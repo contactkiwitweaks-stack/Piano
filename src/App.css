@@ -1,0 +1,6 @@
+/* Native iOS & Mobile Performance Overrides */
+html, body {
+  background-color: #000000;
+  overscroll-behavior: none;
+  touch-action: none;
+}

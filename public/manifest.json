@@ -1,0 +1,19 @@
+{
+  "name": "Virtuoso Piano - Flowkey Masterclass",
+  "short_name": "Virtuoso",
+  "description": "Interactive Piano Learning, Chopin Ballade Masterclass, and Real-Time Pitch Detection",
+  "start_url": "/",
+  "scope": "/",
+  "display": "standalone",
+  "orientation": "any",
+  "background_color": "#09090b",
+  "theme_color": "#09090b",
+  "icons": [
+    {
+      "src": "/favicon.svg",
+      "sizes": "192x192 512x512",
+      "type": "image/svg+xml",
+      "purpose": "any maskable"
+    }
+  ]
+}

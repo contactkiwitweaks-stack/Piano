@@ -1,0 +1,41 @@
+@import "tailwindcss";
+
+@layer base {
+  :root {
+    --sat: env(safe-area-inset-top, 0px);
+    --sab: env(safe-area-inset-bottom, 0px);
+    --sal: env(safe-area-inset-left, 0px);
+    --sar: env(safe-area-inset-right, 0px);
+  }
+
+  body {
+    overscroll-behavior: none;
+    -webkit-user-select: none;
+    user-select: none;
+    -webkit-tap-highlight-color: transparent;
+  }
+}
+
+.font-serif-title {
+  font-family: 'Cinzel', Georgia, serif;
+}
+
+/* Custom scrollbars hidden for clean native app feel */
+::-webkit-scrollbar {
+  display: none;
+}
+* {
+  -ms-overflow-style: none;
+  scrollbar-width: none;
+}
+
+/* Key glow animations */
+@keyframes key-glow {
+  0% { box-shadow: 0 0 10px rgba(56, 189, 248, 0.6), inset 0 -6px 12px rgba(56, 189, 248, 0.4); }
+  50% { box-shadow: 0 0 20px rgba(56, 189, 248, 0.9), inset 0 -10px 18px rgba(56, 189, 248, 0.7); }
+  100% { box-shadow: 0 0 10px rgba(56, 189, 248, 0.6), inset 0 -6px 12px rgba(56, 189, 248, 0.4); }
+}
+
+.glow-active-key {
+  animation: key-glow 1s infinite alternate ease-in-out;
+}
