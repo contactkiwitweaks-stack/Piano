@@ -681,63 +681,59 @@ export const FallingKeysCanvas: React.FC<FallingKeysCanvasProps> = ({
       })
 
       // -------------------------------------------------------------
-      // 10. 3-PEDAL SHOWCASE WIDGET
+      // 10. ULTRA-SLEEK MINIMALIST DAMPER PEDAL PILL (Anime / Modern Glass Aesthetic)
       // -------------------------------------------------------------
-      const pedalBoxW = 110
-      const pedalBoxH = 46
-      const pedalBoxX = width - pedalBoxW - 12
-      const pedalBoxY = keyboardY - pedalBoxH - 8
+      const isPedalDown = curPedal > 30
+      const pedalPillW = 82
+      const pedalPillH = 24
+      const pedalPillX = width - pedalPillW - 14
+      const pedalPillY = keyboardY - pedalPillH - 10
 
-      if (width > 340) {
+      if (width > 280) {
         ctx.save()
-        ctx.fillStyle = curTheme === 'light' ? 'rgba(255, 255, 255, 0.92)' : 'rgba(12, 16, 28, 0.92)'
-        ctx.strokeStyle = curPedal > 30 ? 'rgba(245, 158, 11, 0.7)' : 'rgba(255, 255, 255, 0.15)'
-        ctx.lineWidth = 1.2
+        // Translucent frosted glass pill
+        ctx.fillStyle = isPedalDown
+          ? 'rgba(245, 158, 11, 0.22)'
+          : curTheme === 'light'
+          ? 'rgba(255, 255, 255, 0.75)'
+          : 'rgba(15, 23, 42, 0.65)'
+        ctx.strokeStyle = isPedalDown
+          ? '#f59e0b'
+          : curTheme === 'light'
+          ? 'rgba(0, 0, 0, 0.12)'
+          : 'rgba(255, 255, 255, 0.12)'
+        ctx.lineWidth = 1
+
+        if (isPedalDown) {
+          ctx.shadowColor = 'rgba(245, 158, 11, 0.75)'
+          ctx.shadowBlur = 10
+        }
+
         ctx.beginPath()
-        ctx.roundRect(pedalBoxX, pedalBoxY, pedalBoxW, pedalBoxH, 10)
+        ctx.roundRect(pedalPillX, pedalPillY, pedalPillW, pedalPillH, 12)
         ctx.fill()
         ctx.stroke()
+        ctx.shadowBlur = 0
 
-        const damperDip = curPedal > 30 ? 5 : 0
-        const pedalDefs = [
-          { name: 'Soft', dip: 0, xOffset: 20 },
-          { name: 'Sost', dip: 0, xOffset: 55 },
-          { name: 'Damper', dip: damperDip, xOffset: 90, active: curPedal > 30 },
-        ]
+        // Status indicator dot
+        ctx.beginPath()
+        ctx.arc(pedalPillX + 13, pedalPillY + pedalPillH / 2, isPedalDown ? 3.5 : 2.8, 0, Math.PI * 2)
+        ctx.fillStyle = isPedalDown ? '#fbbf24' : curTheme === 'light' ? '#94a3b8' : '#71717a'
+        ctx.fill()
 
-        pedalDefs.forEach((p) => {
-          const px = pedalBoxX + p.xOffset
-          const py = pedalBoxY + 8 + p.dip
-          ctx.save()
-          if (p.active) {
-            const brassGrad = ctx.createLinearGradient(px - 7, py, px + 7, py + 24)
-            brassGrad.addColorStop(0, '#fef08a')
-            brassGrad.addColorStop(0.4, '#f59e0b')
-            brassGrad.addColorStop(1, '#b45309')
-            ctx.fillStyle = brassGrad
-            ctx.shadowColor = 'rgba(245, 158, 11, 0.9)'
-            ctx.shadowBlur = 12
-          } else {
-            const chromeGrad = ctx.createLinearGradient(px - 7, py, px + 7, py + 24)
-            chromeGrad.addColorStop(0, '#a1a1aa')
-            chromeGrad.addColorStop(0.6, '#52525b')
-            chromeGrad.addColorStop(1, '#27272a')
-            ctx.fillStyle = chromeGrad
-          }
-
-          ctx.beginPath()
-          ctx.roundRect(px - 7, py, 14, 22, 3)
-          ctx.fill()
-          ctx.restore()
-        })
-
-        ctx.fillStyle = curPedal > 30 ? '#f59e0b' : '#71717a'
-        ctx.font = 'bold 8.5px sans-serif'
-        ctx.textAlign = 'center'
+        // Clean typography
+        ctx.fillStyle = isPedalDown
+          ? '#ffffff'
+          : curTheme === 'light'
+          ? '#475569'
+          : '#94a3b8'
+        ctx.font = 'bold 9.5px sans-serif'
+        ctx.textAlign = 'left'
+        ctx.textBaseline = 'middle'
         ctx.fillText(
-          curPedal > 30 ? 'DAMPER: HOLD' : 'PEDAL: RELEASE',
-          pedalBoxX + pedalBoxW / 2,
-          pedalBoxY + pedalBoxH - 4
+          isPedalDown ? 'DAMPER' : 'PEDAL',
+          pedalPillX + 22,
+          pedalPillY + pedalPillH / 2
         )
         ctx.restore()
       }
@@ -778,11 +774,11 @@ export const FallingKeysCanvas: React.FC<FallingKeysCanvasProps> = ({
     const blackKeyHeight = keyboardHeight * 0.62
 
     // Clicked on pedal widget?
-    const pedalBoxW = 110
-    const pedalBoxH = 46
-    const pedalBoxX = width - pedalBoxW - 12
-    const pedalBoxY = keyboardY - pedalBoxH - 8
-    if (x >= pedalBoxX && x <= pedalBoxX + pedalBoxW && y >= pedalBoxY && y <= pedalBoxY + pedalBoxH) {
+    const pedalPillW = 82
+    const pedalPillH = 24
+    const pedalPillX = width - pedalPillW - 14
+    const pedalPillY = keyboardY - pedalPillH - 10
+    if (x >= pedalPillX && x <= pedalPillX + pedalPillW && y >= pedalPillY && y <= pedalPillY + pedalPillH) {
       return { type: 'pedal' }
     }
 
