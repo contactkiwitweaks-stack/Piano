@@ -21430,792 +21430,1108 @@
     {
       "startTime": 0,
       "duration": 1.89,
-      "depth": 127
+      "depth": 127,
+      "type": "syncopated",
+      "measure": 1
     },
     {
       "startTime": 1.94,
       "duration": 1.89,
-      "depth": 127
+      "depth": 127,
+      "type": "syncopated",
+      "measure": 2
     },
     {
       "startTime": 3.87,
       "duration": 1.89,
-      "depth": 127
+      "depth": 127,
+      "type": "syncopated",
+      "measure": 2
     },
     {
       "startTime": 5.81,
       "duration": 1.89,
-      "depth": 127
+      "depth": 127,
+      "type": "syncopated",
+      "measure": 4
     },
     {
       "startTime": 7.74,
       "duration": 1.89,
-      "depth": 127
+      "depth": 127,
+      "type": "syncopated",
+      "measure": 4
     },
     {
       "startTime": 9.68,
       "duration": 1.89,
-      "depth": 127
+      "depth": 127,
+      "type": "syncopated",
+      "measure": 5
     },
     {
       "startTime": 11.61,
       "duration": 1.89,
-      "depth": 127
+      "depth": 127,
+      "type": "syncopated",
+      "measure": 6
     },
     {
       "startTime": 13.55,
       "duration": 1.89,
-      "depth": 127
+      "depth": 127,
+      "type": "syncopated",
+      "measure": 7
     },
     {
       "startTime": 15.48,
       "duration": 1.89,
-      "depth": 127
+      "depth": 127,
+      "type": "syncopated",
+      "measure": 8
     },
     {
       "startTime": 17.42,
       "duration": 1.89,
-      "depth": 127
+      "depth": 127,
+      "type": "syncopated",
+      "measure": 9
     },
     {
       "startTime": 19.35,
       "duration": 1.89,
-      "depth": 127
+      "depth": 127,
+      "type": "syncopated",
+      "measure": 10
     },
     {
       "startTime": 21.29,
       "duration": 1.89,
-      "depth": 127
+      "depth": 127,
+      "type": "syncopated",
+      "measure": 11
     },
     {
       "startTime": 23.23,
       "duration": 1.89,
-      "depth": 127
+      "depth": 127,
+      "type": "syncopated",
+      "measure": 12
     },
     {
       "startTime": 25.16,
       "duration": 1.89,
-      "depth": 127
+      "depth": 127,
+      "type": "syncopated",
+      "measure": 13
     },
     {
       "startTime": 27.1,
       "duration": 1.89,
-      "depth": 127
+      "depth": 127,
+      "type": "syncopated",
+      "measure": 14
     },
     {
       "startTime": 29.03,
       "duration": 1.89,
-      "depth": 127
+      "depth": 127,
+      "type": "syncopated",
+      "measure": 15
     },
     {
       "startTime": 30.97,
       "duration": 1.89,
-      "depth": 127
+      "depth": 127,
+      "type": "syncopated",
+      "measure": 16
     },
     {
       "startTime": 32.9,
       "duration": 1.89,
-      "depth": 127
+      "depth": 127,
+      "type": "syncopated",
+      "measure": 17
     },
     {
       "startTime": 34.84,
       "duration": 1.89,
-      "depth": 127
+      "depth": 127,
+      "type": "syncopated",
+      "measure": 18
     },
     {
       "startTime": 36.77,
       "duration": 1.89,
-      "depth": 127
+      "depth": 127,
+      "type": "syncopated",
+      "measure": 19
     },
     {
       "startTime": 38.71,
       "duration": 1.89,
-      "depth": 127
+      "depth": 127,
+      "type": "syncopated",
+      "measure": 20
     },
     {
       "startTime": 40.65,
       "duration": 1.89,
-      "depth": 127
+      "depth": 127,
+      "type": "syncopated",
+      "measure": 21
     },
     {
       "startTime": 42.58,
       "duration": 1.89,
-      "depth": 127
+      "depth": 127,
+      "type": "syncopated",
+      "measure": 22
     },
     {
       "startTime": 44.52,
       "duration": 1.89,
-      "depth": 127
+      "depth": 127,
+      "type": "syncopated",
+      "measure": 23
     },
     {
       "startTime": 46.45,
       "duration": 1.89,
-      "depth": 127
+      "depth": 127,
+      "type": "syncopated",
+      "measure": 24
     },
     {
       "startTime": 48.39,
       "duration": 1.89,
-      "depth": 127
+      "depth": 127,
+      "type": "syncopated",
+      "measure": 25
     },
     {
       "startTime": 50.32,
       "duration": 1.89,
-      "depth": 127
+      "depth": 127,
+      "type": "syncopated",
+      "measure": 26
     },
     {
       "startTime": 52.26,
       "duration": 1.89,
-      "depth": 127
+      "depth": 127,
+      "type": "syncopated",
+      "measure": 27
     },
     {
       "startTime": 54.19,
       "duration": 1.89,
-      "depth": 127
+      "depth": 127,
+      "type": "syncopated",
+      "measure": 28
     },
     {
       "startTime": 56.13,
       "duration": 1.89,
-      "depth": 127
+      "depth": 127,
+      "type": "syncopated",
+      "measure": 29
     },
     {
       "startTime": 58.06,
       "duration": 1.89,
-      "depth": 127
+      "depth": 127,
+      "type": "syncopated",
+      "measure": 30
     },
     {
       "startTime": 60,
       "duration": 1.89,
-      "depth": 127
+      "depth": 127,
+      "type": "syncopated",
+      "measure": 31
     },
     {
       "startTime": 61.94,
       "duration": 1.89,
-      "depth": 127
+      "depth": 127,
+      "type": "syncopated",
+      "measure": 32
     },
     {
       "startTime": 63.87,
       "duration": 1.89,
-      "depth": 127
+      "depth": 127,
+      "type": "syncopated",
+      "measure": 33
     },
     {
       "startTime": 65.81,
       "duration": 1.89,
-      "depth": 127
+      "depth": 127,
+      "type": "syncopated",
+      "measure": 34
     },
     {
       "startTime": 67.74,
       "duration": 1.89,
-      "depth": 127
+      "depth": 127,
+      "type": "syncopated",
+      "measure": 35
     },
     {
       "startTime": 69.68,
       "duration": 1.89,
-      "depth": 127
+      "depth": 127,
+      "type": "syncopated",
+      "measure": 36
     },
     {
       "startTime": 71.61,
       "duration": 1.89,
-      "depth": 127
+      "depth": 127,
+      "type": "syncopated",
+      "measure": 37
     },
     {
       "startTime": 73.55,
       "duration": 1.89,
-      "depth": 127
+      "depth": 127,
+      "type": "syncopated",
+      "measure": 38
     },
     {
       "startTime": 75.48,
       "duration": 1.89,
-      "depth": 127
+      "depth": 127,
+      "type": "syncopated",
+      "measure": 39
     },
     {
       "startTime": 77.42,
       "duration": 1.89,
-      "depth": 127
+      "depth": 127,
+      "type": "syncopated",
+      "measure": 40
     },
     {
       "startTime": 79.35,
       "duration": 1.89,
-      "depth": 127
+      "depth": 127,
+      "type": "syncopated",
+      "measure": 41
     },
     {
       "startTime": 81.29,
       "duration": 1.89,
-      "depth": 127
+      "depth": 127,
+      "type": "syncopated",
+      "measure": 42
     },
     {
       "startTime": 83.23,
       "duration": 1.89,
-      "depth": 127
+      "depth": 127,
+      "type": "syncopated",
+      "measure": 43
     },
     {
       "startTime": 85.16,
       "duration": 1.89,
-      "depth": 127
+      "depth": 127,
+      "type": "syncopated",
+      "measure": 44
     },
     {
       "startTime": 87.1,
       "duration": 1.89,
-      "depth": 127
+      "depth": 127,
+      "type": "syncopated",
+      "measure": 45
     },
     {
       "startTime": 89.03,
       "duration": 1.89,
-      "depth": 127
+      "depth": 127,
+      "type": "syncopated",
+      "measure": 46
     },
     {
       "startTime": 90.97,
       "duration": 1.89,
-      "depth": 127
+      "depth": 127,
+      "type": "syncopated",
+      "measure": 47
     },
     {
       "startTime": 92.9,
       "duration": 1.89,
-      "depth": 127
+      "depth": 127,
+      "type": "syncopated",
+      "measure": 48
     },
     {
       "startTime": 94.84,
       "duration": 1.89,
-      "depth": 127
+      "depth": 127,
+      "type": "syncopated",
+      "measure": 49
     },
     {
       "startTime": 96.77,
       "duration": 1.89,
-      "depth": 127
+      "depth": 127,
+      "type": "syncopated",
+      "measure": 50
     },
     {
       "startTime": 98.71,
       "duration": 1.89,
-      "depth": 127
+      "depth": 127,
+      "type": "syncopated",
+      "measure": 51
     },
     {
       "startTime": 100.65,
       "duration": 1.89,
-      "depth": 127
+      "depth": 127,
+      "type": "syncopated",
+      "measure": 52
     },
     {
       "startTime": 102.58,
       "duration": 1.89,
-      "depth": 127
+      "depth": 127,
+      "type": "syncopated",
+      "measure": 53
     },
     {
       "startTime": 104.52,
       "duration": 1.89,
-      "depth": 127
+      "depth": 127,
+      "type": "syncopated",
+      "measure": 54
     },
     {
       "startTime": 106.45,
       "duration": 1.89,
-      "depth": 127
+      "depth": 127,
+      "type": "syncopated",
+      "measure": 55
     },
     {
       "startTime": 108.39,
       "duration": 1.89,
-      "depth": 127
+      "depth": 127,
+      "type": "syncopated",
+      "measure": 56
     },
     {
       "startTime": 110.32,
       "duration": 1.89,
-      "depth": 127
+      "depth": 127,
+      "type": "syncopated",
+      "measure": 57
     },
     {
       "startTime": 112.26,
       "duration": 1.89,
-      "depth": 127
+      "depth": 127,
+      "type": "syncopated",
+      "measure": 58
     },
     {
       "startTime": 114.19,
       "duration": 1.89,
-      "depth": 127
+      "depth": 127,
+      "type": "syncopated",
+      "measure": 59
     },
     {
       "startTime": 116.13,
       "duration": 1.89,
-      "depth": 127
+      "depth": 127,
+      "type": "syncopated",
+      "measure": 60
     },
     {
       "startTime": 118.06,
       "duration": 1.89,
-      "depth": 127
+      "depth": 127,
+      "type": "syncopated",
+      "measure": 61
     },
     {
       "startTime": 120,
       "duration": 1.89,
-      "depth": 127
+      "depth": 127,
+      "type": "syncopated",
+      "measure": 62
     },
     {
       "startTime": 121.94,
       "duration": 1.89,
-      "depth": 127
+      "depth": 127,
+      "type": "syncopated",
+      "measure": 63
     },
     {
       "startTime": 123.87,
       "duration": 1.89,
-      "depth": 127
+      "depth": 127,
+      "type": "syncopated",
+      "measure": 64
     },
     {
       "startTime": 125.81,
       "duration": 1.89,
-      "depth": 127
+      "depth": 127,
+      "type": "syncopated",
+      "measure": 65
     },
     {
       "startTime": 127.74,
       "duration": 1.89,
-      "depth": 127
+      "depth": 127,
+      "type": "syncopated",
+      "measure": 66
     },
     {
       "startTime": 129.68,
       "duration": 1.89,
-      "depth": 127
+      "depth": 127,
+      "type": "syncopated",
+      "measure": 67
     },
     {
       "startTime": 131.61,
       "duration": 1.89,
-      "depth": 127
+      "depth": 127,
+      "type": "syncopated",
+      "measure": 68
     },
     {
       "startTime": 133.55,
       "duration": 1.89,
-      "depth": 127
+      "depth": 127,
+      "type": "syncopated",
+      "measure": 69
     },
     {
       "startTime": 135.48,
       "duration": 1.89,
-      "depth": 127
+      "depth": 127,
+      "type": "syncopated",
+      "measure": 70
     },
     {
       "startTime": 137.42,
       "duration": 1.89,
-      "depth": 127
+      "depth": 127,
+      "type": "syncopated",
+      "measure": 71
     },
     {
       "startTime": 139.35,
       "duration": 1.89,
-      "depth": 127
+      "depth": 127,
+      "type": "syncopated",
+      "measure": 72
     },
     {
       "startTime": 141.29,
       "duration": 1.89,
-      "depth": 127
+      "depth": 127,
+      "type": "syncopated",
+      "measure": 73
     },
     {
       "startTime": 143.23,
       "duration": 1.89,
-      "depth": 127
+      "depth": 127,
+      "type": "syncopated",
+      "measure": 74
     },
     {
       "startTime": 145.16,
       "duration": 1.89,
-      "depth": 127
+      "depth": 127,
+      "type": "syncopated",
+      "measure": 75
     },
     {
       "startTime": 147.1,
       "duration": 1.89,
-      "depth": 127
+      "depth": 127,
+      "type": "syncopated",
+      "measure": 76
     },
     {
       "startTime": 149.03,
       "duration": 1.89,
-      "depth": 127
+      "depth": 127,
+      "type": "syncopated",
+      "measure": 77
     },
     {
       "startTime": 150.97,
       "duration": 1.89,
-      "depth": 127
+      "depth": 127,
+      "type": "syncopated",
+      "measure": 78
     },
     {
       "startTime": 152.9,
       "duration": 1.89,
-      "depth": 127
+      "depth": 127,
+      "type": "syncopated",
+      "measure": 79
     },
     {
       "startTime": 154.84,
       "duration": 1.89,
-      "depth": 127
+      "depth": 127,
+      "type": "syncopated",
+      "measure": 80
     },
     {
       "startTime": 156.77,
       "duration": 1.89,
-      "depth": 127
+      "depth": 127,
+      "type": "syncopated",
+      "measure": 81
     },
     {
       "startTime": 158.71,
       "duration": 1.89,
-      "depth": 127
+      "depth": 127,
+      "type": "syncopated",
+      "measure": 82
     },
     {
       "startTime": 160.65,
       "duration": 1.89,
-      "depth": 127
+      "depth": 127,
+      "type": "syncopated",
+      "measure": 83
     },
     {
       "startTime": 162.58,
       "duration": 1.89,
-      "depth": 127
+      "depth": 127,
+      "type": "syncopated",
+      "measure": 84
     },
     {
       "startTime": 164.52,
       "duration": 1.89,
-      "depth": 127
+      "depth": 127,
+      "type": "syncopated",
+      "measure": 85
     },
     {
       "startTime": 166.45,
       "duration": 1.89,
-      "depth": 127
+      "depth": 127,
+      "type": "syncopated",
+      "measure": 86
     },
     {
       "startTime": 168.39,
       "duration": 1.89,
-      "depth": 127
+      "depth": 127,
+      "type": "syncopated",
+      "measure": 87
     },
     {
       "startTime": 170.32,
       "duration": 1.89,
-      "depth": 127
+      "depth": 127,
+      "type": "syncopated",
+      "measure": 88
     },
     {
       "startTime": 172.26,
       "duration": 1.89,
-      "depth": 127
+      "depth": 127,
+      "type": "syncopated",
+      "measure": 89
     },
     {
       "startTime": 174.19,
       "duration": 1.89,
-      "depth": 127
+      "depth": 127,
+      "type": "syncopated",
+      "measure": 90
     },
     {
       "startTime": 176.13,
       "duration": 1.89,
-      "depth": 127
+      "depth": 127,
+      "type": "syncopated",
+      "measure": 91
     },
     {
       "startTime": 178.06,
       "duration": 1.89,
-      "depth": 127
+      "depth": 127,
+      "type": "syncopated",
+      "measure": 92
     },
     {
       "startTime": 180,
       "duration": 1.89,
-      "depth": 127
+      "depth": 127,
+      "type": "syncopated",
+      "measure": 93
     },
     {
       "startTime": 181.94,
       "duration": 1.89,
-      "depth": 127
+      "depth": 127,
+      "type": "syncopated",
+      "measure": 94
     },
     {
       "startTime": 183.87,
       "duration": 1.89,
-      "depth": 127
+      "depth": 127,
+      "type": "syncopated",
+      "measure": 95
     },
     {
       "startTime": 185.81,
       "duration": 1.89,
-      "depth": 127
+      "depth": 127,
+      "type": "syncopated",
+      "measure": 96
     },
     {
       "startTime": 187.74,
       "duration": 1.89,
-      "depth": 127
+      "depth": 127,
+      "type": "syncopated",
+      "measure": 97
     },
     {
       "startTime": 189.68,
       "duration": 1.89,
-      "depth": 127
+      "depth": 127,
+      "type": "syncopated",
+      "measure": 98
     },
     {
       "startTime": 191.61,
       "duration": 1.89,
-      "depth": 127
+      "depth": 127,
+      "type": "syncopated",
+      "measure": 99
     },
     {
       "startTime": 193.55,
       "duration": 1.89,
-      "depth": 127
+      "depth": 127,
+      "type": "syncopated",
+      "measure": 100
     },
     {
       "startTime": 195.48,
       "duration": 1.89,
-      "depth": 127
+      "depth": 127,
+      "type": "syncopated",
+      "measure": 101
     },
     {
       "startTime": 197.42,
       "duration": 1.89,
-      "depth": 127
+      "depth": 127,
+      "type": "syncopated",
+      "measure": 102
     },
     {
       "startTime": 199.35,
       "duration": 1.89,
-      "depth": 127
+      "depth": 127,
+      "type": "syncopated",
+      "measure": 103
     },
     {
       "startTime": 201.29,
       "duration": 1.89,
-      "depth": 127
+      "depth": 127,
+      "type": "syncopated",
+      "measure": 104
     },
     {
       "startTime": 203.23,
       "duration": 1.89,
-      "depth": 127
+      "depth": 127,
+      "type": "syncopated",
+      "measure": 105
     },
     {
       "startTime": 205.16,
       "duration": 1.89,
-      "depth": 127
+      "depth": 127,
+      "type": "syncopated",
+      "measure": 106
     },
     {
       "startTime": 207.1,
       "duration": 1.89,
-      "depth": 127
+      "depth": 127,
+      "type": "syncopated",
+      "measure": 107
     },
     {
       "startTime": 209.03,
       "duration": 1.89,
-      "depth": 127
+      "depth": 127,
+      "type": "syncopated",
+      "measure": 108
     },
     {
       "startTime": 210.97,
       "duration": 1.89,
-      "depth": 127
+      "depth": 127,
+      "type": "syncopated",
+      "measure": 109
     },
     {
       "startTime": 212.9,
       "duration": 1.89,
-      "depth": 127
+      "depth": 127,
+      "type": "syncopated",
+      "measure": 110
     },
     {
       "startTime": 214.84,
       "duration": 1.89,
-      "depth": 127
+      "depth": 127,
+      "type": "syncopated",
+      "measure": 111
     },
     {
       "startTime": 216.77,
       "duration": 1.89,
-      "depth": 127
+      "depth": 127,
+      "type": "syncopated",
+      "measure": 112
     },
     {
       "startTime": 218.71,
       "duration": 1.89,
-      "depth": 127
+      "depth": 127,
+      "type": "syncopated",
+      "measure": 113
     },
     {
       "startTime": 220.65,
       "duration": 1.89,
-      "depth": 127
+      "depth": 127,
+      "type": "syncopated",
+      "measure": 114
     },
     {
       "startTime": 222.58,
       "duration": 1.89,
-      "depth": 127
+      "depth": 127,
+      "type": "syncopated",
+      "measure": 115
     },
     {
       "startTime": 224.52,
       "duration": 1.89,
-      "depth": 127
+      "depth": 127,
+      "type": "syncopated",
+      "measure": 116
     },
     {
       "startTime": 226.45,
       "duration": 1.89,
-      "depth": 127
+      "depth": 127,
+      "type": "syncopated",
+      "measure": 117
     },
     {
       "startTime": 228.39,
       "duration": 1.89,
-      "depth": 127
+      "depth": 127,
+      "type": "syncopated",
+      "measure": 118
     },
     {
       "startTime": 230.32,
       "duration": 1.89,
-      "depth": 127
+      "depth": 127,
+      "type": "syncopated",
+      "measure": 119
     },
     {
       "startTime": 232.26,
       "duration": 1.89,
-      "depth": 127
+      "depth": 127,
+      "type": "syncopated",
+      "measure": 120
     },
     {
       "startTime": 234.19,
       "duration": 1.89,
-      "depth": 127
+      "depth": 127,
+      "type": "syncopated",
+      "measure": 121
     },
     {
       "startTime": 236.13,
       "duration": 1.89,
-      "depth": 127
+      "depth": 127,
+      "type": "syncopated",
+      "measure": 122
     },
     {
       "startTime": 238.06,
       "duration": 1.89,
-      "depth": 127
+      "depth": 127,
+      "type": "syncopated",
+      "measure": 123
     },
     {
       "startTime": 240,
       "duration": 1.89,
-      "depth": 127
+      "depth": 127,
+      "type": "syncopated",
+      "measure": 124
     },
     {
       "startTime": 241.94,
       "duration": 1.89,
-      "depth": 127
+      "depth": 127,
+      "type": "syncopated",
+      "measure": 125
     },
     {
       "startTime": 243.87,
       "duration": 1.89,
-      "depth": 127
+      "depth": 127,
+      "type": "syncopated",
+      "measure": 126
     },
     {
       "startTime": 245.81,
       "duration": 1.89,
-      "depth": 127
+      "depth": 127,
+      "type": "syncopated",
+      "measure": 127
     },
     {
       "startTime": 247.74,
       "duration": 1.89,
-      "depth": 127
+      "depth": 127,
+      "type": "syncopated",
+      "measure": 128
     },
     {
       "startTime": 249.68,
       "duration": 1.89,
-      "depth": 127
+      "depth": 127,
+      "type": "syncopated",
+      "measure": 129
     },
     {
       "startTime": 251.61,
       "duration": 1.89,
-      "depth": 127
+      "depth": 127,
+      "type": "syncopated",
+      "measure": 130
     },
     {
       "startTime": 253.55,
       "duration": 1.89,
-      "depth": 127
+      "depth": 127,
+      "type": "syncopated",
+      "measure": 131
     },
     {
       "startTime": 255.48,
       "duration": 1.89,
-      "depth": 127
+      "depth": 127,
+      "type": "syncopated",
+      "measure": 132
     },
     {
       "startTime": 257.42,
       "duration": 1.89,
-      "depth": 127
+      "depth": 127,
+      "type": "syncopated",
+      "measure": 133
     },
     {
       "startTime": 259.35,
       "duration": 1.89,
-      "depth": 127
+      "depth": 127,
+      "type": "syncopated",
+      "measure": 134
     },
     {
       "startTime": 261.29,
       "duration": 1.89,
-      "depth": 127
+      "depth": 127,
+      "type": "syncopated",
+      "measure": 135
     },
     {
       "startTime": 263.23,
       "duration": 1.89,
-      "depth": 127
+      "depth": 127,
+      "type": "syncopated",
+      "measure": 136
     },
     {
       "startTime": 265.16,
       "duration": 1.89,
-      "depth": 127
+      "depth": 127,
+      "type": "syncopated",
+      "measure": 137
     },
     {
       "startTime": 267.1,
       "duration": 1.89,
-      "depth": 127
+      "depth": 127,
+      "type": "syncopated",
+      "measure": 138
     },
     {
       "startTime": 269.03,
       "duration": 1.89,
-      "depth": 127
+      "depth": 127,
+      "type": "syncopated",
+      "measure": 139
     },
     {
       "startTime": 270.97,
       "duration": 1.89,
-      "depth": 127
+      "depth": 127,
+      "type": "syncopated",
+      "measure": 140
     },
     {
       "startTime": 272.9,
       "duration": 1.89,
-      "depth": 127
+      "depth": 127,
+      "type": "syncopated",
+      "measure": 141
     },
     {
       "startTime": 274.84,
       "duration": 1.89,
-      "depth": 127
+      "depth": 127,
+      "type": "syncopated",
+      "measure": 142
     },
     {
       "startTime": 276.77,
       "duration": 1.89,
-      "depth": 127
+      "depth": 127,
+      "type": "syncopated",
+      "measure": 143
     },
     {
       "startTime": 278.71,
       "duration": 1.89,
-      "depth": 127
+      "depth": 127,
+      "type": "syncopated",
+      "measure": 144
     },
     {
       "startTime": 280.65,
       "duration": 1.89,
-      "depth": 127
+      "depth": 127,
+      "type": "syncopated",
+      "measure": 145
     },
     {
       "startTime": 282.58,
       "duration": 1.89,
-      "depth": 127
+      "depth": 127,
+      "type": "syncopated",
+      "measure": 146
     },
     {
       "startTime": 284.52,
       "duration": 1.89,
-      "depth": 127
+      "depth": 127,
+      "type": "syncopated",
+      "measure": 147
     },
     {
       "startTime": 286.45,
       "duration": 1.89,
-      "depth": 127
+      "depth": 127,
+      "type": "syncopated",
+      "measure": 148
     },
     {
       "startTime": 288.39,
       "duration": 1.89,
-      "depth": 127
+      "depth": 127,
+      "type": "syncopated",
+      "measure": 149
     },
     {
       "startTime": 290.32,
       "duration": 1.89,
-      "depth": 127
+      "depth": 127,
+      "type": "syncopated",
+      "measure": 150
     },
     {
       "startTime": 292.26,
       "duration": 1.89,
-      "depth": 127
+      "depth": 127,
+      "type": "syncopated",
+      "measure": 151
     },
     {
       "startTime": 294.19,
       "duration": 1.89,
-      "depth": 127
+      "depth": 127,
+      "type": "syncopated",
+      "measure": 152
     },
     {
       "startTime": 296.13,
       "duration": 1.89,
-      "depth": 127
+      "depth": 127,
+      "type": "syncopated",
+      "measure": 153
     },
     {
       "startTime": 298.06,
       "duration": 1.89,
-      "depth": 127
+      "depth": 127,
+      "type": "syncopated",
+      "measure": 154
     },
     {
       "startTime": 300,
       "duration": 1.89,
-      "depth": 127
+      "depth": 127,
+      "type": "syncopated",
+      "measure": 155
     },
     {
       "startTime": 301.94,
       "duration": 1.89,
-      "depth": 127
+      "depth": 127,
+      "type": "syncopated",
+      "measure": 156
     },
     {
       "startTime": 303.87,
       "duration": 1.89,
-      "depth": 127
+      "depth": 127,
+      "type": "syncopated",
+      "measure": 157
     }
   ],
   "sections": [

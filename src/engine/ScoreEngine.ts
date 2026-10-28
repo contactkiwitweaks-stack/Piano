@@ -1286,4 +1286,73 @@ export class ScoreEngine {
       ],
     }
   }
+
+  // ==========================================
+  // 16. MY WORK: ORIGINAL EXPRESSIVE SOLO PIANO MASTERPIECE
+  // Evoking deep grief, sorrow, and tragic beauty
+  // ==========================================
+  public static getMyWork(): Piece {
+    const n = this.noteToMidi.bind(this)
+    const notes: NoteEvent[] = []
+    const pedals: PedalEvent[] = []
+
+    const bpm = 66
+    const beat = 60 / bpm
+    const bar = beat * 4
+    let t = 0.0
+    let noteId = 1
+
+    const chords = [
+      { bass: n('G2'), mid: [n('D3'), n('Bb3')], mel: [n('D5'), n('Eb5'), n('D5'), n('C5')] },
+      { bass: n('C2'), mid: [n('Eb3'), n('Bb3')], mel: [n('Bb4'), n('C5'), n('D5'), n('Bb4')] },
+      { bass: n('F2'), mid: [n('C3'), n('A3')], mel: [n('A4'), n('Bb4'), n('C5'), n('A4')] },
+      { bass: n('Bb1'), mid: [n('F2'), n('D3')], mel: [n('G4'), n('A4'), n('Bb4'), n('D5')] },
+      { bass: n('Eb2'), mid: [n('G2'), n('Eb3')], mel: [n('G5'), n('F5'), n('Eb5'), n('D5')] },
+      { bass: n('A1'), mid: [n('G2'), n('C3')], mel: [n('C5'), n('Bb4'), n('A4'), n('G4')] },
+      { bass: n('D2'), mid: [n('F#2'), n('C3')], mel: [n('F#4'), n('G4'), n('A4'), n('D5')] },
+      { bass: n('G1'), mid: [n('D2'), n('Bb2')], mel: [n('G4'), n('Bb4'), n('D5'), n('G5')] },
+    ]
+
+    for (let m = 1; m <= 32; m++) {
+      const c = chords[(m - 1) % chords.length]
+      pedals.push({ startTime: t, duration: bar - 0.04, depth: 127, type: 'syncopated', measure: m })
+
+      notes.push({ id: `mw-fallback-${noteId++}`, midi: c.bass, noteName: this.midiToNoteName(c.bass), startTime: t, duration: bar * 0.7, hand: 'left', finger: 5, measure: m, beat: 1, velocity: 75, isAccent: true })
+      c.mid.forEach((midMidi, i) => {
+        notes.push({ id: `mw-fallback-${noteId++}`, midi: midMidi, noteName: this.midiToNoteName(midMidi), startTime: t + beat * (1 + i * 0.5), duration: bar * 0.4, hand: 'left', finger: (3 - i) as 1 | 2 | 3 | 4 | 5, measure: m, beat: 2 + i * 0.5, velocity: 58 })
+      })
+      c.mel.forEach((melMidi, b) => {
+        notes.push({ id: `mw-fallback-${noteId++}`, midi: melMidi, noteName: this.midiToNoteName(melMidi), startTime: t + beat * b, duration: beat * 0.95, hand: 'right', finger: 4, measure: m, beat: b + 1, velocity: 78, isAccent: b === 0 || b === 1 })
+      })
+      t += bar
+    }
+
+    return {
+      id: 'my-work',
+      title: 'My Work',
+      composer: 'Solo Piano (Original Masterpiece)',
+      opus: 'Op. 1 in G minor',
+      key: 'G minor / B♭ Major',
+      timeSignature: [4, 4],
+      tempoBpm: bpm,
+      duration: Math.round(t * 100) / 100,
+      notes,
+      pedalEvents: pedals,
+      annotations: [
+        {
+          id: 'mw-ann-1',
+          measureRange: [1, 8],
+          title: 'Cantabile Dolente & Ur-Motif',
+          germanTerm: 'Ausdrucksvolles Klage-Thema',
+          category: 'tone-color',
+          instruction: 'Shape the weeping D-Eb-C#-D motif with delicate finger weight and breathing rubato.',
+          referenceTimestampSeconds: 0.0,
+        },
+      ],
+      sections: [
+        { id: 'mw-sec-1', title: 'I. Largo misterioso & Cantabile', startMeasure: 1, endMeasure: 16, startTime: 0, endTime: bar * 16, tempoSuggestion: '52 - 66 BPM', character: 'Dark lamento and singing melody' },
+        { id: 'mw-sec-2', title: 'II. Soaring Waves & Climax', startMeasure: 17, endMeasure: 32, startTime: bar * 16, endTime: t, tempoSuggestion: '104 BPM - Grandioso', character: 'Climactic tragic release' },
+      ],
+    }
+  }
 }
