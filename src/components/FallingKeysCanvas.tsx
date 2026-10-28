@@ -101,6 +101,19 @@ export const FallingKeysCanvas: React.FC<FallingKeysCanvasProps> = ({
   const activeTouchMapRef = useRef<Map<number, number>>(new Map())
   const pressedKeysRef = useRef<Set<number>>(new Set())
 
+  // Precompute maximum note duration in the current piece to ensure binary search culling window never cuts off sustained notes
+  const maxNoteDuration = useMemo(() => {
+    if (!piece || !piece.notes || piece.notes.length === 0) return 4.0
+    let maxD = 1.0
+    for (let i = 0; i < piece.notes.length; i++) {
+      if (piece.notes[i].duration > maxD) maxD = piece.notes[i].duration
+    }
+    return Math.min(15.0, maxD)
+  }, [piece.notes])
+
+  const maxNoteDurationRef = useRef<number>(maxNoteDuration)
+  maxNoteDurationRef.current = maxNoteDuration
+
   // Dynamic visible register calculation (Focuses on the piece's range)
   const { startMidi, endMidi } = useMemo(() => {
     let minMidi = 108
@@ -395,10 +408,12 @@ export const FallingKeysCanvas: React.FC<FallingKeysCanvasProps> = ({
       // -------------------------------------------------------------
       // 5. RENDER FALLING NOTES (SLIM, ELEGANT ROUNDED PILLS WITH NOTE LETTERS)
       // -------------------------------------------------------------
+      const maxNoteDur = maxNoteDurationRef.current || 4.0
+      const minStartTime = curTime - maxNoteDur - 0.5
+
       let low = 0
       let high = piece.notes.length - 1
-      let startIdx = 0
-      const minStartTime = curTime - 0.4
+      let startIdx = piece.notes.length
       while (low <= high) {
         const mid = (low + high) >> 1
         if (piece.notes[mid].startTime >= minStartTime) {
@@ -410,12 +425,16 @@ export const FallingKeysCanvas: React.FC<FallingKeysCanvasProps> = ({
       }
 
       const activePlayingMidis = new Map<number, { isRight: boolean }>()
-      const maxStartTime = curTime + lookaheadSeconds
+      const maxStartTime = curTime + lookaheadSeconds + 0.5
       const notesToRender: typeof piece.notes = []
 
       for (let i = startIdx; i < piece.notes.length; i++) {
         const n = piece.notes[i]
         if (n.startTime > maxStartTime) break
+
+        // Skip notes that have already finished playing before curTime
+        if (n.startTime + n.duration < curTime) continue
+
         notesToRender.push(n)
 
         const isPlaying = curTime >= n.startTime && curTime <= n.startTime + n.duration
@@ -439,11 +458,39 @@ export const FallingKeysCanvas: React.FC<FallingKeysCanvasProps> = ({
           keyW = blackKeyWidth
         }
 
-        const timeFromCurrent = note.startTime - curTime
-        const bottomY = keyboardY - timeFromCurrent * pixelsPerSecond
-        // Note length scaled to duration, with clean minimum height
-        const noteLengthPx = Math.max(14, note.duration * pixelsPerSecond)
-        const topY = bottomY - noteLengthPx
+        // Visual note height scaling:
+        // Capped so sustained notes never turn into massive screen-blocking towers!
+        const maxVisualHeight = Math.min(130, Math.max(50, keyboardY * 0.35))
+        const rawHeight = note.duration * pixelsPerSecond
+        const fullVisualLength = rawHeight <= maxVisualHeight
+          ? Math.max(16, rawHeight)
+          : maxVisualHeight + Math.min(22, (rawHeight - maxVisualHeight) * 0.12)
+
+        const start = note.startTime
+        const end = note.startTime + note.duration
+        let bottomY = 0
+        let topY = 0
+        let noteLengthPx = 0
+
+        if (curTime < start) {
+          // 1. Approaching: Note is falling from above towards the keyboard
+          const timeUntilHit = start - curTime
+          bottomY = keyboardY - timeUntilHit * pixelsPerSecond
+          noteLengthPx = fullVisualLength
+          topY = bottomY - noteLengthPx
+        } else if (curTime <= end) {
+          // 2. Active Strike: Note is currently being held/played at the strike line
+          bottomY = keyboardY
+          const remainingFraction = note.duration > 0 ? (end - curTime) / note.duration : 0
+          noteLengthPx = Math.max(4, fullVisualLength * remainingFraction)
+          topY = keyboardY - noteLengthPx
+        } else {
+          // 3. Finished note
+          return
+        }
+
+        // Skip notes completely off-screen
+        if (bottomY < -20 || topY > keyboardY + 10) return
 
         const isRight = note.hand === 'right'
 
@@ -477,8 +524,8 @@ export const FallingKeysCanvas: React.FC<FallingKeysCanvasProps> = ({
           spawnHitParticles(keyX + keyW / 2, keyboardY, baseColor, 1)
         }
 
-        // Pill margins: leaving 1.5px padding on each side so notes fit cleanly and never crowd
-        const notePad = 1.5
+        // Pill margins: proportional padding so notes fit cleanly and never crowd
+        const notePad = Math.max(1, Math.min(2, keyW * 0.1))
         const noteX = keyX + notePad
         const noteW = Math.max(4, keyW - notePad * 2)
         const cornerR = Math.min(5, noteW / 2)
@@ -505,64 +552,51 @@ export const FallingKeysCanvas: React.FC<FallingKeysCanvasProps> = ({
         ctx.stroke()
 
         // -------------------------------------------------------------
-        // DYNAMIC NOTE LETTER & FINGERING BADGE (NOTE AT TOP, FINGERS AT BOTTOM)
-        // Responsive for mobile portrait: threshold noteW >= 3.5 guarantees letters never disappear!
+        // DYNAMIC NOTE LETTER & FINGERING (NO WEIRD BACKGROUND CIRCLE)
+        // Clean typography directly on pill: Note at top, Finger at bottom
+        // Responsive for mobile portrait & tablet/desktop
         // -------------------------------------------------------------
-        if (noteW >= 3.5 && bottomY > 0 && bottomY < keyboardY + 20) {
+        if (noteW >= 3.5 && noteLengthPx >= 14 && bottomY > 0 && topY < keyboardY) {
           const noteLetter = note.noteName.replace(/[0-9]/g, '')
           const fingerDigit = note.finger || (note.hand === 'left' ? 5 : 1)
-          const isCompact = noteW < 12
-          const noteFont = isCompact ? 'bold 7.5px sans-serif' : 'bold 8.5px sans-serif'
-          const fingerFont = isCompact ? 'bold 7.5px sans-serif' : 'bold 9px sans-serif'
+          const isNarrow = noteW < 13
+          const isShort = noteLengthPx < 32
+
           ctx.save()
+          ctx.textAlign = 'center'
+          ctx.textBaseline = 'middle'
+          ctx.fillStyle = '#ffffff'
+          ctx.shadowColor = 'rgba(0, 0, 0, 0.9)'
+          ctx.shadowBlur = 3.5
 
-          if (curShowFingers && noteLengthPx >= 28) {
-            // 1. Note letter at the TOP-ish
-            const topTextY = Math.max(topY + 10, Math.min(bottomY - 18, topY + 11))
-            ctx.fillStyle = '#ffffff'
-            ctx.shadowColor = 'rgba(0, 0, 0, 0.85)'
-            ctx.shadowBlur = 4
-            ctx.font = noteFont
-            ctx.textAlign = 'center'
-            ctx.fillText(noteLetter, noteX + noteW / 2, topTextY)
+          if (curShowFingers) {
+            if (!isShort) {
+              // 1. Note letter at the TOP of the pill
+              const topTextY = topY + Math.min(13, noteLengthPx * 0.28)
+              ctx.font = isNarrow ? 'bold 7.5px sans-serif' : 'bold 9px sans-serif'
+              ctx.fillText(noteLetter, noteX + noteW / 2, topTextY)
 
-            // 2. Fingering digit at the BOTTOM-ish inside a frosted badge
-            const bottomTextY = Math.min(bottomY - 5, keyboardY - 5)
-            const badgeRadius = Math.max(4, Math.min(7, noteW / 2 + 1))
-            const badgeCenterY = bottomTextY - badgeRadius
-
-            ctx.beginPath()
-            ctx.arc(noteX + noteW / 2, badgeCenterY, badgeRadius, 0, Math.PI * 2)
-            ctx.fillStyle = isRight ? 'rgba(7, 43, 67, 0.75)' : 'rgba(76, 5, 25, 0.75)'
-            ctx.fill()
-            ctx.strokeStyle = isRight ? 'rgba(56, 189, 248, 0.9)' : 'rgba(244, 114, 182, 0.9)'
-            ctx.lineWidth = 0.9
-            ctx.stroke()
-
-            ctx.fillStyle = '#ffffff'
-            ctx.shadowBlur = 0
-            ctx.font = fingerFont
-            ctx.textBaseline = 'middle'
-            ctx.fillText(`${fingerDigit}`, noteX + noteW / 2, badgeCenterY + 0.5)
-            ctx.textBaseline = 'alphabetic'
-          } else if (curShowFingers && noteLengthPx >= 16) {
-            // Compact pill: Note letter and finger digit together
-            const textY = Math.min(bottomY - 4, topY + noteLengthPx / 2 + 3)
-            ctx.fillStyle = '#ffffff'
-            ctx.shadowColor = 'rgba(0, 0, 0, 0.85)'
-            ctx.shadowBlur = 3
-            ctx.font = noteFont
-            ctx.textAlign = 'center'
-            ctx.fillText(isCompact ? `${fingerDigit}` : `${noteLetter} · ${fingerDigit}`, noteX + noteW / 2, textY)
+              // 2. Fingering digit at the BOTTOM of the pill (NO WEIRD BACKGROUND CIRCLE!)
+              const bottomTextY = bottomY - Math.min(10, noteLengthPx * 0.22)
+              ctx.font = isNarrow ? 'bold 8px sans-serif' : 'bold 10px sans-serif'
+              ctx.fillText(`${fingerDigit}`, noteX + noteW / 2, bottomTextY)
+            } else {
+              // Short note pill: render single compact label
+              const centerY = topY + noteLengthPx / 2
+              ctx.font = isNarrow ? 'bold 7.5px sans-serif' : 'bold 8.5px sans-serif'
+              if (isNarrow) {
+                // If narrow, show finger digit cleanly
+                ctx.fillText(`${fingerDigit}`, noteX + noteW / 2, centerY)
+              } else {
+                // If normal width, show "C · 1"
+                ctx.fillText(`${noteLetter} · ${fingerDigit}`, noteX + noteW / 2, centerY)
+              }
+            }
           } else {
-            // Fingers toggle OFF or short note: Note letter centered
-            const textY = Math.min(bottomY - 4, topY + noteLengthPx / 2 + 3)
-            ctx.fillStyle = '#ffffff'
-            ctx.shadowColor = 'rgba(0, 0, 0, 0.85)'
-            ctx.shadowBlur = 3
-            ctx.font = noteFont
-            ctx.textAlign = 'center'
-            ctx.fillText(noteLetter, noteX + noteW / 2, textY)
+            // Fingers toggle OFF: Just the note letter centered cleanly
+            const centerY = topY + noteLengthPx / 2
+            ctx.font = isNarrow ? 'bold 7.5px sans-serif' : 'bold 9px sans-serif'
+            ctx.fillText(noteLetter, noteX + noteW / 2, centerY)
           }
 
           ctx.restore()
