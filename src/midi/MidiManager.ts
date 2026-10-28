@@ -213,12 +213,15 @@ export class MidiManager {
       this.bleCharacteristic = await service.getCharacteristic(BLE_MIDI_CHARACTERISTIC_UUID)
 
       await this.bleCharacteristic.startNotifications()
-      this.bleCharacteristic.addEventListener('characteristicvaluechanged', (event: Event) => {
+      const onValChanged = (event: Event) => {
         const target = event.target as unknown as { value?: DataView }
-        if (target.value) {
-          this.parseBleMidiPacket(target.value)
+        const val = target?.value || this.bleCharacteristic?.value
+        if (val) {
+          this.parseBleMidiPacket(val)
         }
-      })
+      }
+      this.bleCharacteristic.addEventListener('characteristicvaluechanged', onValChanged)
+      ;(this.bleCharacteristic as unknown as { oncharacteristicvaluechanged?: (event: Event) => void }).oncharacteristicvaluechanged = onValChanged
 
       this.state.deviceName = this.bleDevice.name || 'Roland LX-9 (Bluetooth)'
       this.state.isConnected = true
@@ -234,54 +237,50 @@ export class MidiManager {
 
   /**
    * Parses Apple/Roland BLE MIDI protocol packet
-   * Handles timestamp headers, status bytes, and running status
+   * Correctly handles timestamp headers, running status, and multi-note packets
    */
   private parseBleMidiPacket(dataView: DataView) {
     if (dataView.byteLength < 3) return
     const len = dataView.byteLength
     let runningStatus = 0
+    let i = 1 // Skip Header Byte (dataView[0] has bit 7 set and 6-bit timestamp high)
 
-    // Apple/Roland BLE MIDI specification:
-    // Byte 0: Header with bit 7 set [1, 0, timestamp_high (6-bit)]
-    // Following bytes: Timestamp [1, timestamp_low], Status [1, status], Data [0, data]
-    let i = 1
     while (i < len) {
-      let b = dataView.getUint8(i++)
+      const b = dataView.getUint8(i++)
 
-      // If byte has MSB set: could be timestamp byte or status byte
+      // If byte has MSB set, it's either a timestamp low byte (0x80-0xFF) or a status byte
       if ((b & 0x80) !== 0) {
-        // If immediately followed by another byte with MSB set, b was timestamp_low!
-        if (i < len && (dataView.getUint8(i) & 0x80) !== 0) {
-          b = dataView.getUint8(i++)
-        }
-
-        // Channel Voice Message Status (0x80 - 0xEF)
-        if (b >= 0x80 && b <= 0xef) {
-          runningStatus = b
-          const cmd = b & 0xf0
-          if (cmd === 0xc0 || cmd === 0xd0) {
-            // 1-byte data commands
-            if (i < len) {
-              const d1 = dataView.getUint8(i++)
-              this.processRawMidiMessage(new Uint8Array([b, d1]))
-            }
-          } else {
-            // 2-byte data commands (Note On 0x90, Note Off 0x80, CC Damper 0xB0, Pitch Bend 0xE0)
-            if (i + 1 < len) {
-              const d1 = dataView.getUint8(i++)
-              const d2 = dataView.getUint8(i++)
-              this.processRawMidiMessage(new Uint8Array([b, d1, d2]))
-            }
+        if (i < len) {
+          const next = dataView.getUint8(i)
+          if ((next & 0x80) !== 0) {
+            // Both current and next have MSB set: b was timestamp low, next is status byte!
+            runningStatus = dataView.getUint8(i++)
           }
+          // If next had MSB 0, b was timestamp low and next is data1 under existing runningStatus!
         }
-      } else if (runningStatus !== 0) {
-        // Running status: b is data1
-        const cmd = runningStatus & 0xf0
-        if (cmd === 0xc0 || cmd === 0xd0) {
-          this.processRawMidiMessage(new Uint8Array([runningStatus, b]))
-        } else if (i < len) {
+      } else {
+        // b has MSB 0: this is data1 under running status! Step back 1 byte so data extraction reads it
+        i--
+      }
+
+      if (runningStatus === 0 || i >= len) continue
+
+      const cmd = runningStatus & 0xf0
+      if (cmd === 0xc0 || cmd === 0xd0) {
+        // 1-byte data commands (Program Change, Channel Pressure)
+        if (i < len) {
+          const d1 = dataView.getUint8(i++)
+          this.processRawMidiMessage(new Uint8Array([runningStatus, d1]))
+        }
+      } else {
+        // 2-byte data commands (Note On 0x90, Note Off 0x80, CC Damper 0xB0, Pitch Bend 0xE0)
+        if (i + 1 < len) {
+          const d1 = dataView.getUint8(i++)
           const d2 = dataView.getUint8(i++)
-          this.processRawMidiMessage(new Uint8Array([runningStatus, b, d2]))
+          this.processRawMidiMessage(new Uint8Array([runningStatus, d1, d2]))
+        } else if (i < len) {
+          const d1 = dataView.getUint8(i++)
+          this.processRawMidiMessage(new Uint8Array([runningStatus, d1, 0]))
         }
       }
     }

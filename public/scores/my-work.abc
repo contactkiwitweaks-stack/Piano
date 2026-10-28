@@ -4,44 +4,56 @@ C:Solo Piano (Original Masterpiece)
 O:Op. 1 in G minor
 M:4/4
 L:1/8
-Q:1/4=66
+Q:1/4=48
 K:Gm
 %%staves {RH LH}
 V:RH clef=treble name="Treble"
 V:LH clef=bass name="Bass"
 
-% --- MOVEMENT I: LARGO MISTERIOSO (M. 1 - 12) ---
-[V:RH] !p! z2 D2 G2 B2 | d4- d(edc) | !f! c2- c(e A2) c2 | !diminuendo(! d6 !fermata! z2 !diminuendo)! |
-[V:LH] [G,,G,]4- [G,,G,]2 z2 | D,,4- D,,2 z2 | C,,4- C,,2 z2 | D,,6 z2 |
+% =========================================================================
+% MOVEMENT I: LARGO MAESTOSO ED ESPRESSIVO (M. 1 - 8)
+% Inspired by Chopin Ballade No. 1 Opening Recitative & Neapolitan Harmony
+% =========================================================================
+[V:RH] !p! z2 (D2 G2 B2) | d4- d(edc) | !mf! c2- c(e A2) c2 | !diminuendo(! d6 !fermata! z2 !diminuendo)! |
+[V:LH] [G,,4D,4G,4] z4 | D,,4- D,,2 z2 | C,,4- C,,2 z2 | D,,6 !fermata! z2 |
 
-[V:RH] d2 c2 B2 A2 | G2 F2 E2 D2 | D2 G2 B2 d2 | f2 a2 d'4 |
-[V:LH] G,,4 F,,4 | F,,4 E,,4 | G,,2 D,2 B,2 D2 | A,2 F,2 D,4 |
+[V:RH] !p! (DGBd gbd'g') | (fc'af cAFC) | (EbGBd gbd'g') | !diminuendo(! [F#Ac d]4 !fermata! z4 !diminuendo)! |
+[V:LH] [G,,4D,4G,4] z4 | [F,,4C,4F,4] z4 | [Eb,,4Bb,,4Eb,4] z4 | [D,,4A,,4D,4] !fermata! z4 |
 
+% =========================================================================
+% MOVEMENT II: ANDANTE CANTABILE CON DOLORE (M. 9 - 32)
+% Circle-of-Fifths Sequence & Kreisler/Rachmaninoff Inner Counterpoint
+% =========================================================================
+[V:RH] !cantabile! !p! d4- d(edc) | B4- B(cdB) | A4- A(BcA) | B4 d4 |
+[V:LH] G,,2 (D,G, B,DGB) | C,,2 (G,C EbGce) | F,,2 (CF Acfa) | Bb,,,2 (F,Bb, DFBd) |
 
-% --- MOVEMENT II: ANDANTE CANTABILE DOLENTE (M. 13 - 36) ---
-[V:RH] !cantabile! !mf! d2 e2 d2 c2 | B2 c2 d2 B2 | A2 B2 c2 A2 | G2 A2 B2 d2 |
-[V:LH] G,,2 [D,B,]4 z2 | C,,2 [E,B,]4 z2 | F,,2 [C,A,]4 z2 | B,,,2 [F,D,]4 z2 |
+[V:RH] g4- g(f_ed) | c4- c(BAG) | ^F4- F(GAd) | G4- G2 z2 |
+[V:LH] Eb,,2 (Bb,,Eb, G,B,EbG) | A,,,2 (Eb,A, CD^FA) | D,,2 (A,,D, ^F,A,CD) | G,,,2 (D,G, B,DGB) |
 
-[V:RH] g2 f2 e2 d2 | c2 B2 A2 G2 | F2 G2 A2 d2 | G2 B2 d2 g2 |
-[V:LH] E,,2 [G,E,]4 z2 | A,,,2 [G,C]4 z2 | D,,2 [F,C]4 z2 | G,,,2 [D,B,]4 z2 |
-
-
-% --- MOVEMENT III: POCO A POCO ACCELERANDO ED AGITATO (M. 37 - 60) ---
+% =========================================================================
+% MOVEMENT III: POCO A POCO ACCELERANDO ED AGITATO (M. 33 - 56)
+% Tony Ann ICARUS & Liszt Liebestraum Soaring 16th-note Waves
+% =========================================================================
 [V:RH] !crescendo(! (16G,B,EbGBdeg bgeBGEB, | (16A,CF Acfaf c'afcAFCA, | (16B,DFBdgbf d'bgfdBFB, | (16CEGc egeg c'gecGECE !crescendo)! |
-[V:LH] [E,,E,]4- [E,,E,]2 B,,2 | [F,,F,]4- [F,,F,]2 C,2 | [G,,G,]4- [G,,G,]2 D,2 | [C,,C,]4- [C,,C,]2 G,,2 |
+[V:LH] [Eb,,4Bb,,4Eb,4] [Bb,,4Eb,4] | [F,,4C,4F,4] [C,4F,4] | [G,,4D,4G,4] [D,4G,4] | [C,,4G,,4C,4] [G,,4C,4] |
 
+% =========================================================================
+% MOVEMENT IV: GRANDIOSO E DISPERATO (M. 57 - 76)
+% Full Orchestral Fortissimo Chords & The Catastrophic 7-Octave Icarus Fall
+% Chords strictly <= 1 octave (12 semitones) in each hand
+% =========================================================================
+[V:RH] !fff! [G4B4d4g4] [G4B4d4g4] | [Eb4G4c4e4] [Eb4G4c4e4] | [F4A4c4f4] [F4A4c4f4] | [D4F4Bb4d4] [D4F4Bb4d4] |
+[V:LH] [G,,4D,4G,4] [D,2G,2B,2] [D,2G,2B,2] | [C,,4G,,4C,4] [Eb,2G,2C2] [Eb,2G,2C2] | [F,,4C,4F,4] [C,2F,2A,2] [C,2F,2A,2] | [Bb,,,4F,,4Bb,,4] [D,2F,2Bb,2] [D,2F,2Bb,2] |
 
-% --- MOVEMENT IV: GRANDIOSO E DISPERATO (M. 61 - 80) ---
-[V:RH] !fff! [G4B4d4g4] [G4B4d4g4] | [E4G4c4e4] [E4G4c4e4] | [F4A4c4f4] [F4A4c4f4] | [F4B4d4f4] [F4B4d4f4] |
-[V:LH] [G,,2D,2G,2] [G,,2D,2G,2] [G,,2D,2G,2] [G,,2D,2G,2] | [E,,2B,,2E,2] [E,,2B,,2E,2] [E,,2B,,2E,2] [E,,2B,,2E,2] | [F,,2C,2F,2] [F,,2C,2F,2] [F,,2C,2F,2] [F,,2C,2F,2] | [B,,,2F,,2B,,2] [B,,,2F,,2B,,2] [B,,,2F,,2B,,2] [B,,,2F,,2B,,2] |
-
-[V:RH] !ff! (16d'c'ba gfed cBAG FEDC | (16B,A,G,F, E,D,C,B,, A,,G,,F,,E,, D,,C,,B,,,A,,, |
+[V:RH] !ff! (16d'''c'''ba gfed cBAG FEDC | (16B,A,G,F, E,D,C,B,, A,,G,,F,,E,, D,,C,,B,,,A,,, |
 [V:LH] z8 | (16G,,F,,E,,D,, C,,B,,,A,,,G,,, F,,,E,,,D,,,C,,, B,,,,A,,,,G,,,,F,,,, |
 
+% =========================================================================
+% MOVEMENT V: ADAGIO LACRIMOSO E SMORZANDO (M. 77 - 88)
+% Una Corda Water Drops & Ethereal G Major Picardy Third Resolution
+% =========================================================================
+[V:RH] !ppp! !una_corda! d''4 e''4 | ^c''4 d''4 | b'4 c''4 | a'4 d''4 |
+[V:LH] G,,2 (D,G, B,4) | D,,2 (A,,D, ^F,4) | G,,2 (D,G, B,4) | D,,2 (A,,D, ^F,4) |
 
-% --- MOVEMENT V: ADAGIO LACRIMOSO (M. 81 - 92) ---
-[V:RH] !ppp! !una_corda! d''4 e''4 | c''#4 d''4 | b'4 c''4 | a'4 d''4 |
-[V:LH] G,,2 D,2 B,4 | D,,2 A,2 F,4 | G,,2 D,2 B,4 | D,,2 A,2 F,4 |
-
-[V:RH] [D4G4B4] z4 | [D4G4B4d4] z4 | !pp! !fermata! b4 z4 | !ppp! !fermata! [G8B8d8g8] |]
-[V:LH] [G,,,8D,,8G,,8] | z8 | z8 | [G,,,8D,,8G,,8B,,8] |]
+[V:RH] [B4d4g4b4] z4 | [B4d4g4b4] z4 | !pp! !fermata! b''4 z4 | !ppp! !fermata! [G8B8d8g8] |]
+[V:LH] [G,,,8D,,8G,,8B,,8] | z8 | z8 | [G,,,8D,,8G,,8B,,8D8G8] |]

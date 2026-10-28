@@ -137,7 +137,7 @@ export const FlowkeyPlayerView: React.FC<FlowkeyPlayerViewProps> = ({
   return (
     <div className="w-full h-full flex flex-col bg-[#07070b] text-zinc-100 select-none overflow-hidden relative font-sans">
       {/* 1. TOP PREMIUM PLAYER HEADER BAR */}
-      <header className="min-h-12 pt-[var(--sat)] bg-zinc-950/90 backdrop-blur-xl border-b border-white/[0.08] px-3 sm:px-6 flex items-center justify-between z-30 flex-shrink-0 shadow-md">
+      <header className="h-[calc(3rem+var(--sat))] pt-[var(--sat)] bg-zinc-950/90 backdrop-blur-xl border-b border-white/[0.08] px-3 sm:px-6 flex items-center justify-between z-30 flex-shrink-0 shadow-md">
         {/* Left: Back Button & Piece Info */}
         <div className="flex items-center gap-3 min-w-0">
           <button
@@ -703,7 +703,7 @@ export const FlowkeyPlayerView: React.FC<FlowkeyPlayerViewProps> = ({
         <div
           className={`relative overflow-hidden ${
             viewLayout === 'keyboard' ? 'flex-1 min-h-0' : 'flex-1 min-h-0 basis-3/5'
-          } bg-[#08080c]`}
+          } ${theme === 'light' ? 'bg-[#f8fafc]' : 'bg-[#080c1e]'}`}
         >
           <FallingKeysCanvas
             piece={piece}

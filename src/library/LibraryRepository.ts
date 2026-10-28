@@ -11,11 +11,11 @@ export class LibraryRepository {
       id: 'my-work',
       title: 'My Work',
       composer: 'Solo Piano (Original Masterpiece)',
-      opus: 'Op. 1 in G minor (92 Measures)',
+      opus: 'Op. 1 in G minor (88 Measures Complete)',
       difficulty: 6,
       key: 'G minor / B♭ Major',
       period: 'Romantic',
-      durationSeconds: 310,
+      durationSeconds: 301,
       coverColor: 'from-rose-600 via-purple-900 to-zinc-950',
       availableEditions: [
         {

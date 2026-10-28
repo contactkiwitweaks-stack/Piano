@@ -19,7 +19,7 @@ export class AcousticPitchDetector {
   private isListening: boolean = false
   private animFrameId: number | null = null
 
-  private buffer: Float32Array = new Float32Array(2048)
+  private buffer: Float32Array = new Float32Array(4096)
   private pitchListeners: Set<PitchCallback> = new Set()
   private wrongNoteListeners: Set<WrongNoteCallback> = new Set()
 
@@ -88,7 +88,7 @@ export class AcousticPitchDetector {
       const source = this.audioCtx.createMediaStreamSource(this.mediaStream)
 
       this.analyser = this.audioCtx.createAnalyser()
-      this.analyser.fftSize = 2048
+      this.analyser.fftSize = 4096
       source.connect(this.analyser)
 
       this.buffer = new Float32Array(this.analyser.fftSize)
@@ -177,8 +177,8 @@ export class AcousticPitchDetector {
   ): PitchDetectionResult | null {
     const size = buffer.length
     const halfSize = Math.floor(size / 2)
-    const minLag = Math.max(2, Math.floor(sampleRate / 3500)) // Up to A7
-    const maxLag = Math.min(halfSize - 1, Math.floor(sampleRate / 60)) // Down to B1 (~61 Hz)
+    const minLag = Math.max(2, Math.floor(sampleRate / 4200)) // Up to C8 (4186 Hz)
+    const maxLag = Math.min(halfSize - 1, Math.floor(sampleRate / 27.5)) // Full 88-key range down to A0 (27.5 Hz)
 
     // Combined Step 1 & 2: Incremental difference and cumulative mean normalization with early exit
     const d = new Float32Array(maxLag + 1)
@@ -245,18 +245,19 @@ export class AcousticPitchDetector {
     // Smart harmonic & pitch tolerance snapping against expected notes
     if (this.expectedMidiNotes.length > 0) {
       for (const exp of this.expectedMidiNotes) {
-        // Within 0.8 semitones (slight tuning deviation of acoustic piano)
-        if (Math.abs(midiFloat - exp) < 0.8) {
+        // Within 1.1 semitones (acoustic acoustic piano tuning deviations & room reverberation)
+        if (Math.abs(midiFloat - exp) < 1.1) {
           midi = exp
           break
         }
-        // Harmonic overtone match (octave or double-octave)
-        if (Math.abs(exp - midi) % 12 === 0 && dPrime[tauEstimate] < 0.45) {
+        // Harmonic overtone match (octave, double-octave, triple-octave)
+        if (Math.abs(exp - midi) % 12 === 0 && dPrime[tauEstimate] < 0.55) {
           midi = exp
           break
         }
-        // Perfect fifth harmonic match (e.g. 7 or 19 semitones above)
-        if ((Math.abs(exp - midi) === 7 || Math.abs(exp - midi) === 19) && dPrime[tauEstimate] < 0.35) {
+        // Perfect fifth harmonic match (7, 19, or 31 semitones above/below)
+        const diff = Math.abs(exp - midi)
+        if ((diff === 7 || diff === 19 || diff === 5 || diff === 17) && dPrime[tauEstimate] < 0.45) {
           midi = exp
           break
         }

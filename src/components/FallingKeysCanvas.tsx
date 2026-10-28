@@ -150,30 +150,49 @@ export const FallingKeysCanvas = React.memo<FallingKeysCanvasProps>(({
     return { whiteKeys: wKeys, blackKeys: bKeys, totalWhite: Math.max(1, whiteCount), midiToXPos: xPosMap }
   }, [startMidi, endMidi])
 
-  // Synchronous canvas size synchronization
+  // Stable canvas dimension synchronization:
+  // Never mutates canvas.width in an async ResizeObserver callback (which blanks the canvas to black)
+  // Instead, tracks container size and lets the synchronous render tick resize & immediately paint
+  const pendingDimRef = useRef<{ w: number; h: number } | null>(null)
+
   useEffect(() => {
     const canvas = canvasRef.current
     const container = containerRef.current
     if (!canvas || !container) return
 
-    const updateCanvasDimensions = () => {
+    const handleResize = () => {
       const dpr = window.devicePixelRatio || 1
       const width = container.clientWidth
       const height = container.clientHeight
-      if (width === 0 || height === 0) return
-
-      const targetW = Math.round(width * dpr)
-      const targetH = Math.round(height * dpr)
-      if (canvas.width !== targetW || canvas.height !== targetH) {
-        canvas.width = targetW
-        canvas.height = targetH
+      if (width > 0 && height > 0) {
+        pendingDimRef.current = {
+          w: Math.round(width * dpr),
+          h: Math.round(height * dpr),
+        }
       }
     }
 
-    updateCanvasDimensions()
-    const resizeObserver = new ResizeObserver(updateCanvasDimensions)
+    handleResize()
+    const resizeObserver = new ResizeObserver(handleResize)
     resizeObserver.observe(container)
-    return () => resizeObserver.disconnect()
+
+    // Context loss & restoration protection for iOS Safari / WebKit
+    const handleContextLost = (e: Event) => {
+      e.preventDefault()
+      console.warn('Canvas context lost - waiting for GPU restoration...')
+    }
+    const handleContextRestored = () => {
+      console.info('Canvas context restored successfully.')
+    }
+
+    canvas.addEventListener('contextlost', handleContextLost)
+    canvas.addEventListener('contextrestored', handleContextRestored)
+
+    return () => {
+      resizeObserver.disconnect()
+      canvas.removeEventListener('contextlost', handleContextLost)
+      canvas.removeEventListener('contextrestored', handleContextRestored)
+    }
   }, [])
 
   // Fast stable refs for 120 FPS render loop
@@ -234,20 +253,31 @@ export const FallingKeysCanvas = React.memo<FallingKeysCanvasProps>(({
     const render = () => {
       try {
         const container = containerRef.current
-        const dpr = window.devicePixelRatio || 1
-        if (container) {
-          const targetW = Math.round(container.clientWidth * dpr)
-          const targetH = Math.round(container.clientHeight * dpr)
-          if (targetW > 0 && targetH > 0 && (canvas.width !== targetW || canvas.height !== targetH)) {
-            canvas.width = targetW
-            canvas.height = targetH
-          }
+        const dpr = Math.max(1, window.devicePixelRatio || 1)
+        const pending = pendingDimRef.current
+        const containerW = container ? container.clientWidth : 0
+        const containerH = container ? container.clientHeight : 0
+
+        const targetW = pending ? pending.w : Math.round(containerW * dpr)
+        const targetH = pending ? pending.h : Math.round(containerH * dpr)
+
+        // Only resize if target differs by more than 1 pixel (avoids subpixel jitter & black flash)
+        if (
+          targetW > 10 &&
+          targetH > 10 &&
+          (Math.abs(canvas.width - targetW) > 1 || Math.abs(canvas.height - targetH) > 1)
+        ) {
+          canvas.width = targetW
+          canvas.height = targetH
+          pendingDimRef.current = null
         }
 
         const width = canvas.width / dpr
         const height = canvas.height / dpr
 
-        if (width === 0 || height === 0) return
+        if (!width || !height || !isFinite(width) || !isFinite(height) || width < 10 || height < 10) {
+          return
+        }
 
         // Absolute matrix reset: guarantees no exponential scale accumulation or black voids
         ctx.setTransform(dpr, 0, 0, dpr, 0, 0)
@@ -470,32 +500,27 @@ export const FallingKeysCanvas = React.memo<FallingKeysCanvasProps>(({
           keyW = blackKeyWidth
         }
 
-        // Visual note height scaling:
-        // Capped so sustained notes never turn into massive screen-blocking towers!
-        const maxVisualHeight = Math.min(130, Math.max(50, keyboardY * 0.35))
-        const rawHeight = note.duration * pixelsPerSecond
-        const fullVisualLength = rawHeight <= maxVisualHeight
-          ? Math.max(16, rawHeight)
-          : maxVisualHeight + Math.min(22, (rawHeight - maxVisualHeight) * 0.12)
-
+        // Accurate linear note height: ensures notes never jump or "extend" upon striking the keyboard!
         const start = note.startTime
         const end = note.startTime + note.duration
+        const noteHeight = Math.max(14, note.duration * pixelsPerSecond)
+
         let bottomY = 0
         let topY = 0
         let noteLengthPx = 0
 
         if (curTime < start) {
-          // 1. Approaching: Note is falling from above towards the keyboard
+          // 1. Approaching: Note falls downward at constant speed
           const timeUntilHit = start - curTime
           bottomY = keyboardY - timeUntilHit * pixelsPerSecond
-          noteLengthPx = fullVisualLength
-          topY = bottomY - noteLengthPx
+          topY = bottomY - noteHeight
+          noteLengthPx = noteHeight
         } else if (curTime <= end) {
-          // 2. Active Strike: Note is currently being held/played at the strike line
+          // 2. Active Strike: Bottom rests precisely at the strike line while top smoothly descends
           bottomY = keyboardY
-          const remainingFraction = note.duration > 0 ? (end - curTime) / note.duration : 0
-          noteLengthPx = Math.max(4, fullVisualLength * remainingFraction)
-          topY = keyboardY - noteLengthPx
+          const remainingTime = end - curTime
+          topY = keyboardY - Math.max(4, remainingTime * pixelsPerSecond)
+          noteLengthPx = Math.max(4, bottomY - topY)
         } else {
           // 3. Finished note
           return
@@ -547,7 +572,7 @@ export const FallingKeysCanvas = React.memo<FallingKeysCanvasProps>(({
 
         if (isCurrentlyPlaying && !isDimmed) {
           ctx.shadowColor = glowColor
-          ctx.shadowBlur = 18
+          ctx.shadowBlur = 6
         }
 
         // Draw smooth rounded pill rectangle
@@ -638,7 +663,7 @@ export const FallingKeysCanvas = React.memo<FallingKeysCanvasProps>(({
       ctx.stroke()
       ctx.restore()
 
-      // Upward blooming radiant light cones for all struck keys
+      // Delicate strike contact glow (subtle key surface reflection without masking falling notes)
       activePlayingMidis.forEach((info, midi) => {
         const posInfo = midiToXPos.get(midi)
         if (!posInfo) return
@@ -648,9 +673,9 @@ export const FallingKeysCanvas = React.memo<FallingKeysCanvasProps>(({
         const kW = !posInfo.isBlack ? whiteKeyWidth : blackKeyWidth
 
         ctx.save()
-        const bloomH = Math.min(65, keyboardY * 0.4)
+        const bloomH = 8
         const bloomGrad = ctx.createLinearGradient(kX + kW / 2, keyboardY, kX + kW / 2, keyboardY - bloomH)
-        const bloomColor = info.isRight ? 'rgba(56, 189, 248, 0.65)' : 'rgba(244, 114, 182, 0.65)'
+        const bloomColor = info.isRight ? 'rgba(56, 189, 248, 0.28)' : 'rgba(244, 114, 182, 0.28)'
         bloomGrad.addColorStop(0, bloomColor)
         bloomGrad.addColorStop(1, 'rgba(0, 0, 0, 0)')
         ctx.fillStyle = bloomGrad
