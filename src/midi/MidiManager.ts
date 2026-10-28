@@ -170,9 +170,15 @@ export class MidiManager {
    * Connects via Web Bluetooth (BLE MIDI) directly to Roland LX-9
    */
   public async connectBluetoothMidi(): Promise<boolean> {
-    const nav = navigator as unknown as { bluetooth?: { requestDevice: (opt: object) => Promise<GenericBleDevice> } }
+    const nav = navigator as unknown as {
+      bluetooth?: { requestDevice: (opt: object) => Promise<GenericBleDevice> }
+      requestMIDIAccess?: (opt: { sysex: boolean }) => Promise<GenericMidiAccess>
+    }
     if (!nav.bluetooth) {
-      console.warn('Web Bluetooth API is not available on this browser.')
+      console.warn('Web Bluetooth API is not available natively on this browser. Bridging to Web MIDI for system-paired Bluetooth digital pianos...')
+      if (nav.requestMIDIAccess) {
+        return await this.connectWebMidi()
+      }
       return false
     }
 

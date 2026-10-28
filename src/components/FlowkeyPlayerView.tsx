@@ -28,6 +28,7 @@ import {
   Award,
   Sliders,
   ChevronDown,
+  Settings,
 } from 'lucide-react'
 
 interface FlowkeyPlayerViewProps {
@@ -124,6 +125,7 @@ export const FlowkeyPlayerView: React.FC<FlowkeyPlayerViewProps> = ({
   const [yliaWallpaper, setYliaWallpaper] = useState<string>(() => {
     return localStorage.getItem('virtuoso_ylia_wallpaper') || '/images/ylia_bg.png'
   })
+  const [mobileSettingsOpen, setMobileSettingsOpen] = useState(false)
 
   // Active section based on currentTime
   const currentSection =
@@ -248,9 +250,9 @@ export const FlowkeyPlayerView: React.FC<FlowkeyPlayerViewProps> = ({
         </div>
 
         {/* Right: Section Selector & Status Tools */}
-        <div className="flex items-center gap-2 flex-shrink-0">
-          {/* Section Selector */}
-          <div className="relative">
+        <div className="flex items-center gap-1.5 sm:gap-2 flex-shrink-0">
+          {/* Section Selector (Desktop & Tablet) */}
+          <div className="relative hidden md:block">
             <button
               onClick={() => setSectionsMenuOpen(!sectionsMenuOpen)}
               className="flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-zinc-900 hover:bg-zinc-800 border border-white/10 text-xs font-semibold text-zinc-200 transition-colors shadow-sm"
@@ -313,10 +315,10 @@ export const FlowkeyPlayerView: React.FC<FlowkeyPlayerViewProps> = ({
             </div>
           )}
 
-          {/* 2D Overhead vs 3D Perspective Waterfall Toggle */}
+          {/* 2D Overhead vs 3D Perspective Waterfall Toggle (Desktop) */}
           <button
             onClick={() => setViewPerspective(viewPerspective === '2d' ? '3d' : '2d')}
-            className={`flex items-center gap-1 px-2.5 py-1.5 rounded-xl border text-xs font-bold transition-all ${
+            className={`hidden sm:flex items-center gap-1 px-2.5 py-1.5 rounded-xl border text-xs font-bold transition-all ${
               viewPerspective === '3d'
                 ? 'bg-amber-500/20 border-amber-500/50 text-amber-300 shadow-sm'
                 : 'bg-zinc-900 hover:bg-zinc-800 border-white/10 text-zinc-400 hover:text-white'
@@ -327,8 +329,8 @@ export const FlowkeyPlayerView: React.FC<FlowkeyPlayerViewProps> = ({
             <span className="font-mono text-[10px]">{viewPerspective.toUpperCase()}</span>
           </button>
 
-          {/* Visual Theme Selector (Your Lie in April, Concert Dark, Ivory Light) */}
-          <div className="relative">
+          {/* Visual Theme Selector (Desktop) */}
+          <div className="relative hidden sm:block">
             <button
               onClick={() => setThemeMenuOpen(!themeMenuOpen)}
               className="flex items-center gap-1.5 px-2.5 py-1.5 rounded-xl bg-zinc-900 hover:bg-zinc-800 border border-white/10 text-xs font-bold text-sky-400 hover:text-sky-300 transition-all shadow-sm active:scale-95"
@@ -415,21 +417,21 @@ export const FlowkeyPlayerView: React.FC<FlowkeyPlayerViewProps> = ({
             )}
           </div>
 
-          {/* Audio & Acoustics Settings */}
+          {/* Audio & Acoustics Settings (Desktop) */}
           {onOpenAudioSettings && (
             <button
               onClick={onOpenAudioSettings}
-              className="w-8 h-8 rounded-xl bg-zinc-900 hover:bg-zinc-800 border border-white/10 flex items-center justify-center text-zinc-400 hover:text-white transition-colors"
+              className="hidden sm:flex w-8 h-8 rounded-xl bg-zinc-900 hover:bg-zinc-800 border border-white/10 items-center justify-center text-zinc-400 hover:text-white transition-colors"
               title="Acoustic Reverb & Touch Velocity"
             >
               <Sliders className="w-3.5 h-3.5 text-orange-400" />
             </button>
           )}
 
-          {/* Masterclass Tips Toggle */}
+          {/* Masterclass Tips Toggle (Desktop) */}
           <button
             onClick={() => setIsMasterclassOpen(!isMasterclassOpen)}
-            className={`flex items-center gap-1 px-2.5 py-1.5 rounded-xl border text-xs font-semibold transition-all ${
+            className={`hidden sm:flex items-center gap-1 px-2.5 py-1.5 rounded-xl border text-xs font-semibold transition-all ${
               isMasterclassOpen
                 ? 'bg-amber-500/20 border-amber-500/50 text-amber-300'
                 : 'bg-zinc-900 hover:bg-zinc-800 border-white/10 text-zinc-300'
@@ -437,7 +439,7 @@ export const FlowkeyPlayerView: React.FC<FlowkeyPlayerViewProps> = ({
             title="Masterclass Guidance"
           >
             <GraduationCap className="w-4 h-4 text-amber-400" />
-            <span className="hidden sm:inline">Tips</span>
+            <span>Tips</span>
           </button>
 
           {/* Wrong note toast */}
@@ -474,8 +476,168 @@ export const FlowkeyPlayerView: React.FC<FlowkeyPlayerViewProps> = ({
           >
             {isMicActive ? <Mic className="w-3.5 h-3.5 text-emerald-400 animate-pulse" /> : <MicOff className="w-3.5 h-3.5" />}
           </button>
+
+          {/* Mobile Quick Settings Trigger (iPhone) */}
+          <button
+            onClick={() => setMobileSettingsOpen(true)}
+            className="flex sm:hidden items-center justify-center w-8 h-8 rounded-xl bg-zinc-900 border border-white/10 text-amber-400 hover:text-amber-300 active:scale-95 transition-all shadow-sm"
+            title="Settings & Controls"
+          >
+            <Settings className="w-4 h-4" />
+          </button>
         </div>
       </header>
+
+      {/* Mobile Controls & Settings Modal Drawer */}
+      {mobileSettingsOpen && (
+        <div className="fixed inset-0 z-50 bg-black/80 backdrop-blur-md flex items-end sm:items-center justify-center p-0 sm:p-4">
+          <div className="w-full max-w-lg bg-zinc-900 border border-white/15 rounded-t-3xl sm:rounded-3xl shadow-2xl overflow-hidden flex flex-col text-zinc-100 max-h-[85vh] animate-in slide-in-from-bottom-6 duration-200">
+            {/* Header */}
+            <div className="flex items-center justify-between px-5 py-4 bg-zinc-950 border-b border-white/10">
+              <div className="flex items-center gap-2">
+                <Settings className="w-5 h-5 text-amber-400" />
+                <h3 className="font-bold text-sm tracking-wide">Player Controls & Settings</h3>
+              </div>
+              <button
+                onClick={() => setMobileSettingsOpen(false)}
+                className="w-8 h-8 rounded-full bg-zinc-800 flex items-center justify-center text-zinc-400 hover:text-white"
+              >
+                <X className="w-4 h-4" />
+              </button>
+            </div>
+
+            <div className="p-4 space-y-4 overflow-y-auto">
+              {/* 1. Visual Theme & Wallpapers */}
+              <div className="space-y-2">
+                <div className="text-[11px] font-bold text-sky-400 uppercase tracking-wider">Visual Theme</div>
+                <div className="grid grid-cols-3 gap-2">
+                  {[
+                    { id: 'ylia' as VisualTheme, label: 'YLIA Anime' },
+                    { id: 'dark' as VisualTheme, label: 'Concert Dark' },
+                    { id: 'light' as VisualTheme, label: 'Ivory Light' },
+                  ].map((t) => (
+                    <button
+                      key={t.id}
+                      onClick={() => {
+                        setTheme(t.id)
+                        localStorage.setItem('virtuoso_theme', t.id)
+                      }}
+                      className={`py-2 px-1 rounded-xl text-xs font-bold transition-all border ${
+                        theme === t.id
+                          ? 'bg-sky-500/25 border-sky-400 text-sky-200'
+                          : 'bg-zinc-800/60 border-white/5 text-zinc-400'
+                      }`}
+                    >
+                      {t.label}
+                    </button>
+                  ))}
+                </div>
+
+                {theme === 'ylia' && (
+                  <div className="pt-2 space-y-1.5">
+                    <div className="text-[10px] text-zinc-400 uppercase font-semibold">YLIA Artwork</div>
+                    <div className="grid grid-cols-2 gap-1.5">
+                      {[
+                        { url: '/images/ylia_bg.png', label: 'Starry Duet' },
+                        { url: '/images/598673.jpg', label: 'Mirrored Horizon' },
+                        { url: '/images/your-lie-in-april-3840x3070-21018.jpg', label: 'Pastel Aurora' },
+                        { url: '/images/your-lie-in-april-3840x2160-21020.jpg', label: 'Sunset Blossom' },
+                      ].map((art) => (
+                        <button
+                          key={art.url}
+                          onClick={() => {
+                            setYliaWallpaper(art.url)
+                            localStorage.setItem('virtuoso_ylia_wallpaper', art.url)
+                          }}
+                          className={`p-2 rounded-xl text-left text-xs font-semibold border transition-all ${
+                            yliaWallpaper === art.url
+                              ? 'bg-sky-500/25 border-sky-400 text-white'
+                              : 'bg-zinc-800/40 border-white/5 text-zinc-400'
+                          }`}
+                        >
+                          {art.label}
+                        </button>
+                      ))}
+                    </div>
+                  </div>
+                )}
+              </div>
+
+              {/* 2. View Mode & 3D Perspective */}
+              <div className="space-y-2">
+                <div className="text-[11px] font-bold text-amber-400 uppercase tracking-wider">Perspective & Layout</div>
+                <div className="grid grid-cols-2 gap-2">
+                  <button
+                    onClick={() => setViewPerspective(viewPerspective === '2d' ? '3d' : '2d')}
+                    className="p-2.5 rounded-xl bg-zinc-800/60 border border-white/10 flex items-center justify-between text-xs font-bold"
+                  >
+                    <span>Perspective</span>
+                    <span className="font-mono text-amber-400">{viewPerspective.toUpperCase()}</span>
+                  </button>
+                  <button
+                    onClick={() => setViewLayout(viewLayout === 'keyboard' ? 'split' : viewLayout === 'split' ? 'sheet' : 'keyboard')}
+                    className="p-2.5 rounded-xl bg-zinc-800/60 border border-white/10 flex items-center justify-between text-xs font-bold capitalize"
+                  >
+                    <span>View Layout</span>
+                    <span className="font-mono text-amber-400">{viewLayout}</span>
+                  </button>
+                </div>
+              </div>
+
+              {/* 3. Section Selection */}
+              <div className="space-y-1.5">
+                <div className="text-[11px] font-bold text-zinc-400 uppercase tracking-wider">Song Sections</div>
+                <div className="max-h-36 overflow-y-auto space-y-1 pr-1">
+                  {piece.sections.map((sec) => (
+                    <button
+                      key={sec.id}
+                      onClick={() => {
+                        onSeek(sec.startTime)
+                        onLoopRangeChange([sec.startMeasure, sec.endMeasure])
+                        setMobileSettingsOpen(false)
+                      }}
+                      className={`w-full p-2 rounded-xl text-left text-xs font-semibold flex items-center justify-between border ${
+                        currentSection?.id === sec.id
+                          ? 'bg-amber-500/20 border-amber-500/50 text-white'
+                          : 'bg-zinc-800/40 border-white/5 text-zinc-400'
+                      }`}
+                    >
+                      <span className="truncate">{sec.title}</span>
+                      <span className="font-mono text-[10px] text-amber-400 ml-2">M.{sec.startMeasure}–{sec.endMeasure}</span>
+                    </button>
+                  ))}
+                </div>
+              </div>
+
+              {/* 4. Connectivity & Audio */}
+              <div className="pt-2 border-t border-white/10 flex gap-2">
+                <button
+                  onClick={() => {
+                    setMobileSettingsOpen(false)
+                    onOpenBluetoothModal()
+                  }}
+                  className="flex-1 p-2.5 rounded-xl bg-blue-950/40 border border-blue-500/40 text-blue-300 font-bold text-xs flex items-center justify-center gap-2"
+                >
+                  <Bluetooth className="w-4 h-4 text-blue-400" />
+                  <span>Roland LX-9</span>
+                </button>
+                {onOpenAudioSettings && (
+                  <button
+                    onClick={() => {
+                      setMobileSettingsOpen(false)
+                      onOpenAudioSettings()
+                    }}
+                    className="flex-1 p-2.5 rounded-xl bg-orange-950/40 border border-orange-500/40 text-orange-300 font-bold text-xs flex items-center justify-center gap-2"
+                  >
+                    <Sliders className="w-4 h-4 text-orange-400" />
+                    <span>Acoustics</span>
+                  </button>
+                )}
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
 
       {/* Masterclass Guidance Drawer */}
       {isMasterclassOpen && (
@@ -562,54 +724,85 @@ export const FlowkeyPlayerView: React.FC<FlowkeyPlayerViewProps> = ({
         </div>
       )}
 
-      {/* 3. CENTER REDESIGNED PRACTICE COCKPIT (CLEAN, PASTEL PALETTE, NO CLUTTER) */}
-      <div className="h-14 bg-zinc-950/95 backdrop-blur-2xl border-y border-white/[0.08] px-3 sm:px-6 flex items-center justify-between z-20 flex-shrink-0 shadow-lg">
-        {/* Left: Hand Practice Segmented Control (Both, RH Cyan, LH Pink) */}
-        <div className="flex items-center gap-1.5 bg-zinc-900 border border-white/10 rounded-2xl p-1 shadow-inner">
-          <button
-            onClick={() => onHandModeChange('both')}
-            className={`flex items-center gap-1 px-3 py-1.5 rounded-xl text-xs font-bold transition-all ${
-              handMode === 'both'
-                ? 'bg-gradient-to-r from-pink-400 to-sky-400 text-zinc-950 shadow-md scale-105'
-                : 'text-zinc-400 hover:text-zinc-200'
-            }`}
-            title="Practice Both Hands"
-          >
-            <Hand className="w-3.5 h-3.5" />
-            <span className="hidden sm:inline">Both</span>
-          </button>
-          <button
-            onClick={() => onHandModeChange('right')}
-            className={`flex items-center gap-1 px-3 py-1.5 rounded-xl text-xs font-bold transition-all ${
-              handMode === 'right'
-                ? 'bg-sky-400 text-zinc-950 shadow-md scale-105'
-                : 'text-zinc-400 hover:text-zinc-200'
-            }`}
-            title="Practice Right Hand (Pastel Cyan Notes)"
-          >
-            <span className="text-sky-400 font-mono font-bold">RH</span>
-            <span className="hidden sm:inline">Right</span>
-          </button>
-          <button
-            onClick={() => onHandModeChange('left')}
-            className={`flex items-center gap-1 px-3 py-1.5 rounded-xl text-xs font-bold transition-all ${
-              handMode === 'left'
-                ? 'bg-pink-400 text-zinc-950 shadow-md scale-105'
-                : 'text-zinc-400 hover:text-zinc-200'
-            }`}
-            title="Practice Left Hand (Pastel Pink Notes)"
-          >
-            <span className="text-pink-400 font-mono font-bold">LH</span>
-            <span className="hidden sm:inline">Left</span>
-          </button>
+      {/* 3. CENTER REDESIGNED PRACTICE COCKPIT (RESPONSIVE DUAL-TIER ON MOBILE IPHONE) */}
+      <div className="bg-zinc-950/95 backdrop-blur-2xl border-y border-white/[0.08] px-3 sm:px-6 py-2 sm:py-0 sm:h-14 flex flex-col sm:flex-row items-center justify-between gap-2 z-20 flex-shrink-0 shadow-lg">
+        {/* Tier 1 on Mobile: Hands + Auxiliary Toggles (Fingers & Loop) */}
+        <div className="flex items-center justify-between w-full sm:w-auto gap-2">
+          {/* Hand Practice Segmented Control (Both, RH Cyan, LH Pink) */}
+          <div className="flex items-center gap-1 bg-zinc-900 border border-white/10 rounded-2xl p-1 shadow-inner flex-shrink-0">
+            <button
+              onClick={() => onHandModeChange('both')}
+              className={`flex items-center gap-1 px-2.5 sm:px-3 py-1.5 rounded-xl text-xs font-bold transition-all ${
+                handMode === 'both'
+                  ? 'bg-gradient-to-r from-pink-400 to-sky-400 text-zinc-950 shadow-md scale-105'
+                  : 'text-zinc-400 hover:text-zinc-200'
+              }`}
+              title="Practice Both Hands"
+            >
+              <Hand className="w-3.5 h-3.5" />
+              <span>Both</span>
+            </button>
+            <button
+              onClick={() => onHandModeChange('right')}
+              className={`flex items-center gap-1 px-2.5 sm:px-3 py-1.5 rounded-xl text-xs font-bold transition-all ${
+                handMode === 'right'
+                  ? 'bg-sky-400 text-zinc-950 shadow-md scale-105'
+                  : 'text-zinc-400 hover:text-zinc-200'
+              }`}
+              title="Practice Right Hand (Pastel Cyan Notes)"
+            >
+              <span className="text-sky-400 font-mono font-bold">RH</span>
+              <span className="hidden md:inline">Right</span>
+            </button>
+            <button
+              onClick={() => onHandModeChange('left')}
+              className={`flex items-center gap-1 px-2.5 sm:px-3 py-1.5 rounded-xl text-xs font-bold transition-all ${
+                handMode === 'left'
+                  ? 'bg-pink-400 text-zinc-950 shadow-md scale-105'
+                  : 'text-zinc-400 hover:text-zinc-200'
+              }`}
+              title="Practice Left Hand (Pastel Pink Notes)"
+            >
+              <span className="text-pink-400 font-mono font-bold">LH</span>
+              <span className="hidden md:inline">Left</span>
+            </button>
+          </div>
+
+          {/* Quick auxiliary toggles visible on mobile in top tier */}
+          <div className="flex sm:hidden items-center gap-1.5">
+            <button
+              onClick={onToggleHands}
+              className={`px-2.5 py-1.5 rounded-xl border text-xs font-bold flex items-center gap-1 transition-all ${
+                showHands
+                  ? 'bg-amber-500/20 border-amber-500/60 text-amber-300'
+                  : 'bg-zinc-900 border-white/10 text-zinc-500'
+              }`}
+              title="Fingering numbers"
+            >
+              <Hand className="w-3 h-3" />
+              <span className="text-[11px]">{showHands ? 'Fingers' : 'No Fig'}</span>
+            </button>
+            <button
+              onClick={onToggleLoop}
+              className={`px-2.5 py-1.5 rounded-xl border text-xs font-bold flex items-center gap-1 transition-all ${
+                isLooping
+                  ? 'bg-blue-500/20 border-blue-500/60 text-blue-300'
+                  : 'bg-zinc-900 border-white/10 text-zinc-400'
+              }`}
+              title="Loop"
+            >
+              <Repeat className="w-3 h-3" />
+              <span className="text-[11px]">Loop</span>
+            </button>
+          </div>
         </div>
 
-        {/* Center: Main Transport (Rewind, Play, Wait Mode, Speed) */}
-        <div className="flex items-center gap-3 sm:gap-4">
+        {/* Tier 2: Main Transport (Rewind, Play, Wait Mode, Speed) */}
+        <div className="flex items-center justify-center gap-2.5 sm:gap-4 w-full sm:w-auto">
           {/* Rewind */}
           <button
             onClick={onRewind}
-            className="w-10 h-10 rounded-full bg-zinc-900 hover:bg-zinc-800 border border-white/10 flex items-center justify-center text-zinc-400 hover:text-white transition-all active:scale-95 shadow-md"
+            className="w-10 h-10 rounded-full bg-zinc-900 hover:bg-zinc-800 border border-white/10 flex items-center justify-center text-zinc-400 hover:text-white transition-all active:scale-95 shadow-md flex-shrink-0"
             title="Rewind to Beginning"
           >
             <RotateCcw className="w-4 h-4" />
@@ -618,7 +811,7 @@ export const FlowkeyPlayerView: React.FC<FlowkeyPlayerViewProps> = ({
           {/* Central Vibrantly Glowing Play/Pause Button */}
           <button
             onClick={onTogglePlay}
-            className="w-13 h-13 rounded-full bg-gradient-to-tr from-orange-600 via-orange-500 to-amber-500 hover:from-orange-500 hover:to-amber-400 text-white flex items-center justify-center shadow-[0_0_24px_rgba(249,115,22,0.65)] active:scale-95 transition-all p-3.5"
+            className="w-12 h-12 sm:w-13 sm:h-13 rounded-full bg-gradient-to-tr from-orange-600 via-orange-500 to-amber-500 hover:from-orange-500 hover:to-amber-400 text-white flex items-center justify-center shadow-[0_0_24px_rgba(249,115,22,0.65)] active:scale-95 transition-all p-3 flex-shrink-0"
             title={isPlaying ? 'Pause' : 'Play'}
           >
             {isPlaying ? (
@@ -631,7 +824,7 @@ export const FlowkeyPlayerView: React.FC<FlowkeyPlayerViewProps> = ({
           {/* Wait-for-Note Mode Segmented Button */}
           <button
             onClick={onToggleWaitMode}
-            className={`px-3.5 py-2 rounded-2xl border text-xs font-bold transition-all shadow-md active:scale-95 flex items-center gap-1.5 ${
+            className={`px-3 py-2 rounded-2xl border text-xs font-bold transition-all shadow-md active:scale-95 flex items-center gap-1.5 ${
               isWaitMode
                 ? 'bg-gradient-to-r from-amber-500 to-orange-500 border-amber-400 text-zinc-950 font-extrabold shadow-[0_0_15px_rgba(245,158,11,0.6)] animate-pulse'
                 : 'bg-zinc-900 hover:bg-zinc-800 border-white/10 text-zinc-300'
@@ -639,7 +832,7 @@ export const FlowkeyPlayerView: React.FC<FlowkeyPlayerViewProps> = ({
             title="Wait for Note: waits until you press the exact key!"
           >
             <Clock className="w-3.5 h-3.5" />
-            <span>{isWaitMode ? 'Waiting for Key' : 'Wait Mode'}</span>
+            <span>{isWaitMode ? 'Wait' : 'Wait Off'}</span>
           </button>
 
           {/* Speed / Tempo Popover Controller */}
@@ -695,8 +888,8 @@ export const FlowkeyPlayerView: React.FC<FlowkeyPlayerViewProps> = ({
           </div>
         </div>
 
-        {/* Right: Loop & Fingering Toggles */}
-        <div className="flex items-center gap-2">
+        {/* Right on Desktop: Auxiliary Toggles (hidden on mobile since they are in Tier 1) */}
+        <div className="hidden sm:flex items-center gap-2">
           {/* Fingering Guide Toggle */}
           <button
             onClick={onToggleHands}
@@ -708,7 +901,7 @@ export const FlowkeyPlayerView: React.FC<FlowkeyPlayerViewProps> = ({
             title="Toggle Fingering Numbers & Guides"
           >
             <Hand className="w-3.5 h-3.5" />
-            <span className="hidden sm:inline">Fingers {showHands ? 'ON' : 'OFF'}</span>
+            <span>Fingers {showHands ? 'ON' : 'OFF'}</span>
           </button>
 
           {/* Loop Mode Toggle */}
@@ -722,12 +915,12 @@ export const FlowkeyPlayerView: React.FC<FlowkeyPlayerViewProps> = ({
             title="Loop Active Measures"
           >
             <Repeat className="w-3.5 h-3.5" />
-            <span className="hidden sm:inline font-mono text-[11px]">
+            <span className="font-mono text-[11px]">
               M.{loopRange[0]}–{loopRange[1]}
             </span>
           </button>
 
-          {/* Speed Ramp (+5% on loop finish) */}
+          {/* Speed Ramp */}
           {isLooping && onToggleSpeedRamp && (
             <button
               onClick={onToggleSpeedRamp}
@@ -739,7 +932,7 @@ export const FlowkeyPlayerView: React.FC<FlowkeyPlayerViewProps> = ({
               title="Auto-Speed: increases tempo by +5% after each successful loop"
             >
               <TrendingUp className="w-3.5 h-3.5" />
-              <span className="hidden sm:inline">+5%</span>
+              <span>+5%</span>
             </button>
           )}
 
@@ -755,7 +948,7 @@ export const FlowkeyPlayerView: React.FC<FlowkeyPlayerViewProps> = ({
               title="Metronome Click"
             >
               <Timer className="w-3.5 h-3.5" />
-              <span className="hidden sm:inline">Metro</span>
+              <span>Metro</span>
             </button>
           )}
         </div>

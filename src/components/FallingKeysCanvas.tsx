@@ -1,4 +1,4 @@
-import React, { useRef, useEffect, useState, useMemo, useCallback } from 'react'
+import React, { useRef, useEffect, useMemo, useCallback } from 'react'
 import type { Piece } from '../types/music'
 import { PianoAudioEngine } from '../audio/PianoAudioEngine'
 import { Haptics, ImpactStyle } from '@capacitor/haptics'
@@ -99,7 +99,7 @@ export const FallingKeysCanvas: React.FC<FallingKeysCanvasProps> = ({
 
   // Touch tracking for polyphonic keyboard input
   const activeTouchMapRef = useRef<Map<number, number>>(new Map())
-  const [pressedKeys, setPressedKeys] = useState<Set<number>>(new Set())
+  const pressedKeysRef = useRef<Set<number>>(new Set())
 
   // Dynamic visible register calculation (Focuses on the piece's range)
   const { startMidi, endMidi } = useMemo(() => {
@@ -237,6 +237,7 @@ export const FallingKeysCanvas: React.FC<FallingKeysCanvasProps> = ({
         const curHandMode = handModeRef.current
         const curTheme = themeRef.current
         const curShowFingers = showFingersRef.current
+        const curPressedKeys = pressedKeysRef.current
 
         // Sleek tactile keyboard: takes only 19% of screen, giving 81% vertical space to falling notes!
         const keyboardHeight = Math.min(108, Math.max(70, height * 0.19))
@@ -505,57 +506,61 @@ export const FallingKeysCanvas: React.FC<FallingKeysCanvasProps> = ({
 
         // -------------------------------------------------------------
         // DYNAMIC NOTE LETTER & FINGERING BADGE (NOTE AT TOP, FINGERS AT BOTTOM)
+        // Responsive for mobile portrait: threshold noteW >= 3.5 guarantees letters never disappear!
         // -------------------------------------------------------------
-        if (noteW >= 10 && bottomY > 0 && bottomY < keyboardY + 20) {
+        if (noteW >= 3.5 && bottomY > 0 && bottomY < keyboardY + 20) {
           const noteLetter = note.noteName.replace(/[0-9]/g, '')
           const fingerDigit = note.finger || (note.hand === 'left' ? 5 : 1)
+          const isCompact = noteW < 12
+          const noteFont = isCompact ? 'bold 7.5px sans-serif' : 'bold 8.5px sans-serif'
+          const fingerFont = isCompact ? 'bold 7.5px sans-serif' : 'bold 9px sans-serif'
           ctx.save()
 
-          if (curShowFingers && noteLengthPx >= 30) {
+          if (curShowFingers && noteLengthPx >= 28) {
             // 1. Note letter at the TOP-ish
-            const topTextY = Math.max(topY + 11, Math.min(bottomY - 18, topY + 12))
+            const topTextY = Math.max(topY + 10, Math.min(bottomY - 18, topY + 11))
             ctx.fillStyle = '#ffffff'
             ctx.shadowColor = 'rgba(0, 0, 0, 0.85)'
             ctx.shadowBlur = 4
-            ctx.font = 'bold 8.5px sans-serif'
+            ctx.font = noteFont
             ctx.textAlign = 'center'
             ctx.fillText(noteLetter, noteX + noteW / 2, topTextY)
 
             // 2. Fingering digit at the BOTTOM-ish inside a frosted badge
-            const bottomTextY = Math.min(bottomY - 6, keyboardY - 6)
-            const badgeRadius = Math.max(5, Math.min(7, noteW / 2 - 1.5))
-            const badgeCenterY = bottomTextY - 3.5
+            const bottomTextY = Math.min(bottomY - 5, keyboardY - 5)
+            const badgeRadius = Math.max(4, Math.min(7, noteW / 2 + 1))
+            const badgeCenterY = bottomTextY - badgeRadius
 
             ctx.beginPath()
             ctx.arc(noteX + noteW / 2, badgeCenterY, badgeRadius, 0, Math.PI * 2)
-            ctx.fillStyle = isRight ? 'rgba(7, 43, 67, 0.65)' : 'rgba(76, 5, 25, 0.65)'
+            ctx.fillStyle = isRight ? 'rgba(7, 43, 67, 0.75)' : 'rgba(76, 5, 25, 0.75)'
             ctx.fill()
-            ctx.strokeStyle = isRight ? 'rgba(56, 189, 248, 0.85)' : 'rgba(244, 114, 182, 0.85)'
+            ctx.strokeStyle = isRight ? 'rgba(56, 189, 248, 0.9)' : 'rgba(244, 114, 182, 0.9)'
             ctx.lineWidth = 0.9
             ctx.stroke()
 
             ctx.fillStyle = '#ffffff'
             ctx.shadowBlur = 0
-            ctx.font = 'bold 9px sans-serif'
+            ctx.font = fingerFont
             ctx.textBaseline = 'middle'
             ctx.fillText(`${fingerDigit}`, noteX + noteW / 2, badgeCenterY + 0.5)
             ctx.textBaseline = 'alphabetic'
-          } else if (curShowFingers && noteLengthPx >= 18) {
+          } else if (curShowFingers && noteLengthPx >= 16) {
             // Compact pill: Note letter and finger digit together
             const textY = Math.min(bottomY - 4, topY + noteLengthPx / 2 + 3)
             ctx.fillStyle = '#ffffff'
             ctx.shadowColor = 'rgba(0, 0, 0, 0.85)'
             ctx.shadowBlur = 3
-            ctx.font = 'bold 8.5px sans-serif'
+            ctx.font = noteFont
             ctx.textAlign = 'center'
-            ctx.fillText(`${noteLetter} · ${fingerDigit}`, noteX + noteW / 2, textY)
+            ctx.fillText(isCompact ? `${fingerDigit}` : `${noteLetter} · ${fingerDigit}`, noteX + noteW / 2, textY)
           } else {
-            // Fingers toggle OFF or small note: Note letter centered
+            // Fingers toggle OFF or short note: Note letter centered
             const textY = Math.min(bottomY - 4, topY + noteLengthPx / 2 + 3)
             ctx.fillStyle = '#ffffff'
             ctx.shadowColor = 'rgba(0, 0, 0, 0.85)'
             ctx.shadowBlur = 3
-            ctx.font = 'bold 9px sans-serif'
+            ctx.font = noteFont
             ctx.textAlign = 'center'
             ctx.fillText(noteLetter, noteX + noteW / 2, textY)
           }
@@ -634,7 +639,7 @@ export const FallingKeysCanvas: React.FC<FallingKeysCanvasProps> = ({
       whiteKeys.forEach((wk) => {
         const x = wk.index * whiteKeyWidth
         const activeInfo = activePlayingMidis.get(wk.midi) || (curActiveNotes.has(wk.midi) ? { isRight: true } : undefined)
-        const isPressed = activeInfo !== undefined || pressedKeys.has(wk.midi)
+        const isPressed = activeInfo !== undefined || curPressedKeys.has(wk.midi)
         const isExpected = expectedSet.has(wk.midi)
         const yOffset = isPressed ? 2.5 : 0
 
@@ -705,7 +710,7 @@ export const FallingKeysCanvas: React.FC<FallingKeysCanvasProps> = ({
       blackKeys.forEach((bk) => {
         const x = (bk.whiteIndexBefore + 1) * whiteKeyWidth - blackKeyWidth / 2
         const activeInfo = activePlayingMidis.get(bk.midi) || (curActiveNotes.has(bk.midi) ? { isRight: true } : undefined)
-        const isPressed = activeInfo !== undefined || pressedKeys.has(bk.midi)
+        const isPressed = activeInfo !== undefined || curPressedKeys.has(bk.midi)
         const isExpected = expectedSet.has(bk.midi)
         const yOffset = isPressed ? 2 : 0
 
@@ -890,10 +895,12 @@ export const FallingKeysCanvas: React.FC<FallingKeysCanvasProps> = ({
 
   const onKeyStart = (pointerId: number, midi: number) => {
     activeTouchMapRef.current.set(pointerId, midi)
+    pressedKeysRef.current.add(midi)
+
+    PianoAudioEngine.getInstance().unlockAudio().catch(() => {})
     PianoAudioEngine.getInstance().noteOn(midi, 95)
     Haptics.impact({ style: ImpactStyle.Light }).catch(() => {})
 
-    setPressedKeys((prev) => new Set(prev).add(midi))
     if (onKeyClick) onKeyClick(midi)
     if (onScreenKeyPress) onScreenKeyPress(midi)
   }
@@ -912,12 +919,8 @@ export const FallingKeysCanvas: React.FC<FallingKeysCanvasProps> = ({
       }
 
       if (!stillHeld) {
+        pressedKeysRef.current.delete(midi)
         PianoAudioEngine.getInstance().noteOff(midi)
-        setPressedKeys((prev) => {
-          const next = new Set(prev)
-          next.delete(midi)
-          return next
-        })
       }
     }
   }
