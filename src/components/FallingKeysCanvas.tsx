@@ -150,7 +150,7 @@ export const FallingKeysCanvas = React.memo<FallingKeysCanvasProps>(({
     return { whiteKeys: wKeys, blackKeys: bKeys, totalWhite: Math.max(1, whiteCount), midiToXPos: xPosMap }
   }, [startMidi, endMidi])
 
-  // ResizeObserver for canvas sync - strictly avoids wiping canvas when dimensions haven't changed!
+  // Synchronous canvas size synchronization
   useEffect(() => {
     const canvas = canvasRef.current
     const container = containerRef.current
@@ -162,10 +162,9 @@ export const FallingKeysCanvas = React.memo<FallingKeysCanvasProps>(({
       const height = container.clientHeight
       if (width === 0 || height === 0) return
 
-      const targetW = Math.floor(width * dpr)
-      const targetH = Math.floor(height * dpr)
-      // Guard against subpixel layout micro-jitter clearing the canvas buffer
-      if (Math.abs(canvas.width - targetW) > 2 || Math.abs(canvas.height - targetH) > 2) {
+      const targetW = Math.round(width * dpr)
+      const targetH = Math.round(height * dpr)
+      if (canvas.width !== targetW || canvas.height !== targetH) {
         canvas.width = targetW
         canvas.height = targetH
       }
@@ -229,12 +228,22 @@ export const FallingKeysCanvas = React.memo<FallingKeysCanvasProps>(({
     let animId: number
     const canvas = canvasRef.current
     if (!canvas) return
-    const ctx = canvas.getContext('2d', { alpha: false })
+    const ctx = canvas.getContext('2d', { alpha: true })
     if (!ctx) return
 
     const render = () => {
       try {
+        const container = containerRef.current
         const dpr = window.devicePixelRatio || 1
+        if (container) {
+          const targetW = Math.round(container.clientWidth * dpr)
+          const targetH = Math.round(container.clientHeight * dpr)
+          if (targetW > 0 && targetH > 0 && (canvas.width !== targetW || canvas.height !== targetH)) {
+            canvas.width = targetW
+            canvas.height = targetH
+          }
+        }
+
         const width = canvas.width / dpr
         const height = canvas.height / dpr
 
@@ -555,50 +564,56 @@ export const FallingKeysCanvas = React.memo<FallingKeysCanvasProps>(({
         ctx.stroke()
 
         // -------------------------------------------------------------
-        // DYNAMIC NOTE LETTER & FINGERING (NO WEIRD BACKGROUND CIRCLE)
+        // DYNAMIC NOTE LETTER & FINGERING (MATCHING SCREENSHOT AESTHETIC)
         // Clean typography directly on pill: Note at top, Finger at bottom
-        // Responsive for mobile portrait & tablet/desktop
+        // Never hides note letters on mobile portrait or landscape!
         // -------------------------------------------------------------
-        if (noteW >= 3.5 && noteLengthPx >= 14 && bottomY > 0 && topY < keyboardY) {
+        if (noteW >= 3.0 && noteLengthPx >= 10 && bottomY > 0 && topY < keyboardY) {
           const noteLetter = note.noteName.replace(/[0-9]/g, '')
           const fingerDigit = note.finger || (note.hand === 'left' ? 5 : 1)
-          const isNarrow = noteW < 13
-          const isShort = noteLengthPx < 32
+          const isNarrow = noteW < 14
+          const isShort = noteLengthPx < 28
 
           ctx.save()
           ctx.textAlign = 'center'
           ctx.textBaseline = 'middle'
           ctx.fillStyle = '#ffffff'
-          ctx.shadowColor = 'rgba(0, 0, 0, 0.9)'
-          ctx.shadowBlur = 3.5
+          ctx.shadowColor = 'rgba(0, 0, 0, 0.95)'
+          ctx.shadowBlur = 4
 
           if (curShowFingers) {
             if (!isShort) {
               // 1. Note letter at the TOP of the pill
-              const topTextY = topY + Math.min(13, noteLengthPx * 0.28)
+              const topTextY = topY + Math.min(12, Math.max(7, noteLengthPx * 0.24))
               ctx.font = isNarrow ? 'bold 7.5px sans-serif' : 'bold 9px sans-serif'
               ctx.fillText(noteLetter, noteX + noteW / 2, topTextY)
 
-              // 2. Fingering digit at the BOTTOM of the pill (NO WEIRD BACKGROUND CIRCLE!)
-              const bottomTextY = bottomY - Math.min(10, noteLengthPx * 0.22)
-              ctx.font = isNarrow ? 'bold 8px sans-serif' : 'bold 10px sans-serif'
+              // 2. Fingering digit at the BOTTOM of the pill (NO weird background circle!)
+              const bottomTextY = bottomY - Math.min(10, Math.max(6, noteLengthPx * 0.20))
+              ctx.font = isNarrow ? 'bold 8px sans-serif' : 'bold 9.5px sans-serif'
               ctx.fillText(`${fingerDigit}`, noteX + noteW / 2, bottomTextY)
             } else {
-              // Short note pill: render single compact label
+              // Short note pill on mobile:
               const centerY = topY + noteLengthPx / 2
-              ctx.font = isNarrow ? 'bold 7.5px sans-serif' : 'bold 8.5px sans-serif'
               if (isNarrow) {
-                // If narrow, show finger digit cleanly
-                ctx.fillText(`${fingerDigit}`, noteX + noteW / 2, centerY)
+                // Squeezed mobile portrait: stack note letter slightly higher and finger lower if room, or show note letter
+                if (noteLengthPx >= 20) {
+                  ctx.font = 'bold 7px sans-serif'
+                  ctx.fillText(noteLetter, noteX + noteW / 2, centerY - 4.5)
+                  ctx.fillText(`${fingerDigit}`, noteX + noteW / 2, centerY + 4.5)
+                } else {
+                  ctx.font = 'bold 7.5px sans-serif'
+                  ctx.fillText(noteLetter, noteX + noteW / 2, centerY)
+                }
               } else {
-                // If normal width, show "C · 1"
+                ctx.font = 'bold 8.5px sans-serif'
                 ctx.fillText(`${noteLetter} · ${fingerDigit}`, noteX + noteW / 2, centerY)
               }
             }
           } else {
             // Fingers toggle OFF: Just the note letter centered cleanly
             const centerY = topY + noteLengthPx / 2
-            ctx.font = isNarrow ? 'bold 7.5px sans-serif' : 'bold 9px sans-serif'
+            ctx.font = isNarrow ? 'bold 8px sans-serif' : 'bold 9.5px sans-serif'
             ctx.fillText(noteLetter, noteX + noteW / 2, centerY)
           }
 
@@ -907,7 +922,22 @@ export const FallingKeysCanvas = React.memo<FallingKeysCanvasProps>(({
       return { type: 'pedal' }
     }
 
-    if (y < keyboardY) return null
+    // If clicked above keyboard (in falling notes highway), check if tapping in key lane
+    if (y < keyboardY) {
+      for (const bk of blackKeys) {
+        const bx = (bk.whiteIndexBefore + 1) * whiteKeyWidth - blackKeyWidth / 2
+        if (x >= bx && x <= bx + blackKeyWidth) {
+          return { type: 'key', midi: bk.midi }
+        }
+      }
+      for (const wk of whiteKeys) {
+        const wx = wk.index * whiteKeyWidth
+        if (x >= wx && x <= wx + whiteKeyWidth) {
+          return { type: 'key', midi: wk.midi }
+        }
+      }
+      return null
+    }
 
     // Check black keys first
     for (const bk of blackKeys) {

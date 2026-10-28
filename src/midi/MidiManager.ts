@@ -190,14 +190,17 @@ export class MidiManager {
           acceptAllDevices: true,
           optionalServices: [BLE_MIDI_SERVICE_UUID],
         })
-      } catch {
+      } catch (err: unknown) {
+        const errMsg = (err as Error)?.message || ''
+        if (errMsg.toLowerCase().includes('cancel') || errMsg.toLowerCase().includes('abort')) {
+          return false
+        }
         // Fallback filter for browsers requiring explicit namePrefix/service filters
         this.bleDevice = await nav.bluetooth.requestDevice({
           filters: [
             { services: [BLE_MIDI_SERVICE_UUID] },
             { namePrefix: 'Roland' },
             { namePrefix: 'LX' },
-            { namePrefix: 'Piano' },
           ],
           optionalServices: [BLE_MIDI_SERVICE_UUID],
         })

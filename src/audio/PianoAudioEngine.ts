@@ -235,9 +235,17 @@ export class PianoAudioEngine {
   public async unlockAudio(): Promise<boolean> {
     this.init()
     if (!this.ctx) return false
-    if (this.ctx.state === 'suspended') {
-      await this.ctx.resume()
-    }
+    try {
+      if (this.ctx.state === 'suspended') {
+        await this.ctx.resume()
+      }
+      // Mandatory iOS WebKit audio graph unlock: play 1-sample silent buffer synchronously
+      const silentBuf = this.ctx.createBuffer(1, 1, 22050)
+      const src = this.ctx.createBufferSource()
+      src.buffer = silentBuf
+      src.connect(this.ctx.destination)
+      src.start(0)
+    } catch {}
     return this.ctx.state === 'running'
   }
 

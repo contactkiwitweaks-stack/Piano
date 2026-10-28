@@ -139,14 +139,14 @@ export class AcousticPitchDetector {
     }
     const rms = Math.sqrt(sumSq / this.buffer.length)
 
-    // Noise gate threshold: 0.004 catches delicate acoustic piano key strikes & iPhone mic
-    if (rms > 0.004) {
+    // Noise gate threshold: 0.002 catches delicate acoustic piano key strikes & iPhone mic
+    if (rms > 0.002) {
       const sampleRate = this.audioCtx?.sampleRate || 44100
       const pitchResult = this.detectPitchAutocorrelation(this.buffer, sampleRate, rms)
 
-      if (pitchResult && pitchResult.confidence > 0.40) {
-        // Debounce repeated hits within 90ms
-        if (pitchResult.midi !== this.lastReportedMidi || now - this.lastReportedTime > 90) {
+      if (pitchResult && pitchResult.confidence > 0.35) {
+        // Debounce repeated hits within 75ms
+        if (pitchResult.midi !== this.lastReportedMidi || now - this.lastReportedTime > 75) {
           this.lastReportedMidi = pitchResult.midi
           this.lastReportedTime = now
 

@@ -308,13 +308,23 @@ export function App() {
               AcousticPitchDetector.getInstance().setExpectedNotes(expectedMidis)
 
               // Check if all expected midis in this chord have been hit
-              const allHit = expectedMidis.every(
-                (m) =>
-                  midiState.activeNotes.has(m) ||
-                  screenActiveNotesRef.current.has(m) ||
-                  detectedMicNotesRef.current.has(m) ||
-                  hitWaitNotesRef.current.has(m)
-              )
+              // When practicing acoustically with microphone, monophonic pitch detection cannot resolve simultaneous polyphonic strings;
+              // detecting any note in the chord immediately satisfies the chord!
+              const micHitAny =
+                isMicActive &&
+                expectedMidis.some(
+                  (m) => detectedMicNotesRef.current.has(m) || hitWaitNotesRef.current.has(m)
+                )
+
+              const allHit =
+                micHitAny ||
+                expectedMidis.every(
+                  (m) =>
+                    midiState.activeNotes.has(m) ||
+                    screenActiveNotesRef.current.has(m) ||
+                    detectedMicNotesRef.current.has(m) ||
+                    hitWaitNotesRef.current.has(m)
+                )
 
               if (!allHit) {
                 // Wait for student to strike all chord notes!

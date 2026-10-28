@@ -701,7 +701,7 @@ export const FlowkeyPlayerView: React.FC<FlowkeyPlayerViewProps> = ({
       {/* 2. UPPER: 2D OVERHEAD KEYBOARD & FALLING NOTES HIGHWAY */}
       {viewLayout !== 'sheet' && (
         <div
-          className={`relative overflow-hidden transition-all duration-300 ${
+          className={`relative overflow-hidden ${
             viewLayout === 'keyboard' ? 'flex-1 min-h-0' : 'flex-1 min-h-0 basis-3/5'
           } bg-[#08080c]`}
         >
@@ -957,7 +957,7 @@ export const FlowkeyPlayerView: React.FC<FlowkeyPlayerViewProps> = ({
       {/* 4. LOWER: AUTHENTIC FLOWKEY PARCHMENT SHEET MUSIC */}
       {viewLayout !== 'keyboard' && (
         <div
-          className={`relative overflow-hidden transition-all duration-300 ${
+          className={`relative overflow-hidden ${
             viewLayout === 'sheet' ? 'flex-1 min-h-0' : 'flex-1 min-h-0 basis-1/2'
           } bg-[#fdfbf7]`}
         >
