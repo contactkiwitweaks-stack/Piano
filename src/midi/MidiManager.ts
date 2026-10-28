@@ -168,6 +168,7 @@ export class MidiManager {
 
   /**
    * Connects via Web Bluetooth (BLE MIDI) directly to Roland LX-9
+   * Compatible with Bluefy, WebBLE, Chrome, and Edge on iOS/iPadOS/macOS/Windows/Android
    */
   public async connectBluetoothMidi(): Promise<boolean> {
     const nav = navigator as unknown as {
@@ -183,10 +184,24 @@ export class MidiManager {
     }
 
     try {
-      this.bleDevice = await nav.bluetooth.requestDevice({
-        filters: [{ services: [BLE_MIDI_SERVICE_UUID] }],
-        optionalServices: [BLE_MIDI_SERVICE_UUID],
-      })
+      // 1. First attempt: acceptAllDevices discovers Roland LX-9 even if 128-bit UUID is omitted in the 31-byte advertising packet
+      try {
+        this.bleDevice = await nav.bluetooth.requestDevice({
+          acceptAllDevices: true,
+          optionalServices: [BLE_MIDI_SERVICE_UUID],
+        })
+      } catch {
+        // Fallback filter for browsers requiring explicit namePrefix/service filters
+        this.bleDevice = await nav.bluetooth.requestDevice({
+          filters: [
+            { services: [BLE_MIDI_SERVICE_UUID] },
+            { namePrefix: 'Roland' },
+            { namePrefix: 'LX' },
+            { namePrefix: 'Piano' },
+          ],
+          optionalServices: [BLE_MIDI_SERVICE_UUID],
+        })
+      }
 
       if (!this.bleDevice || !this.bleDevice.gatt) return false
 
@@ -216,31 +231,56 @@ export class MidiManager {
 
   /**
    * Parses Apple/Roland BLE MIDI protocol packet
+   * Handles timestamp headers, status bytes, and running status
    */
   private parseBleMidiPacket(dataView: DataView) {
-    const bytes: number[] = []
-    for (let i = 0; i < dataView.byteLength; i++) {
-      bytes.push(dataView.getUint8(i))
-    }
+    if (dataView.byteLength < 3) return
+    const len = dataView.byteLength
+    let runningStatus = 0
 
+    // Apple/Roland BLE MIDI specification:
+    // Byte 0: Header with bit 7 set [1, 0, timestamp_high (6-bit)]
+    // Following bytes: Timestamp [1, timestamp_low], Status [1, status], Data [0, data]
     let i = 1
-    while (i < bytes.length) {
-      if ((bytes[i] & 0x80) !== 0 && i + 1 < bytes.length && (bytes[i + 1] & 0x80) !== 0) {
-        i += 2
-        continue
-      }
-      if ((bytes[i] & 0x80) !== 0) {
-        const status = bytes[i]
-        const command = status & 0xf0
-        if (command === 0x90 || command === 0x80 || command === 0xb0) {
-          if (i + 2 < bytes.length) {
-            this.processRawMidiMessage(new Uint8Array([bytes[i], bytes[i + 1], bytes[i + 2]]))
-            i += 3
-            continue
+    while (i < len) {
+      let b = dataView.getUint8(i++)
+
+      // If byte has MSB set: could be timestamp byte or status byte
+      if ((b & 0x80) !== 0) {
+        // If immediately followed by another byte with MSB set, b was timestamp_low!
+        if (i < len && (dataView.getUint8(i) & 0x80) !== 0) {
+          b = dataView.getUint8(i++)
+        }
+
+        // Channel Voice Message Status (0x80 - 0xEF)
+        if (b >= 0x80 && b <= 0xef) {
+          runningStatus = b
+          const cmd = b & 0xf0
+          if (cmd === 0xc0 || cmd === 0xd0) {
+            // 1-byte data commands
+            if (i < len) {
+              const d1 = dataView.getUint8(i++)
+              this.processRawMidiMessage(new Uint8Array([b, d1]))
+            }
+          } else {
+            // 2-byte data commands (Note On 0x90, Note Off 0x80, CC Damper 0xB0, Pitch Bend 0xE0)
+            if (i + 1 < len) {
+              const d1 = dataView.getUint8(i++)
+              const d2 = dataView.getUint8(i++)
+              this.processRawMidiMessage(new Uint8Array([b, d1, d2]))
+            }
           }
         }
+      } else if (runningStatus !== 0) {
+        // Running status: b is data1
+        const cmd = runningStatus & 0xf0
+        if (cmd === 0xc0 || cmd === 0xd0) {
+          this.processRawMidiMessage(new Uint8Array([runningStatus, b]))
+        } else if (i < len) {
+          const d2 = dataView.getUint8(i++)
+          this.processRawMidiMessage(new Uint8Array([runningStatus, b, d2]))
+        }
       }
-      i++
     }
   }
 

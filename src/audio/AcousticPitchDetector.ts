@@ -139,14 +139,14 @@ export class AcousticPitchDetector {
     }
     const rms = Math.sqrt(sumSq / this.buffer.length)
 
-    // Noise gate threshold: 0.014 ignores room noise while reliably catching piano key strikes
-    if (rms > 0.014) {
+    // Noise gate threshold: 0.004 catches delicate acoustic piano key strikes & iPhone mic
+    if (rms > 0.004) {
       const sampleRate = this.audioCtx?.sampleRate || 44100
       const pitchResult = this.detectPitchAutocorrelation(this.buffer, sampleRate, rms)
 
-      if (pitchResult && pitchResult.confidence > 0.55) {
-        // Debounce repeated hits within 110ms
-        if (pitchResult.midi !== this.lastReportedMidi || now - this.lastReportedTime > 110) {
+      if (pitchResult && pitchResult.confidence > 0.40) {
+        // Debounce repeated hits within 90ms
+        if (pitchResult.midi !== this.lastReportedMidi || now - this.lastReportedTime > 90) {
           this.lastReportedMidi = pitchResult.midi
           this.lastReportedTime = now
 
@@ -186,7 +186,7 @@ export class AcousticPitchDetector {
     dPrime[0] = 1
     let runningSum = 0
     let tauEstimate = -1
-    const threshold = 0.14
+    const threshold = 0.20 // Standard YIN dip threshold
 
     for (let tau = 1; tau <= maxLag; tau++) {
       let sum = 0
@@ -216,7 +216,7 @@ export class AcousticPitchDetector {
           tauEstimate = tau
         }
       }
-      if (minVal > 0.40) return null
+      if (minVal > 0.60) return null
     }
 
     if (tauEstimate <= 0) return null
@@ -242,11 +242,21 @@ export class AcousticPitchDetector {
 
     if (midi < 21 || midi > 108) return null // Outside 88-key grand piano range
 
-    // If expected note is within harmonic range (octave match), snap to expected note
+    // Smart harmonic & pitch tolerance snapping against expected notes
     if (this.expectedMidiNotes.length > 0) {
       for (const exp of this.expectedMidiNotes) {
-        if (Math.abs(exp - midi) === 12 && dPrime[tauEstimate] < 0.25) {
-          // Strong harmonic match for expected note
+        // Within 0.8 semitones (slight tuning deviation of acoustic piano)
+        if (Math.abs(midiFloat - exp) < 0.8) {
+          midi = exp
+          break
+        }
+        // Harmonic overtone match (octave or double-octave)
+        if (Math.abs(exp - midi) % 12 === 0 && dPrime[tauEstimate] < 0.45) {
+          midi = exp
+          break
+        }
+        // Perfect fifth harmonic match (e.g. 7 or 19 semitones above)
+        if ((Math.abs(exp - midi) === 7 || Math.abs(exp - midi) === 19) && dPrime[tauEstimate] < 0.35) {
           midi = exp
           break
         }

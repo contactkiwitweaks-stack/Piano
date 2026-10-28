@@ -279,7 +279,7 @@ export function App() {
 
       if (isPlaying && activePiece && activeTab === 'player') {
         const prevTime = currentTimeRef.current
-        const nextTime = prevTime + deltaSec * playbackRate
+        let nextTime = prevTime + deltaSec * playbackRate
 
         // Wait-for-Note Mode: chord-aware simultaneous cluster detection
         if (isWaitMode) {
@@ -328,6 +328,27 @@ export function App() {
                 setAccuracyPercent(Math.max(0, Math.min(100, Math.round((notesHitCountRef.current / total) * 100))))
               }
               hitWaitNotesRef.current.clear()
+
+              // CRITICAL: Advance time & index past this chord so we never get trapped waiting for the same chord twice!
+              nextTime = Math.max(nextTime, upcomingLeader.startTime + 0.005)
+              while (
+                nextNoteIndexRef.current < activePiece.notes.length &&
+                activePiece.notes[nextNoteIndexRef.current].startTime <= nextTime
+              ) {
+                const note = activePiece.notes[nextNoteIndexRef.current]
+                const isAccompaniment =
+                  (handMode === 'right' && note.hand === 'left') ||
+                  (handMode === 'left' && note.hand === 'right')
+                if (!isWaitMode || isAccompaniment) {
+                  PianoAudioEngine.getInstance().scheduleNote(
+                    note.midi,
+                    note.velocity || 80,
+                    note.duration / playbackRate,
+                    0
+                  )
+                }
+                nextNoteIndexRef.current++
+              }
             }
           }
         }

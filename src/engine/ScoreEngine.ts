@@ -1102,98 +1102,188 @@ export class ScoreEngine {
   }
 
   // ==========================================
-  // 14. ABBA: THE WINNER TAKES IT ALL FALLBACK SCORE
+  // 14. ABBA: THE WINNER TAKES IT ALL (Official YouTube Track, Key: F# Major, 125 BPM)
   // ==========================================
   public static getTheWinnerTakesItAll(): Piece {
     const n = this.noteToMidi.bind(this)
     const notes: NoteEvent[] = []
     const pedals: PedalEvent[] = []
 
-    const introChords = [
-      { name: 'F', bass: n('F2'), chord: [n('A3'), n('C4'), n('F4')] },
-      { name: 'C/E', bass: n('E2'), chord: [n('G3'), n('C4'), n('E4')] },
-      { name: 'Dm', bass: n('D2'), chord: [n('F3'), n('A3'), n('D4')] },
-      { name: 'Am/C', bass: n('C2'), chord: [n('E3'), n('A3'), n('C4')] },
-      { name: 'Bb', bass: n('Bb1'), chord: [n('D3'), n('F3'), n('Bb3')] },
-      { name: 'F/A', bass: n('A1'), chord: [n('C3'), n('F3'), n('A3')] },
-      { name: 'Gm7', bass: n('G1'), chord: [n('Bb2'), n('D3'), n('F3')] },
-      { name: 'C7', bass: n('C2'), chord: [n('Bb2'), n('E3'), n('G3')] },
+    const bpm = 125
+    const beat = 60 / bpm
+    const bar = beat * 4
+    let t = 0.0
+    let noteId = 1
+
+    const addNote = (name: string, start: number, dur: number, hand: 'left' | 'right', finger: number, measure: number, vel = 80, isAccent = false) => {
+      notes.push({
+        id: `abba-se-${noteId++}`,
+        midi: n(name),
+        noteName: name,
+        startTime: Math.round(start * 1000) / 1000,
+        duration: Math.round(dur * 1000) / 1000,
+        hand,
+        finger,
+        measure,
+        velocity: vel,
+        isAccent: isAccent || undefined,
+      })
+    }
+
+    // Intro (F# -> D#m -> G#m -> C#)
+    const introData = [
+      { m: 1, lh: ['F#1', 'F#2'], rh: [{ n: 'C#5', b: 0, d: 0.9, f: 5, a: true }, { n: 'B4', b: 1, d: 0.45, f: 4 }, { n: 'A#4', b: 1.5, d: 0.45, f: 3 }, { n: 'G#4', b: 2, d: 0.45, f: 2 }, { n: 'F#4', b: 2.5, d: 0.9, f: 1, a: true }, { n: 'A#4', b: 3.5, d: 0.45, f: 3 }] },
+      { m: 2, lh: ['F#2', 'C#3'], rh: [{ n: 'F#4', b: 0, d: 0.45, f: 1 }, { n: 'A#4', b: 0.5, d: 0.45, f: 3 }, { n: 'C#5', b: 1, d: 0.9, f: 5 }, { n: 'B4', b: 2, d: 0.45, f: 4 }, { n: 'A#4', b: 2.5, d: 0.45, f: 3 }, { n: 'G#4', b: 3, d: 0.9, f: 2 }] },
+      { m: 3, lh: ['D#2', 'D#3'], rh: [{ n: 'G#4', b: 0, d: 0.9, f: 4, a: true }, { n: 'F#4', b: 1, d: 0.45, f: 3 }, { n: 'F4', b: 1.5, d: 0.45, f: 2 }, { n: 'D#4', b: 2, d: 0.9, f: 1, a: true }, { n: 'F#4', b: 3, d: 0.45, f: 3 }, { n: 'A#4', b: 3.5, d: 0.45, f: 5 }] },
+      { m: 4, lh: ['D#2', 'A#2'], rh: [{ n: 'D#4', b: 0, d: 0.45, f: 1 }, { n: 'F#4', b: 0.5, d: 0.45, f: 3 }, { n: 'G#4', b: 1, d: 0.9, f: 4 }, { n: 'F#4', b: 2, d: 0.45, f: 3 }, { n: 'F4', b: 2.5, d: 0.45, f: 2 }, { n: 'D#4', b: 3, d: 0.9, f: 1 }] },
+      { m: 5, lh: ['G#1', 'G#2'], rh: [{ n: 'C#5', b: 0, d: 0.9, f: 5, a: true }, { n: 'B4', b: 1, d: 0.45, f: 4 }, { n: 'A#4', b: 1.5, d: 0.45, f: 3 }, { n: 'G#4', b: 2, d: 0.9, f: 2, a: true }, { n: 'B4', b: 3, d: 0.45, f: 4 }, { n: 'D#5', b: 3.5, d: 0.45, f: 5 }] },
+      { m: 6, lh: ['G#1', 'D#2'], rh: [{ n: 'G#4', b: 0, d: 0.45, f: 1 }, { n: 'B4', b: 0.5, d: 0.45, f: 3 }, { n: 'C#5', b: 1, d: 0.9, f: 5 }, { n: 'B4', b: 2, d: 0.45, f: 4 }, { n: 'A#4', b: 2.5, d: 0.45, f: 3 }, { n: 'G#4', b: 3, d: 0.9, f: 2 }] },
+      { m: 7, lh: ['C#2', 'C#3'], rh: [{ n: 'F4', b: 0, d: 0.9, f: 3, a: true }, { n: 'D#4', b: 1, d: 0.45, f: 2 }, { n: 'C#4', b: 1.5, d: 0.45, f: 1 }, { n: 'G#4', b: 2, d: 0.9, f: 4 }, { n: 'B4', b: 3, d: 0.9, f: 5 }] },
+      { m: 8, lh: ['C#2', 'G#2'], rh: [{ n: 'C#4', b: 0, d: 0.45, f: 1 }, { n: 'F4', b: 0.5, d: 0.45, f: 2 }, { n: 'G#4', b: 1, d: 0.45, f: 3 }, { n: 'B4', b: 1.5, d: 0.45, f: 4 }, { n: 'C#5', b: 2, d: 0.9, f: 5 }, { n: 'C#4', b: 3, d: 0.9, f: 1 }] },
     ]
 
-    const beat = 60 / 126
-    let time = 0.0
+    introData.forEach((pat) => {
+      const mStart = t
+      pat.lh.forEach((noteName, idx) => addNote(noteName, mStart, bar * 0.9, 'left', idx === 0 ? 5 : 1, pat.m, 82))
+      pat.rh.forEach((item) => addNote(item.n, mStart + item.b * beat, item.d * beat, 'right', item.f, pat.m, item.a ? 90 : 78, item.a))
+      pedals.push({ startTime: mStart, duration: bar * 0.92, depth: 95, type: 'sustain', measure: pat.m })
+      t += bar
+    })
 
-    introChords.forEach((ch, mIdx) => {
-      const measure = mIdx + 1
-      const mStart = time
+    // Chorus: The Winner Takes It All
+    const chorusData = [
+      { m: 9, lh: ['F#2', 'C#3'], rh: [{ n: 'C#5', b: 0, d: 0.9, f: 5, a: true }, { n: 'B4', b: 1, d: 0.45, f: 4 }, { n: 'A#4', b: 1.5, d: 0.45, f: 3 }, { n: 'G#4', b: 2, d: 0.45, f: 2 }, { n: 'F#4', b: 2.5, d: 1.2, f: 1, a: true }] },
+      { m: 10, lh: ['B1', 'F#2', 'D#3'], rh: [{ n: 'D#5', b: 0, d: 0.9, f: 5, a: true }, { n: 'C#5', b: 1, d: 0.45, f: 4 }, { n: 'B4', b: 1.5, d: 0.45, f: 3 }, { n: 'A#4', b: 2, d: 0.45, f: 2 }, { n: 'G#4', b: 2.5, d: 1.2, f: 1 }] },
+      { m: 11, lh: ['C#2', 'G#2', 'F3'], rh: [{ n: 'C#5', b: 0, d: 0.9, f: 5, a: true }, { n: 'B4', b: 1, d: 0.45, f: 4 }, { n: 'A#4', b: 1.5, d: 0.45, f: 3 }, { n: 'G#4', b: 2, d: 0.45, f: 2 }, { n: 'F#4', b: 2.5, d: 0.9, f: 1 }] },
+      { m: 12, lh: ['F#2', 'C#3', 'A#3'], rh: [{ n: 'A#4', b: 0, d: 0.45, f: 3 }, { n: 'G#4', b: 0.5, d: 0.45, f: 2 }, { n: 'F#4', b: 1, d: 0.45, f: 1 }, { n: 'F4', b: 1.5, d: 0.45, f: 1 }, { n: 'F#4', b: 2, d: 1.5, f: 2, a: true }] },
+    ]
 
-      // LH Bass
-      notes.push({
-        id: `abba-fb-lh-${mIdx}`,
-        midi: ch.bass,
-        noteName: this.midiToNoteName(ch.bass),
-        startTime: mStart,
-        duration: beat * 3.8,
-        hand: 'left',
-        measure,
-        velocity: 85,
-        isAccent: true,
-      })
-
-      // RH 8th-note broken chord pulse
-      for (let b = 0; b < 8; b++) {
-        const t = mStart + b * (beat / 2)
-        ch.chord.forEach((midi, cIdx) => {
-          notes.push({
-            id: `abba-fb-rh-${mIdx}-${b}-${cIdx}`,
-            midi,
-            noteName: this.midiToNoteName(midi),
-            startTime: t,
-            duration: (beat / 2) * 0.9,
-            hand: 'right',
-            measure,
-            velocity: 75 + (b % 2 === 0 ? 5 : 0),
-          })
-        })
-      }
-
-      pedals.push({
-        startTime: mStart,
-        duration: beat * 3.9,
-        depth: 100,
-        type: 'sustain',
-        measure,
-        tip: `Pedal for ${ch.name}`,
-      })
-
-      time += beat * 4
+    chorusData.forEach((pat) => {
+      const mStart = t
+      pat.lh.forEach((noteName, idx) => addNote(noteName, mStart, bar * 0.9, 'left', idx === 0 ? 5 : idx === 1 ? 2 : 1, pat.m, 90))
+      pat.rh.forEach((item) => addNote(item.n, mStart + item.b * beat, item.d * beat, 'right', item.f, pat.m, item.a ? 98 : 88, item.a))
+      pedals.push({ startTime: mStart, duration: bar * 0.95, depth: 110, type: 'sustain', measure: pat.m })
+      t += bar
     })
 
     return {
       id: 'abba-the-winner-takes-it-all',
       title: 'The Winner Takes It All',
       composer: 'ABBA (Benny Andersson & Björn Ulvaeus)',
-      opus: 'Super Trouper (1980)',
-      key: 'F major',
+      opus: 'Super Trouper (1980) - Official Track',
+      key: 'F# major',
       timeSignature: [4, 4],
-      tempoBpm: 126,
-      duration: time + 0.5,
+      tempoBpm: bpm,
+      duration: Math.round(t * 100) / 100,
       notes,
       pedalEvents: pedals,
       annotations: [
         {
-          id: 'abba-fb-ann-1',
+          id: 'abba-ann-1',
           measureRange: [1, 8],
-          title: 'Driving Broken Chord Accompaniment',
-          germanTerm: 'Rhythmischer Achtelpuls',
+          title: 'Benny Andersson: Falling Piano Arpeggio',
+          germanTerm: 'Fallende Arpeggien',
           category: 'fingering',
-          instruction: 'Maintain steady 8th-note pulsation with supple wrist breathing. Left hand bass octaves anchor the chord changes.',
+          instruction: 'Keep wrist low and flexible across the 6 sharps of F# Major. Let the high C#5 ring above the driving eighth notes.',
           referenceTimestampSeconds: 0.0,
-        }
+        },
       ],
       sections: [
-        { id: 'abba-fb-sec-1', title: 'Iconic Driving Piano Intro', startMeasure: 1, endMeasure: 8, startTime: 0, endTime: time, tempoSuggestion: '126 BPM', character: 'Rhythmic, emotional pulse' }
-      ]
+        { id: 'abba-sec-1', title: 'Iconic Melancholic Piano Intro (F# Major)', startMeasure: 1, endMeasure: 8, startTime: 0, endTime: bar * 8, tempoSuggestion: '125 BPM', character: 'Driving falling arpeggios' },
+        { id: 'abba-sec-2', title: 'Chorus: "The Winner Takes It All"', startMeasure: 9, endMeasure: 12, startTime: bar * 8, endTime: t, tempoSuggestion: '125 BPM - Fortissimo', character: 'Grand fortissimo climax' },
+      ],
+    }
+  }
+
+  // 15. HANDEL / HALVORSEN: PASSACAGLIA IN G MINOR (HWV 432)
+  // ==========================================
+  public static getHandelPassacaglia(): Piece {
+    const n = this.noteToMidi.bind(this)
+    const notes: NoteEvent[] = []
+    const pedals: PedalEvent[] = []
+
+    const bpm = 104
+    const beat = 60 / bpm
+    const bar = beat * 4
+    let t = 0.0
+    let noteId = 1
+
+    const addNote = (name: string, start: number, dur: number, hand: 'left' | 'right', finger: number, measure: number, vel = 80, isAccent = false) => {
+      notes.push({
+        id: `pass-se-${noteId++}`,
+        midi: n(name),
+        noteName: name,
+        startTime: Math.round(start * 1000) / 1000,
+        duration: Math.round(dur * 1000) / 1000,
+        hand,
+        finger,
+        measure,
+        velocity: vel,
+        isAccent: isAccent || undefined,
+      })
+    }
+
+    const themeChords = [
+      { m: 1, lh: ['G2', 'D3', 'Bb3'], rh: [{ n: 'D5', b: 0, d: 0.9, f: 5, a: true }, { n: 'Eb5', b: 1, d: 0.45, f: 4 }, { n: 'D5', b: 1.5, d: 0.45, f: 3 }, { n: 'C5', b: 2, d: 0.45, f: 2 }, { n: 'Bb4', b: 2.5, d: 1.2, f: 1, a: true }] },
+      { m: 2, lh: ['C2', 'G2', 'Eb3'], rh: [{ n: 'C5', b: 0, d: 0.9, f: 4, a: true }, { n: 'D5', b: 1, d: 0.45, f: 5 }, { n: 'C5', b: 1.5, d: 0.45, f: 4 }, { n: 'Bb4', b: 2, d: 0.45, f: 3 }, { n: 'A4', b: 2.5, d: 1.2, f: 2, a: true }] },
+      { m: 3, lh: ['F2', 'C3', 'A3'], rh: [{ n: 'Bb4', b: 0, d: 0.9, f: 4, a: true }, { n: 'C5', b: 1, d: 0.45, f: 5 }, { n: 'Bb4', b: 1.5, d: 0.45, f: 4 }, { n: 'A4', b: 2, d: 0.45, f: 3 }, { n: 'G4', b: 2.5, d: 1.2, f: 2, a: true }] },
+      { m: 4, lh: ['Bb1', 'F2', 'D3'], rh: [{ n: 'A4', b: 0, d: 0.9, f: 3 }, { n: 'D4', b: 1, d: 0.9, f: 1 }, { n: 'F#4', b: 2, d: 0.9, f: 2 }, { n: 'G4', b: 3, d: 0.9, f: 3, a: true }] },
+      { m: 5, lh: ['Eb2', 'Bb2', 'G3'], rh: [{ n: 'G4', b: 0, d: 0.9, f: 2 }, { n: 'Bb4', b: 1, d: 0.9, f: 3 }, { n: 'D5', b: 2, d: 0.9, f: 5, a: true }, { n: 'C5', b: 3, d: 0.9, f: 4 }] },
+      { m: 6, lh: ['C2', 'Eb2', 'A2'], rh: [{ n: 'Bb4', b: 0, d: 0.9, f: 3 }, { n: 'A4', b: 1, d: 0.9, f: 2 }, { n: 'G4', b: 2, d: 0.9, f: 1 }, { n: 'F#4', b: 3, d: 0.9, f: 2, a: true }] },
+      { m: 7, lh: ['D2', 'A2', 'F#3'], rh: [{ n: 'F#4', b: 0, d: 0.9, f: 2 }, { n: 'A4', b: 1, d: 0.9, f: 3 }, { n: 'C5', b: 2, d: 0.9, f: 4 }, { n: 'D5', b: 3, d: 0.9, f: 5, a: true }] },
+      { m: 8, lh: ['G1', 'G2', 'D3'], rh: [{ n: 'G4', b: 0, d: 2.2, f: 2, a: true }, { n: 'Bb4', b: 0, d: 2.2, f: 3, a: true }, { n: 'D5', b: 0, d: 2.2, f: 5, a: true }] },
+    ]
+
+    themeChords.forEach((pat) => {
+      const mStart = t
+      pat.lh.forEach((noteName, idx) => addNote(noteName, mStart, bar * 0.9, 'left', idx === 0 ? 5 : idx === 1 ? 2 : 1, pat.m, 85))
+      pat.rh.forEach((item) => addNote(item.n, mStart + item.b * beat, item.d * beat, 'right', item.f, pat.m, item.a ? 92 : 80, item.a))
+      pedals.push({ startTime: mStart, duration: bar * 0.92, depth: 90, type: 'sustain', measure: pat.m })
+      t += bar
+    })
+
+    // Climax Octaves
+    const climaxData = [
+      { m: 9, lh: ['G1', 'G2'], rh: [{ n: 'D5', b: 0, d: 0.9, f: 5, a: true }, { n: 'Eb5', b: 1, d: 0.45, f: 4 }, { n: 'D5', b: 1.5, d: 0.45, f: 3 }, { n: 'C5', b: 2, d: 0.45, f: 2 }, { n: 'Bb4', b: 2.5, d: 1.2, f: 1, a: true }] },
+      { m: 10, lh: ['C2', 'C3'], rh: [{ n: 'C5', b: 0, d: 0.9, f: 4, a: true }, { n: 'D5', b: 1, d: 0.45, f: 5 }, { n: 'C5', b: 1.5, d: 0.45, f: 4 }, { n: 'Bb4', b: 2, d: 0.45, f: 3 }, { n: 'A4', b: 2.5, d: 1.2, f: 2, a: true }] },
+      { m: 11, lh: ['D1', 'D2'], rh: [{ n: 'F#4', b: 0, d: 0.9, f: 2 }, { n: 'A4', b: 1, d: 0.9, f: 3 }, { n: 'C5', b: 2, d: 0.9, f: 4 }, { n: 'D5', b: 3, d: 0.9, f: 5, a: true }] },
+      { m: 12, lh: ['G1', 'G2', 'D3'], rh: [{ n: 'G4', b: 0, d: 2.8, f: 1, a: true }, { n: 'B4', b: 0, d: 2.8, f: 3, a: true }, { n: 'D5', b: 0, d: 2.8, f: 4, a: true }, { n: 'G5', b: 0, d: 2.8, f: 5, a: true }] },
+    ]
+
+    climaxData.forEach((pat) => {
+      const mStart = t
+      pat.lh.forEach((noteName) => addNote(noteName, mStart, bar * 0.92, 'left', 5, pat.m, 102, true))
+      pat.rh.forEach((item) => addNote(item.n, mStart + item.b * beat, item.d * beat, 'right', item.f, pat.m, item.a ? 106 : 94, item.a))
+      pedals.push({ startTime: mStart, duration: bar * 0.95, depth: 115, type: 'sustain', measure: pat.m })
+      t += bar
+    })
+
+    return {
+      id: 'handel-halvorsen-passacaglia',
+      title: 'Passacaglia in G minor',
+      composer: 'George Frideric Handel / Johan Halvorsen',
+      opus: 'HWV 432 (Suite No. 7) - Concert Solo',
+      key: 'G minor',
+      timeSignature: [4, 4],
+      tempoBpm: bpm,
+      duration: Math.round(t * 100) / 100,
+      notes,
+      pedalEvents: pedals,
+      annotations: [
+        {
+          id: 'pass-ann-1',
+          measureRange: [1, 8],
+          title: 'Baroque Ground Bass Phrasing',
+          germanTerm: 'Generalbass Phrasierung',
+          category: 'tone-color',
+          instruction: 'Emphasize the deep G minor ground bass steps (Gm - Cm - F - Bb - Eb - Cm - D7 - Gm). Let each harmony resolve with nobility.',
+          referenceTimestampSeconds: 0.0,
+        },
+      ],
+      sections: [
+        { id: 'pass-sec-1', title: 'Maestoso Ground Bass Theme', startMeasure: 1, endMeasure: 8, startTime: 0, endTime: bar * 8, tempoSuggestion: '104 BPM', character: 'Dark, noble ground bass' },
+        { id: 'pass-sec-2', title: 'Dramatic Octave Climax', startMeasure: 9, endMeasure: 12, startTime: bar * 8, endTime: t, tempoSuggestion: '104 BPM - Fortissimo', character: 'Thunderous octave leaps' },
+      ],
     }
   }
 }

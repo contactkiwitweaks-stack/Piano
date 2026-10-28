@@ -30,18 +30,37 @@ export class LibraryRepository {
       id: 'abba-the-winner-takes-it-all',
       title: 'The Winner Takes It All',
       composer: 'ABBA',
-      opus: 'Super Trouper (1980)',
+      opus: 'Super Trouper (1980) - Official Track',
       difficulty: 4,
-      key: 'F major',
+      key: 'F# major',
       period: 'Contemporary',
-      durationSeconds: 53,
+      durationSeconds: 54,
       coverColor: 'from-sky-500 via-indigo-600 to-purple-950',
       availableEditions: [
         {
           id: 'urtext',
           name: 'Original Benny Andersson Piano Score',
           year: '1980',
-          description: 'The iconic driving 8th-note piano accompaniment, emotional verse storytelling, and grand fortissimo chorus.',
+          description: 'The authentic F# Major driving 8th-note piano accompaniment, emotional verse storytelling, and grand fortissimo chorus.',
+        },
+      ],
+    },
+    {
+      id: 'handel-halvorsen-passacaglia',
+      title: 'Passacaglia in G minor',
+      composer: 'Handel / Halvorsen',
+      opus: 'HWV 432 (Suite No. 7)',
+      difficulty: 6,
+      key: 'G minor',
+      period: 'Baroque',
+      durationSeconds: 56,
+      coverColor: 'from-amber-600 via-red-900 to-zinc-950',
+      availableEditions: [
+        {
+          id: 'urtext',
+          name: 'Concert Solo Piano Edition',
+          year: '1894 / Urtext',
+          description: 'The viral dramatic masterpiece: noble Baroque ground bass (Gm - Cm - F - Bb - Eb - D7), cascading arpeggios, and thunderous octave climax.',
         },
       ],
     },
@@ -340,6 +359,9 @@ export class LibraryRepository {
     switch (pieceId) {
       case 'abba-the-winner-takes-it-all':
         return ScoreEngine.getTheWinnerTakesItAll()
+
+      case 'handel-halvorsen-passacaglia':
+        return ScoreEngine.getHandelPassacaglia()
 
       case 'tony-ann-icarus':
         return ScoreEngine.getTonyAnnIcarus()

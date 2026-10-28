@@ -67,7 +67,7 @@ function isMidiBlack(midi: number): boolean {
   return IS_BLACK_KEY[midi % 12]
 }
 
-export const FallingKeysCanvas: React.FC<FallingKeysCanvasProps> = ({
+export const FallingKeysCanvas = React.memo<FallingKeysCanvasProps>(({
   piece,
   currentTime,
   playbackRate,
@@ -164,7 +164,8 @@ export const FallingKeysCanvas: React.FC<FallingKeysCanvasProps> = ({
 
       const targetW = Math.floor(width * dpr)
       const targetH = Math.floor(height * dpr)
-      if (canvas.width !== targetW || canvas.height !== targetH) {
+      // Guard against subpixel layout micro-jitter clearing the canvas buffer
+      if (Math.abs(canvas.width - targetW) > 2 || Math.abs(canvas.height - targetH) > 2) {
         canvas.width = targetW
         canvas.height = targetH
       }
@@ -239,8 +240,8 @@ export const FallingKeysCanvas: React.FC<FallingKeysCanvasProps> = ({
 
         if (width === 0 || height === 0) return
 
-        ctx.save()
-        ctx.scale(dpr, dpr)
+        // Absolute matrix reset: guarantees no exponential scale accumulation or black voids
+        ctx.setTransform(dpr, 0, 0, dpr, 0, 0)
 
         const curTime = currentTimeRef.current
         const curRate = playbackRateRef.current
@@ -297,7 +298,9 @@ export const FallingKeysCanvas: React.FC<FallingKeysCanvasProps> = ({
               drawX = (width - drawW) / 2
             }
 
-            ctx.drawImage(img, drawX, drawY, drawW, drawH)
+            try {
+              ctx.drawImage(img, drawX, drawY, drawW, drawH)
+            } catch {}
 
             // Soft dark starry vignette overlay so notes pop brilliantly
             const overlay = ctx.createLinearGradient(0, 0, 0, keyboardY)
@@ -857,8 +860,6 @@ export const FallingKeysCanvas: React.FC<FallingKeysCanvasProps> = ({
         )
         ctx.restore()
       }
-
-        ctx.restore()
       } catch (err) {
         console.warn('Canvas render tick glitch caught:', err)
       } finally {
@@ -991,4 +992,4 @@ export const FallingKeysCanvas: React.FC<FallingKeysCanvasProps> = ({
       <canvas ref={canvasRef} className="w-full h-full block" />
     </div>
   )
-}
+})

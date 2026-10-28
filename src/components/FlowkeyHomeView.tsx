@@ -106,6 +106,7 @@ export const FlowkeyHomeView: React.FC<FlowkeyHomeViewProps> = ({
   }
 
   const quickSearchTags = [
+    { label: 'Passacaglia', query: 'passacaglia' },
     { label: 'ABBA', query: 'abba' },
     { label: 'The Winner Takes It All', query: 'winner' },
     { label: 'Tony Ann', query: 'tony ann' },
@@ -224,13 +225,13 @@ export const FlowkeyHomeView: React.FC<FlowkeyHomeViewProps> = ({
 
   const recommendedPieces = useMemo(() => {
     return catalog.filter((p) =>
-      ['abba-the-winner-takes-it-all', 'tony-ann-icarus', 'beethoven-fur-elise', 'chopin-ballade-1'].includes(p.id)
+      ['handel-halvorsen-passacaglia', 'abba-the-winner-takes-it-all', 'tony-ann-icarus', 'beethoven-fur-elise', 'chopin-ballade-1'].includes(p.id)
     )
   }, [catalog])
 
   const popularPieces = useMemo(() => {
     return catalog.filter((p) =>
-      ['abba-the-winner-takes-it-all', 'tony-ann-icarus', 'beethoven-fur-elise', 'chopin-ballade-1'].includes(p.id)
+      ['handel-halvorsen-passacaglia', 'abba-the-winner-takes-it-all', 'tony-ann-icarus', 'beethoven-fur-elise', 'chopin-ballade-1'].includes(p.id)
     )
   }, [catalog])
 
