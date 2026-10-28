@@ -19,6 +19,33 @@ interface FallingKeysCanvasProps {
   expectedNotes?: number[]
   onScreenKeyPress?: (midi: number) => void
   onTogglePedal?: () => void
+  showFingers?: boolean
+  wallpaperUrl?: string
+}
+
+/** Safe rounded rectangle drawing that never crashes on older WebKit or negative radii */
+function drawSafeRoundRect(
+  ctx: CanvasRenderingContext2D,
+  x: number,
+  y: number,
+  w: number,
+  h: number,
+  radius: number
+) {
+  const safeW = Math.max(0.1, w)
+  const safeH = Math.max(0.1, h)
+  const safeR = Math.max(0, Math.min(radius, safeW / 2, safeH / 2))
+  ctx.beginPath()
+  if (typeof ctx.roundRect === 'function') {
+    ctx.roundRect(x, y, safeW, safeH, safeR)
+  } else {
+    ctx.moveTo(x + safeR, y)
+    ctx.arcTo(x + safeW, y, x + safeW, y + safeH, safeR)
+    ctx.arcTo(x + safeW, y + safeH, x, y + safeH, safeR)
+    ctx.arcTo(x, y + safeH, x, y, safeR)
+    ctx.arcTo(x, y, x + safeW, y, safeR)
+    ctx.closePath()
+  }
 }
 
 interface Particle {
@@ -53,20 +80,22 @@ export const FallingKeysCanvas: React.FC<FallingKeysCanvasProps> = ({
   expectedNotes = [],
   onScreenKeyPress,
   onTogglePedal,
+  showFingers = true,
+  wallpaperUrl = '/images/ylia_bg.png',
 }) => {
   const canvasRef = useRef<HTMLCanvasElement>(null)
   const containerRef = useRef<HTMLDivElement>(null)
   const particlesRef = useRef<Particle[]>([])
   const yliaImageRef = useRef<HTMLImageElement | null>(null)
 
-  // Load Your Lie in April authentic artwork
+  // Load Your Lie in April authentic artwork with automatic fallback and caching
   useEffect(() => {
     const img = new Image()
-    img.src = '/images/ylia_bg.png'
+    img.src = wallpaperUrl || '/images/ylia_bg.png'
     img.onload = () => {
       yliaImageRef.current = img
     }
-  }, [])
+  }, [wallpaperUrl])
 
   // Touch tracking for polyphonic keyboard input
   const activeTouchMapRef = useRef<Map<number, number>>(new Map())
@@ -108,7 +137,7 @@ export const FallingKeysCanvas: React.FC<FallingKeysCanvasProps> = ({
     return { whiteKeys: wKeys, blackKeys: bKeys, totalWhite: Math.max(1, whiteCount), midiToXPos: xPosMap }
   }, [startMidi, endMidi])
 
-  // ResizeObserver for canvas sync
+  // ResizeObserver for canvas sync - strictly avoids wiping canvas when dimensions haven't changed!
   useEffect(() => {
     const canvas = canvasRef.current
     const container = containerRef.current
@@ -120,8 +149,12 @@ export const FallingKeysCanvas: React.FC<FallingKeysCanvasProps> = ({
       const height = container.clientHeight
       if (width === 0 || height === 0) return
 
-      canvas.width = Math.floor(width * dpr)
-      canvas.height = Math.floor(height * dpr)
+      const targetW = Math.floor(width * dpr)
+      const targetH = Math.floor(height * dpr)
+      if (canvas.width !== targetW || canvas.height !== targetH) {
+        canvas.width = targetW
+        canvas.height = targetH
+      }
     }
 
     updateCanvasDimensions()
@@ -145,6 +178,8 @@ export const FallingKeysCanvas: React.FC<FallingKeysCanvasProps> = ({
   handModeRef.current = handMode
   const themeRef = useRef(theme)
   themeRef.current = theme
+  const showFingersRef = useRef(showFingers)
+  showFingersRef.current = showFingers
 
   // Particle emission helper
   const spawnHitParticles = useCallback((x: number, y: number, color: string, count: number = 2) => {
@@ -184,101 +219,104 @@ export const FallingKeysCanvas: React.FC<FallingKeysCanvasProps> = ({
     if (!ctx) return
 
     const render = () => {
-      const dpr = window.devicePixelRatio || 1
-      const width = canvas.width / dpr
-      const height = canvas.height / dpr
+      try {
+        const dpr = window.devicePixelRatio || 1
+        const width = canvas.width / dpr
+        const height = canvas.height / dpr
 
-      if (width === 0 || height === 0) {
-        animId = requestAnimationFrame(render)
-        return
-      }
+        if (width === 0 || height === 0) return
 
-      ctx.save()
-      ctx.scale(dpr, dpr)
+        ctx.save()
+        ctx.scale(dpr, dpr)
 
-      const curTime = currentTimeRef.current
-      const curRate = playbackRateRef.current
-      const curActiveNotes = activeNotesRef.current
-      const curPedal = damperPedalRef.current
-      const curExpectedNotes = expectedNotesRef.current
-      const curHandMode = handModeRef.current
-      const curTheme = themeRef.current
+        const curTime = currentTimeRef.current
+        const curRate = playbackRateRef.current
+        const curActiveNotes = activeNotesRef.current
+        const curPedal = damperPedalRef.current
+        const curExpectedNotes = expectedNotesRef.current
+        const curHandMode = handModeRef.current
+        const curTheme = themeRef.current
+        const curShowFingers = showFingersRef.current
 
-      // Sleek tactile keyboard: takes only 19% of screen, giving 81% vertical space to falling notes!
-      const keyboardHeight = Math.min(108, Math.max(70, height * 0.19))
-      const keyboardY = height - keyboardHeight
-      const blackKeyHeight = keyboardHeight * 0.62
-      const whiteKeyWidth = width / totalWhite
-      const blackKeyWidth = whiteKeyWidth * 0.64
+        // Sleek tactile keyboard: takes only 19% of screen, giving 81% vertical space to falling notes!
+        const keyboardHeight = Math.min(108, Math.max(70, height * 0.19))
+        const keyboardY = height - keyboardHeight
+        const blackKeyHeight = keyboardHeight * 0.62
+        const whiteKeyWidth = width / totalWhite
+        const blackKeyWidth = whiteKeyWidth * 0.64
 
-      const pixelsPerSecond = 145 * curRate
-      const lookaheadSeconds = keyboardY / pixelsPerSecond
+        const pixelsPerSecond = 145 * curRate
+        const lookaheadSeconds = keyboardY / pixelsPerSecond
 
-      // 3D Perspective Projection helper
-      const projectPoint = (x: number, y: number) => {
-        if (viewMode === '2d') return { x, y }
-        const progressY = Math.max(0, Math.min(1, y / keyboardY))
-        const depthScale = 0.82 + progressY * 0.18
-        const centerX = width / 2
-        return { x: centerX + (x - centerX) * depthScale, y }
-      }
+        // 3D Perspective Projection helper
+        const projectPoint = (x: number, y: number) => {
+          if (viewMode === '2d') return { x, y }
+          const progressY = Math.max(0, Math.min(1, y / keyboardY))
+          const depthScale = 0.82 + progressY * 0.18
+          const centerX = width / 2
+          return { x: centerX + (x - centerX) * depthScale, y }
+        }
 
-      // -------------------------------------------------------------
-      // 1. THEME BACKGROUND RENDERING
-      // -------------------------------------------------------------
-      if (curTheme === 'ylia') {
-        const img = yliaImageRef.current
-        if (img && img.complete && img.naturalWidth > 0) {
-          // Draw authentic "Your Lie in April" Kaori & Kousei artwork
-          const imgAspect = img.naturalWidth / img.naturalHeight
-          const canvasAspect = width / keyboardY
-          let drawW = width
-          let drawH = keyboardY
-          let drawX = 0
-          let drawY = 0
+        // -------------------------------------------------------------
+        // 1. THEME BACKGROUND RENDERING (PREVENTS ANY BLACK VOIDS)
+        // -------------------------------------------------------------
+        // Solid base fill across the ENTIRE canvas first (never flashes black)
+        ctx.fillStyle = curTheme === 'light' ? '#f8fafc' : '#080c1e'
+        ctx.fillRect(0, 0, width, height)
 
-          if (canvasAspect > imgAspect) {
-            drawH = width / imgAspect
-            drawY = (keyboardY - drawH) / 2
+        if (curTheme === 'ylia') {
+          const img = yliaImageRef.current
+          if (img && img.complete && img.naturalWidth > 0) {
+            // Draw authentic "Your Lie in April" Kaori & Kousei artwork
+            const imgAspect = img.naturalWidth / img.naturalHeight
+            const canvasAspect = width / keyboardY
+            let drawW = width
+            let drawH = keyboardY
+            let drawX = 0
+            let drawY = 0
+
+            if (canvasAspect > imgAspect) {
+              drawH = width / imgAspect
+              drawY = (keyboardY - drawH) / 2
+            } else {
+              drawW = keyboardY * imgAspect
+              drawX = (width - drawW) / 2
+            }
+
+            ctx.drawImage(img, drawX, drawY, drawW, drawH)
+
+            // Soft dark starry vignette overlay so notes pop brilliantly
+            const overlay = ctx.createLinearGradient(0, 0, 0, keyboardY)
+            overlay.addColorStop(0, 'rgba(8, 12, 28, 0.45)')
+            overlay.addColorStop(0.7, 'rgba(10, 15, 36, 0.55)')
+            overlay.addColorStop(1, 'rgba(6, 9, 24, 0.75)')
+            ctx.fillStyle = overlay
+            ctx.fillRect(0, 0, width, keyboardY)
           } else {
-            drawW = keyboardY * imgAspect
-            drawX = (width - drawW) / 2
+            // Deep starry navy fallback
+            const grad = ctx.createLinearGradient(0, 0, 0, keyboardY)
+            grad.addColorStop(0, '#0a0f24')
+            grad.addColorStop(0.6, '#0f1738')
+            grad.addColorStop(1, '#070a1a')
+            ctx.fillStyle = grad
+            ctx.fillRect(0, 0, width, keyboardY)
           }
-
-          ctx.drawImage(img, drawX, drawY, drawW, drawH)
-
-          // Soft dark starry vignette overlay so notes pop brilliantly
-          const overlay = ctx.createLinearGradient(0, 0, 0, keyboardY)
-          overlay.addColorStop(0, 'rgba(8, 12, 28, 0.45)')
-          overlay.addColorStop(0.7, 'rgba(10, 15, 36, 0.55)')
-          overlay.addColorStop(1, 'rgba(6, 9, 24, 0.75)')
-          ctx.fillStyle = overlay
+        } else if (curTheme === 'dark') {
+          // Concert Dark: Deep obsidian midnight
+          const grad = ctx.createLinearGradient(0, 0, 0, keyboardY)
+          grad.addColorStop(0, '#06070a')
+          grad.addColorStop(0.7, '#0b0d14')
+          grad.addColorStop(1, '#040508')
+          ctx.fillStyle = grad
           ctx.fillRect(0, 0, width, keyboardY)
         } else {
-          // Deep starry navy fallback
+          // Ivory Studio Light
           const grad = ctx.createLinearGradient(0, 0, 0, keyboardY)
-          grad.addColorStop(0, '#0a0f24')
-          grad.addColorStop(0.6, '#0f1738')
-          grad.addColorStop(1, '#070a1a')
+          grad.addColorStop(0, '#f8fafc')
+          grad.addColorStop(1, '#e2e8f0')
           ctx.fillStyle = grad
           ctx.fillRect(0, 0, width, keyboardY)
         }
-      } else if (curTheme === 'dark') {
-        // Concert Dark: Deep obsidian midnight
-        const grad = ctx.createLinearGradient(0, 0, 0, keyboardY)
-        grad.addColorStop(0, '#06070a')
-        grad.addColorStop(0.7, '#0b0d14')
-        grad.addColorStop(1, '#040508')
-        ctx.fillStyle = grad
-        ctx.fillRect(0, 0, width, keyboardY)
-      } else {
-        // Ivory Studio Light
-        const grad = ctx.createLinearGradient(0, 0, 0, keyboardY)
-        grad.addColorStop(0, '#f8fafc')
-        grad.addColorStop(1, '#e2e8f0')
-        ctx.fillStyle = grad
-        ctx.fillRect(0, 0, width, keyboardY)
-      }
 
       // -------------------------------------------------------------
       // 2. HORIZONTAL MEASURE LINES & MEASURE NUMBERS (Like Screenshot)
@@ -453,8 +491,7 @@ export const FallingKeysCanvas: React.FC<FallingKeysCanvasProps> = ({
         }
 
         // Draw smooth rounded pill rectangle
-        ctx.beginPath()
-        ctx.roundRect(noteX, topY, noteW, noteLengthPx, cornerR)
+        drawSafeRoundRect(ctx, noteX, topY, noteW, noteLengthPx, cornerR)
 
         const noteGrad = ctx.createLinearGradient(noteX, topY, noteX, bottomY)
         noteGrad.addColorStop(0, gradTop)
@@ -466,18 +503,63 @@ export const FallingKeysCanvas: React.FC<FallingKeysCanvasProps> = ({
         ctx.lineWidth = 1.2
         ctx.stroke()
 
-        // STAMPED NOTE LETTER (e.g. "E", "B", "A", "C", "D") INSIDE PILL (MATCHING SCREENSHOT)
-        // No fingering numbers! Just note letters!
-        if (noteW >= 10 && bottomY > 0 && bottomY < keyboardY + 16) {
+        // -------------------------------------------------------------
+        // DYNAMIC NOTE LETTER & FINGERING BADGE (NOTE AT TOP, FINGERS AT BOTTOM)
+        // -------------------------------------------------------------
+        if (noteW >= 10 && bottomY > 0 && bottomY < keyboardY + 20) {
           const noteLetter = note.noteName.replace(/[0-9]/g, '')
-          const textY = Math.min(bottomY - 4, topY + noteLengthPx / 2 + 3)
+          const fingerDigit = note.finger || (note.hand === 'left' ? 5 : 1)
           ctx.save()
-          ctx.fillStyle = '#ffffff'
-          ctx.shadowColor = 'rgba(0, 0, 0, 0.8)'
-          ctx.shadowBlur = 3
-          ctx.font = 'bold 9px sans-serif'
-          ctx.textAlign = 'center'
-          ctx.fillText(noteLetter, noteX + noteW / 2, textY)
+
+          if (curShowFingers && noteLengthPx >= 30) {
+            // 1. Note letter at the TOP-ish
+            const topTextY = Math.max(topY + 11, Math.min(bottomY - 18, topY + 12))
+            ctx.fillStyle = '#ffffff'
+            ctx.shadowColor = 'rgba(0, 0, 0, 0.85)'
+            ctx.shadowBlur = 4
+            ctx.font = 'bold 8.5px sans-serif'
+            ctx.textAlign = 'center'
+            ctx.fillText(noteLetter, noteX + noteW / 2, topTextY)
+
+            // 2. Fingering digit at the BOTTOM-ish inside a frosted badge
+            const bottomTextY = Math.min(bottomY - 6, keyboardY - 6)
+            const badgeRadius = Math.max(5, Math.min(7, noteW / 2 - 1.5))
+            const badgeCenterY = bottomTextY - 3.5
+
+            ctx.beginPath()
+            ctx.arc(noteX + noteW / 2, badgeCenterY, badgeRadius, 0, Math.PI * 2)
+            ctx.fillStyle = isRight ? 'rgba(7, 43, 67, 0.65)' : 'rgba(76, 5, 25, 0.65)'
+            ctx.fill()
+            ctx.strokeStyle = isRight ? 'rgba(56, 189, 248, 0.85)' : 'rgba(244, 114, 182, 0.85)'
+            ctx.lineWidth = 0.9
+            ctx.stroke()
+
+            ctx.fillStyle = '#ffffff'
+            ctx.shadowBlur = 0
+            ctx.font = 'bold 9px sans-serif'
+            ctx.textBaseline = 'middle'
+            ctx.fillText(`${fingerDigit}`, noteX + noteW / 2, badgeCenterY + 0.5)
+            ctx.textBaseline = 'alphabetic'
+          } else if (curShowFingers && noteLengthPx >= 18) {
+            // Compact pill: Note letter and finger digit together
+            const textY = Math.min(bottomY - 4, topY + noteLengthPx / 2 + 3)
+            ctx.fillStyle = '#ffffff'
+            ctx.shadowColor = 'rgba(0, 0, 0, 0.85)'
+            ctx.shadowBlur = 3
+            ctx.font = 'bold 8.5px sans-serif'
+            ctx.textAlign = 'center'
+            ctx.fillText(`${noteLetter} · ${fingerDigit}`, noteX + noteW / 2, textY)
+          } else {
+            // Fingers toggle OFF or small note: Note letter centered
+            const textY = Math.min(bottomY - 4, topY + noteLengthPx / 2 + 3)
+            ctx.fillStyle = '#ffffff'
+            ctx.shadowColor = 'rgba(0, 0, 0, 0.85)'
+            ctx.shadowBlur = 3
+            ctx.font = 'bold 9px sans-serif'
+            ctx.textAlign = 'center'
+            ctx.fillText(noteLetter, noteX + noteW / 2, textY)
+          }
+
           ctx.restore()
         }
 
@@ -709,8 +791,7 @@ export const FallingKeysCanvas: React.FC<FallingKeysCanvasProps> = ({
           ctx.shadowBlur = 10
         }
 
-        ctx.beginPath()
-        ctx.roundRect(pedalPillX, pedalPillY, pedalPillW, pedalPillH, 12)
+        drawSafeRoundRect(ctx, pedalPillX, pedalPillY, pedalPillW, pedalPillH, 12)
         ctx.fill()
         ctx.stroke()
         ctx.shadowBlur = 0
@@ -738,8 +819,12 @@ export const FallingKeysCanvas: React.FC<FallingKeysCanvasProps> = ({
         ctx.restore()
       }
 
-      ctx.restore()
-      animId = requestAnimationFrame(render)
+        ctx.restore()
+      } catch (err) {
+        console.warn('Canvas render tick glitch caught:', err)
+      } finally {
+        animId = requestAnimationFrame(render)
+      }
     }
 
     animId = requestAnimationFrame(render)

@@ -121,6 +121,9 @@ export const FlowkeyPlayerView: React.FC<FlowkeyPlayerViewProps> = ({
   const [theme, setTheme] = useState<VisualTheme>(() => {
     return (localStorage.getItem('virtuoso_theme') as VisualTheme) || 'ylia'
   })
+  const [yliaWallpaper, setYliaWallpaper] = useState<string>(() => {
+    return localStorage.getItem('virtuoso_ylia_wallpaper') || '/images/ylia_bg.png'
+  })
 
   // Active section based on currentTime
   const currentSection =
@@ -374,6 +377,40 @@ export const FlowkeyPlayerView: React.FC<FlowkeyPlayerViewProps> = ({
                     </button>
                   )
                 })}
+
+                {/* YLIA Multiple Artworks Sub-selector */}
+                {theme === 'ylia' && (
+                  <div className="pt-2 border-t border-white/10 flex flex-col gap-1">
+                    <div className="px-2 text-[9px] font-bold text-sky-400 uppercase tracking-wider">
+                      YLIA Artworks
+                    </div>
+                    {[
+                      { url: '/images/ylia_bg.png', name: 'Starry Duet (Kaori & Kousei)' },
+                      { url: '/images/598673.jpg', name: 'Mirrored Horizon (Silhouette)' },
+                      { url: '/images/your-lie-in-april-3840x3070-21018.jpg', name: 'Pastel Aurora (Ocean Piano)' },
+                      { url: '/images/your-lie-in-april-3840x2160-21020.jpg', name: 'Sunset Blossom (Anime Quote)' },
+                    ].map((art) => {
+                      const isArtSel = yliaWallpaper === art.url
+                      return (
+                        <button
+                          key={art.url}
+                          onClick={() => {
+                            setYliaWallpaper(art.url)
+                            localStorage.setItem('virtuoso_ylia_wallpaper', art.url)
+                          }}
+                          className={`px-2 py-1.5 rounded-lg text-left text-[11px] font-semibold transition-all flex items-center justify-between ${
+                            isArtSel
+                              ? 'bg-sky-500/25 text-sky-200 border border-sky-400/30'
+                              : 'bg-zinc-800/30 text-zinc-400 hover:text-zinc-200 hover:bg-zinc-800/60 border border-transparent'
+                          }`}
+                        >
+                          <span className="truncate">{art.name}</span>
+                          {isArtSel && <span className="w-1.5 h-1.5 rounded-full bg-sky-400"></span>}
+                        </button>
+                      )
+                    })}
+                  </div>
+                )}
               </div>
             )}
           </div>
@@ -519,6 +556,8 @@ export const FlowkeyPlayerView: React.FC<FlowkeyPlayerViewProps> = ({
             expectedNotes={expectedNotes}
             onScreenKeyPress={onScreenKeyPress}
             onTogglePedal={onTogglePedal}
+            showFingers={showHands}
+            wallpaperUrl={yliaWallpaper}
           />
         </div>
       )}

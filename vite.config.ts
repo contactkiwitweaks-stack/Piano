@@ -11,5 +11,8 @@ export default defineConfig({
   server: {
     host: true, // Listen on all network addresses (accessible via iPhone on local Wi-Fi)
     port: 5173,
+    watch: {
+      ignored: ['**/ios/**', '**/dist/**', '**/.git/**', '**/node_modules/**', '**/.gemini/**'],
+    },
   },
 })
