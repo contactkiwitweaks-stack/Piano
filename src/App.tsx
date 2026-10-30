@@ -5,7 +5,6 @@ import { LibraryRepository } from './library/LibraryRepository'
 import { PracticeVariantEngine } from './engine/PracticeVariantEngine'
 import { PianoAudioEngine } from './audio/PianoAudioEngine'
 import { MidiManager } from './midi/MidiManager'
-import { AcousticPitchDetector, type PitchDetectionResult } from './audio/AcousticPitchDetector'
 import { FlowkeyPlayerView } from './components/FlowkeyPlayerView'
 import { FlowkeyHomeView } from './components/FlowkeyHomeView'
 import { FlowkeyTabBar, type TabId } from './components/FlowkeyTabBar'
@@ -24,8 +23,6 @@ import {
   Bluetooth,
   Music2,
   BookOpen,
-  Mic,
-  MicOff,
   X,
   Sliders,
   Flame,
@@ -58,9 +55,8 @@ export function App() {
   const [isLooping, setIsLooping] = useState<boolean>(false)
   const [loopRange, setLoopRange] = useState<[number, number]>([1, 4])
 
-  // Hardware MIDI & Acoustic Microphone State
+  // Hardware MIDI State
   const [midiState, setMidiState] = useState<MidiInputState>(MidiManager.getInstance().getState())
-  const [isMicActive, setIsMicActive] = useState<boolean>(false)
   const [wrongNoteMidi, setWrongNoteMidi] = useState<number | null>(null)
 
   // Metronome & Speed Ramp state
@@ -71,9 +67,8 @@ export function App() {
   const notesHitCountRef = useRef<number>(0)
   const notesWrongCountRef = useRef<number>(0)
 
-  // Real-time input tracking for Wait Mode from all input sources (on-screen keyboard, mic, MIDI)
+  // Real-time input tracking for Wait Mode from all input sources (on-screen keyboard, MIDI)
   const screenActiveNotesRef = useRef<Set<number>>(new Set())
-  const detectedMicNotesRef = useRef<Set<number>>(new Set())
 
   // Modals
   const [isRolandModalOpen, setIsRolandModalOpen] = useState<boolean>(false)
@@ -211,39 +206,6 @@ export function App() {
     }
   }, [triggerWrongNoteAlert])
 
-  // Subscribe to Acoustic Microphone Pitch Detector
-  useEffect(() => {
-    const unsubscribePitch = AcousticPitchDetector.getInstance().subscribe(
-      (result: PitchDetectionResult) => {
-        detectedMicNotesRef.current.add(result.midi)
-        hitWaitNotesRef.current.add(result.midi)
-        setTimeout(() => {
-          detectedMicNotesRef.current.delete(result.midi)
-        }, 350)
-
-        if (activePieceRef.current && activeTabRef.current === 'player') {
-          const curTime = currentTimeRef.current
-          const currentExpected = activePieceRef.current.notes
-            .filter((n) => Math.abs(n.startTime - curTime) < 0.3)
-            .map((n) => n.midi)
-
-          if (currentExpected.includes(result.midi)) {
-            setWrongNoteMidi(null)
-          }
-        }
-      },
-      (detectedMidi: number) => {
-        if (activeTabRef.current === 'player' && isWaitModeRef.current) {
-          triggerWrongNoteAlert(detectedMidi)
-        }
-      }
-    )
-
-    return () => {
-      unsubscribePitch()
-    }
-  }, [triggerWrongNoteAlert])
-
   const handleScreenKeyPress = useCallback((midi: number) => {
     screenActiveNotesRef.current.add(midi)
     hitWaitNotesRef.current.add(midi)
@@ -305,26 +267,13 @@ export function App() {
 
             if (targetChordNotes.length > 0) {
               const expectedMidis = targetChordNotes.map((n) => n.midi)
-              AcousticPitchDetector.getInstance().setExpectedNotes(expectedMidis)
-
-              // Check if all expected midis in this chord have been hit
-              // When practicing acoustically with microphone, monophonic pitch detection cannot resolve simultaneous polyphonic strings;
-              // detecting any note in the chord immediately satisfies the chord!
-              const micHitAny =
-                isMicActive &&
-                expectedMidis.some(
-                  (m) => detectedMicNotesRef.current.has(m) || hitWaitNotesRef.current.has(m)
-                )
-
-              const allHit =
-                micHitAny ||
-                expectedMidis.every(
-                  (m) =>
-                    midiState.activeNotes.has(m) ||
-                    screenActiveNotesRef.current.has(m) ||
-                    detectedMicNotesRef.current.has(m) ||
-                    hitWaitNotesRef.current.has(m)
-                )
+              // Check if all expected midis in this chord have been hit via MIDI or touch keyboard
+              const allHit = expectedMidis.every(
+                (m) =>
+                  midiState.activeNotes.has(m) ||
+                  screenActiveNotesRef.current.has(m) ||
+                  hitWaitNotesRef.current.has(m)
+              )
 
               if (!allHit) {
                 // Wait for student to strike all chord notes!
@@ -486,16 +435,6 @@ export function App() {
     setIsMuted(!isMuted)
   }
 
-  const handleToggleMic = async () => {
-    if (isMicActive) {
-      AcousticPitchDetector.getInstance().stopListening()
-      setIsMicActive(false)
-    } else {
-      const ok = await AcousticPitchDetector.getInstance().startListening()
-      setIsMicActive(ok)
-    }
-  }
-
   const handleHandModeChange = useCallback((mode: 'both' | 'right' | 'left') => {
     setHandMode(mode)
     if (mode === 'right') {
@@ -626,20 +565,6 @@ export function App() {
               <span className="hidden sm:inline">Acoustics</span>
             </button>
 
-            {/* Acoustic Mic */}
-            <button
-              onClick={handleToggleMic}
-              className={`flex items-center gap-1.5 px-3 py-1.5 rounded-xl border text-xs font-semibold transition-all ${
-                isMicActive
-                  ? 'bg-emerald-500/20 border-emerald-500/50 text-emerald-300'
-                  : 'bg-zinc-900 border-white/10 text-zinc-400 hover:text-zinc-200'
-              }`}
-              title="Acoustic Microphone"
-            >
-              {isMicActive ? <Mic className="w-3.5 h-3.5 text-emerald-400 animate-pulse" /> : <MicOff className="w-3.5 h-3.5" />}
-              <span className="hidden sm:inline">Mic</span>
-            </button>
-
             {/* Roland LX-9 Bluetooth Status */}
             <button
               onClick={() => setIsRolandModalOpen(true)}
@@ -685,7 +610,6 @@ export function App() {
             edition={edition}
             language={language}
             isConnectedLX9={midiState.isConnected}
-            isMicActive={isMicActive}
             wrongNoteMidi={wrongNoteMidi}
             expectedNotes={expectedNotes}
             isMetronomeOn={isMetronomeOn}
@@ -704,7 +628,6 @@ export function App() {
             onToggleHands={() => setShowHands(!showHands)}
             onToggleLoop={() => setIsLooping(!isLooping)}
             onLoopRangeChange={setLoopRange}
-            onToggleMic={handleToggleMic}
             onOpenBluetoothModal={() => setIsRolandModalOpen(true)}
             onBackToDiscovery={() => setActiveTab('songs')}
             onScreenKeyPress={handleScreenKeyPress}
@@ -766,8 +689,6 @@ export function App() {
           <div className="flex-1 max-w-4xl mx-auto w-full overflow-hidden">
             <NoteReadingTrainer
               language={language}
-              isMicActive={isMicActive}
-              onToggleMic={handleToggleMic}
             />
           </div>
         </div>

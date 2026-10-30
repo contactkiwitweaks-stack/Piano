@@ -70,8 +70,6 @@
 	<string>Virtuoso connects directly to Bluetooth MIDI digital pianos like the Roland LX-9 for low-latency continuous pedal tracking and key performance.</string>
 	<key>NSBluetoothPeripheralUsageDescription</key>
 	<string>Virtuoso connects to Bluetooth MIDI digital pianos for key and continuous pedal tracking.</string>
-	<key>NSMicrophoneUsageDescription</key>
-	<string>Virtuoso uses the microphone for real-time acoustic pitch detection and wrong-note alerts while practicing on acoustic pianos.</string>
 	<key>UIBackgroundModes</key>
 	<array>
 		<string>audio</string>

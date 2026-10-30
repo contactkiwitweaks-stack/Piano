@@ -1,7 +1,6 @@
 import React, { useState, useEffect, useRef, useCallback, useMemo } from 'react'
 import { PianoAudioEngine } from '../audio/PianoAudioEngine'
 import { MidiManager } from '../midi/MidiManager'
-import { AcousticPitchDetector, type PitchDetectionResult } from '../audio/AcousticPitchDetector'
 import { translations, type LanguageCode } from '../i18n/translations'
 import {
   Zap,
@@ -11,8 +10,6 @@ import {
   RefreshCw,
   Flame,
   Award,
-  Mic,
-  MicOff,
   Music,
   X,
   Target,
@@ -21,8 +18,6 @@ import {
 
 interface NoteReadingTrainerProps {
   language: LanguageCode
-  isMicActive: boolean
-  onToggleMic: () => void
 }
 
 interface NoteTarget {
@@ -128,8 +123,6 @@ const LEVEL_5_NOTES: NoteTarget[] = [
 
 export const NoteReadingTrainer: React.FC<NoteReadingTrainerProps> = ({
   language,
-  isMicActive,
-  onToggleMic,
 }) => {
   const [level, setLevel] = useState<1 | 2 | 3 | 4 | 5>(2)
   const [clefFilter, setClefFilter] = useState<'all' | 'treble' | 'bass'>('all')
@@ -226,15 +219,6 @@ export const NoteReadingTrainer: React.FC<NoteReadingTrainerProps> = ({
       () => {}
     )
     return () => unsub()
-  }, [evaluateNote])
-
-  // Listen to Acoustic Pitch Detector (Mic)
-  useEffect(() => {
-    const unsubPitch = AcousticPitchDetector.getInstance().subscribe(
-      (result: PitchDetectionResult) => evaluateNote(result.midi),
-      () => {}
-    )
-    return () => unsubPitch()
   }, [evaluateNote])
 
   // Staff Geometry Constants
@@ -371,20 +355,6 @@ export const NoteReadingTrainer: React.FC<NoteReadingTrainerProps> = ({
               </button>
             ))}
           </div>
-
-          {/* Acoustic Mic Button */}
-          <button
-            onClick={onToggleMic}
-            className={`flex items-center gap-1 px-2.5 py-1 rounded-xl border text-xs font-medium transition-all ${
-              isMicActive
-                ? 'bg-emerald-500/20 border-emerald-500/50 text-emerald-300'
-                : 'bg-zinc-900 border-zinc-800 text-zinc-400 hover:text-zinc-200'
-            }`}
-            title="Acoustic Mic Pitch Detection"
-          >
-            {isMicActive ? <Mic className="w-3.5 h-3.5 text-emerald-400 animate-pulse" /> : <MicOff className="w-3.5 h-3.5" />}
-            <span className="text-[10px] font-mono">{isMicActive ? 'Mic Active' : 'Mic Off'}</span>
-          </button>
 
           {/* Help Mnemonic Guide */}
           <button

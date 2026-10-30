@@ -13,8 +13,6 @@ import {
   Gauge,
   Eye,
   CheckCircle2,
-  Mic,
-  MicOff,
   BookOpen,
   Volume2,
   Globe,
@@ -30,7 +28,6 @@ interface PracticeLabControlsProps {
   loopRange: [number, number]
   tempoRampEnabled: boolean
   isConnectedLX9: boolean
-  isMicActive: boolean
   mechanicalNoiseEnabled: boolean
   language: LanguageCode
   edition: MasterEditionId
@@ -43,7 +40,6 @@ interface PracticeLabControlsProps {
   onToggleLoop: () => void
   onLoopRangeChange: (range: [number, number]) => void
   onToggleTempoRamp: () => void
-  onToggleMic: () => void
   onToggleMechanicalNoise: () => void
   onLanguageChange: (lang: LanguageCode) => void
   onOpenBluetoothModal: () => void
@@ -61,7 +57,6 @@ export const PracticeLabControls: React.FC<PracticeLabControlsProps> = ({
   loopRange,
   tempoRampEnabled,
   isConnectedLX9,
-  isMicActive,
   mechanicalNoiseEnabled,
   language,
   edition,
@@ -74,7 +69,6 @@ export const PracticeLabControls: React.FC<PracticeLabControlsProps> = ({
   onToggleLoop,
   onLoopRangeChange,
   onToggleTempoRamp,
-  onToggleMic,
   onToggleMechanicalNoise,
   onLanguageChange,
   onOpenBluetoothModal,
@@ -183,19 +177,6 @@ export const PracticeLabControls: React.FC<PracticeLabControlsProps> = ({
             <span className="hidden sm:inline font-mono text-[11px] uppercase">
               {edition}
             </span>
-          </button>
-
-          {/* Acoustic Mic Toggle */}
-          <button
-            onClick={onToggleMic}
-            className={`flex items-center gap-1 px-2 py-1.5 rounded-xl border text-xs font-medium transition-all ${
-              isMicActive
-                ? 'bg-emerald-500/20 border-emerald-500/50 text-emerald-300'
-                : 'bg-zinc-900 border-zinc-800 text-zinc-400 hover:text-zinc-200'
-            }`}
-            title="Acoustic Microphone Pitch Detection"
-          >
-            {isMicActive ? <Mic className="w-3.5 h-3.5 animate-pulse text-emerald-400" /> : <MicOff className="w-3.5 h-3.5" />}
           </button>
 
           {/* Roland LX-9 Bluetooth */}

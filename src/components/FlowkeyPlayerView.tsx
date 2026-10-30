@@ -10,8 +10,6 @@ import {
   RotateCcw,
   Repeat,
   ChevronLeft,
-  Mic,
-  MicOff,
   Bluetooth,
   Hand,
   Layers,
@@ -46,7 +44,6 @@ interface FlowkeyPlayerViewProps {
   edition: MasterEditionId
   language: LanguageCode
   isConnectedLX9: boolean
-  isMicActive: boolean
   wrongNoteMidi: number | null
   expectedNotes?: number[]
   isMetronomeOn?: boolean
@@ -61,7 +58,6 @@ interface FlowkeyPlayerViewProps {
   onToggleHands: () => void
   onToggleLoop: () => void
   onLoopRangeChange: (range: [number, number]) => void
-  onToggleMic: () => void
   onToggleMetronome?: () => void
   onToggleSpeedRamp?: () => void
   onOpenAudioSettings?: () => void
@@ -87,7 +83,6 @@ export const FlowkeyPlayerView: React.FC<FlowkeyPlayerViewProps> = ({
   edition,
   language,
   isConnectedLX9,
-  isMicActive,
   wrongNoteMidi,
   expectedNotes = [],
   isMetronomeOn = false,
@@ -102,7 +97,6 @@ export const FlowkeyPlayerView: React.FC<FlowkeyPlayerViewProps> = ({
   onToggleHands,
   onToggleLoop,
   onLoopRangeChange,
-  onToggleMic,
   onToggleMetronome,
   onToggleSpeedRamp,
   onOpenAudioSettings,
@@ -462,19 +456,6 @@ export const FlowkeyPlayerView: React.FC<FlowkeyPlayerViewProps> = ({
             <span className="font-mono text-[10px] hidden sm:inline">
               {isConnectedLX9 ? `LX-9` : 'Roland'}
             </span>
-          </button>
-
-          {/* Acoustic Mic */}
-          <button
-            onClick={onToggleMic}
-            className={`w-8 h-8 rounded-xl border flex items-center justify-center transition-all ${
-              isMicActive
-                ? 'bg-emerald-500/20 border-emerald-500/50 text-emerald-300'
-                : 'bg-zinc-900 border-white/10 text-zinc-400 hover:text-zinc-200'
-            }`}
-            title="Acoustic Microphone"
-          >
-            {isMicActive ? <Mic className="w-3.5 h-3.5 text-emerald-400 animate-pulse" /> : <MicOff className="w-3.5 h-3.5" />}
           </button>
 
           {/* Mobile Quick Settings Trigger (iPhone) */}
