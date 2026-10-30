@@ -131,7 +131,7 @@ export const FlowkeyPlayerView: React.FC<FlowkeyPlayerViewProps> = ({
   return (
     <div className="w-full h-full flex flex-col bg-[#07070b] text-zinc-100 select-none overflow-hidden relative font-sans">
       {/* 1. TOP PREMIUM PLAYER HEADER BAR */}
-      <header className="h-[calc(3rem+var(--sat))] pt-[var(--sat)] bg-zinc-950/90 backdrop-blur-xl border-b border-white/[0.08] px-3 sm:px-6 flex items-center justify-between z-30 flex-shrink-0 shadow-md">
+      <header className="h-[calc(3rem+var(--sat))] landscape:h-11 pt-[var(--sat)] landscape:pt-0 bg-zinc-950/90 backdrop-blur-xl border-b border-white/[0.08] px-3 sm:px-6 pl-[max(0.75rem,env(safe-area-inset-left))] pr-[max(0.75rem,env(safe-area-inset-right))] flex items-center justify-between z-30 flex-shrink-0 shadow-md">
         {/* Left: Back Button & Piece Info */}
         <div className="flex items-center gap-3 min-w-0">
           <button
@@ -684,7 +684,7 @@ export const FlowkeyPlayerView: React.FC<FlowkeyPlayerViewProps> = ({
         <div
           className={`relative overflow-hidden ${
             viewLayout === 'keyboard' ? 'flex-1 min-h-0' : 'flex-1 min-h-0 basis-3/5'
-          } ${theme === 'light' ? 'bg-[#f8fafc]' : 'bg-[#080c1e]'}`}
+          } ${theme === 'light' ? 'bg-[#f8fafc]' : 'bg-[#080c1e]'} pl-[max(0.25rem,env(safe-area-inset-left))] pr-[max(0.25rem,env(safe-area-inset-right))]`}
         >
           <FallingKeysCanvas
             piece={piece}
@@ -705,10 +705,10 @@ export const FlowkeyPlayerView: React.FC<FlowkeyPlayerViewProps> = ({
         </div>
       )}
 
-      {/* 3. CENTER REDESIGNED PRACTICE COCKPIT (RESPONSIVE DUAL-TIER ON MOBILE IPHONE) */}
-      <div className="bg-zinc-950/95 backdrop-blur-2xl border-y border-white/[0.08] px-3 sm:px-6 py-2 sm:py-0 sm:h-14 flex flex-col sm:flex-row items-center justify-between gap-2 z-20 flex-shrink-0 shadow-lg">
-        {/* Tier 1 on Mobile: Hands + Auxiliary Toggles (Fingers & Loop) */}
-        <div className="flex items-center justify-between w-full sm:w-auto gap-2">
+      {/* 3. CENTER REDESIGNED PRACTICE COCKPIT (RESPONSIVE DUAL-TIER ON MOBILE IPHONE PORTRAIT, SLEEK SINGLE-ROW IN LANDSCAPE) */}
+      <div className="bg-zinc-950/95 backdrop-blur-2xl border-y border-white/[0.08] px-3 sm:px-6 py-1.5 sm:py-0 sm:h-14 landscape:h-11 landscape:py-0 flex flex-col sm:flex-row landscape:flex-row items-center justify-between gap-1.5 sm:gap-2 z-20 flex-shrink-0 shadow-lg pl-[max(0.75rem,env(safe-area-inset-left))] pr-[max(0.75rem,env(safe-area-inset-right))]">
+        {/* Tier 1 on Mobile Portrait: Hands + Auxiliary Toggles (Fingers & Loop) */}
+        <div className="flex items-center justify-between w-full sm:w-auto landscape:w-auto gap-2">
           {/* Hand Practice Segmented Control (Both, RH Cyan, LH Pink) */}
           <div className="flex items-center gap-1 bg-zinc-900 border border-white/10 rounded-2xl p-1 shadow-inner flex-shrink-0">
             <button
@@ -779,26 +779,26 @@ export const FlowkeyPlayerView: React.FC<FlowkeyPlayerViewProps> = ({
         </div>
 
         {/* Tier 2: Main Transport (Rewind, Play, Wait Mode, Speed) */}
-        <div className="flex items-center justify-center gap-2.5 sm:gap-4 w-full sm:w-auto">
+        <div className="flex items-center justify-center gap-2 sm:gap-4 landscape:gap-2.5 w-full sm:w-auto landscape:w-auto">
           {/* Rewind */}
           <button
             onClick={onRewind}
-            className="w-10 h-10 rounded-full bg-zinc-900 hover:bg-zinc-800 border border-white/10 flex items-center justify-center text-zinc-400 hover:text-white transition-all active:scale-95 shadow-md flex-shrink-0"
+            className="w-9 h-9 sm:w-10 sm:h-10 landscape:w-8 landscape:h-8 rounded-full bg-zinc-900 hover:bg-zinc-800 border border-white/10 flex items-center justify-center text-zinc-400 hover:text-white transition-all active:scale-95 shadow-md flex-shrink-0"
             title="Rewind to Beginning"
           >
-            <RotateCcw className="w-4 h-4" />
+            <RotateCcw className="w-3.5 h-3.5 sm:w-4 sm:h-4" />
           </button>
 
           {/* Central Vibrantly Glowing Play/Pause Button */}
           <button
             onClick={onTogglePlay}
-            className="w-12 h-12 sm:w-13 sm:h-13 rounded-full bg-gradient-to-tr from-orange-600 via-orange-500 to-amber-500 hover:from-orange-500 hover:to-amber-400 text-white flex items-center justify-center shadow-[0_0_24px_rgba(249,115,22,0.65)] active:scale-95 transition-all p-3 flex-shrink-0"
+            className="w-11 h-11 sm:w-13 sm:h-13 landscape:w-9 landscape:h-9 rounded-full bg-gradient-to-tr from-orange-600 via-orange-500 to-amber-500 hover:from-orange-500 hover:to-amber-400 text-white flex items-center justify-center shadow-[0_0_24px_rgba(249,115,22,0.65)] active:scale-95 transition-all p-2.5 sm:p-3 landscape:p-2 flex-shrink-0"
             title={isPlaying ? 'Pause' : 'Play'}
           >
             {isPlaying ? (
-              <Pause className="w-6 h-6 fill-current" />
+              <Pause className="w-5 h-5 sm:w-6 sm:h-6 landscape:w-4 landscape:h-4 fill-current" />
             ) : (
-              <Play className="w-6 h-6 fill-current ml-0.5" />
+              <Play className="w-5 h-5 sm:w-6 sm:h-6 landscape:w-4 landscape:h-4 fill-current ml-0.5" />
             )}
           </button>
 

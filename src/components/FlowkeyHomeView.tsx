@@ -294,7 +294,7 @@ export const FlowkeyHomeView: React.FC<FlowkeyHomeViewProps> = ({
   // MY SONGS TAB VIEW
   if (viewTab === 'mySongs') {
     return (
-      <div className="w-full h-full bg-[#0a0a0f] text-zinc-100 overflow-y-auto select-none px-4 sm:px-8 py-6 space-y-8 max-w-7xl mx-auto scrollbar-thin scrollbar-thumb-zinc-800 pb-28">
+      <div className="w-full h-full bg-[#0a0a0f] text-zinc-100 overflow-y-auto select-none px-4 sm:px-8 pl-[max(1rem,env(safe-area-inset-left))] pr-[max(1rem,env(safe-area-inset-right))] py-6 space-y-8 max-w-7xl mx-auto scrollbar-thin scrollbar-thumb-zinc-800 pb-[max(7rem,calc(env(safe-area-inset-bottom)+5rem))]">
         <div className="space-y-1">
           <h1 className="text-2xl sm:text-3xl font-extrabold text-white tracking-tight flex items-center gap-2.5">
             <Bookmark className="w-7 h-7 text-orange-500" />
@@ -416,7 +416,7 @@ export const FlowkeyHomeView: React.FC<FlowkeyHomeViewProps> = ({
   const isBrowsingAll = selectedGenre === 'all' && searchQuery.trim().length === 0 && viewTab !== 'search'
 
   return (
-    <div className="w-full h-full bg-[#0a0a0f] text-zinc-100 overflow-y-auto select-none px-4 sm:px-8 py-6 space-y-8 max-w-7xl mx-auto scrollbar-thin scrollbar-thumb-zinc-800 pb-28">
+    <div className="w-full h-full bg-[#0a0a0f] text-zinc-100 overflow-y-auto select-none px-4 sm:px-8 pl-[max(1rem,env(safe-area-inset-left))] pr-[max(1rem,env(safe-area-inset-right))] py-6 space-y-8 max-w-7xl mx-auto scrollbar-thin scrollbar-thumb-zinc-800 pb-[max(7rem,calc(env(safe-area-inset-bottom)+5rem))]">
       {/* Search Bar */}
       <div className="space-y-3">
         <div className="relative">

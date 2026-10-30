@@ -109,7 +109,7 @@ export const CoursesView: React.FC<CoursesViewProps> = ({
       selectedCourse.lessons.find((l) => l.progressPercent < 100) || selectedCourse.lessons[0]
 
     return (
-      <div className="w-full h-full bg-[#0a0a0f] text-zinc-100 flex flex-col overflow-y-auto select-none px-4 sm:px-8 py-6 max-w-5xl mx-auto">
+      <div className="w-full h-full bg-[#0a0a0f] text-zinc-100 flex flex-col overflow-y-auto select-none px-4 sm:px-8 pl-[max(1rem,env(safe-area-inset-left))] pr-[max(1rem,env(safe-area-inset-right))] py-6 max-w-5xl mx-auto pb-[max(7rem,calc(env(safe-area-inset-bottom)+5rem))]">
         {/* Back to Courses Button */}
         <button
           onClick={() => setSelectedCourse(null)}
@@ -252,7 +252,7 @@ export const CoursesView: React.FC<CoursesViewProps> = ({
 
   // All Courses Overview (Flowkey Screenshot 5)
   return (
-    <div className="w-full h-full bg-[#0a0a0f] text-zinc-100 overflow-y-auto select-none px-4 sm:px-8 py-6 space-y-10 max-w-6xl mx-auto scrollbar-thin scrollbar-thumb-zinc-800">
+    <div className="w-full h-full bg-[#0a0a0f] text-zinc-100 overflow-y-auto select-none px-4 sm:px-8 pl-[max(1rem,env(safe-area-inset-left))] pr-[max(1rem,env(safe-area-inset-right))] py-6 space-y-10 max-w-6xl mx-auto scrollbar-thin scrollbar-thumb-zinc-800 pb-[max(7rem,calc(env(safe-area-inset-bottom)+5rem))]">
       {/* Header Banner */}
       <div className="space-y-1">
         <h1 className="text-2xl sm:text-3xl font-extrabold text-white tracking-tight">

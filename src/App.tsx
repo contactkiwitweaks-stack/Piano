@@ -500,10 +500,10 @@ export function App() {
   }
 
   return (
-    <div className="w-screen h-screen flex flex-col bg-[#09090d] text-zinc-100 overflow-hidden font-sans select-none relative">
+    <div className="w-full h-full min-h-[100dvh] max-h-[100dvh] flex flex-col bg-[#09090d] text-zinc-100 overflow-hidden font-sans select-none relative">
       {/* Top Header Bar (Only visible outside the Player view) */}
       {activeTab !== 'player' && (
-        <header className="min-h-14 bg-zinc-950/90 backdrop-blur-xl border-b border-white/[0.08] px-4 sm:px-8 flex items-center justify-between z-30 select-none pt-[var(--sat)] shadow-md">
+        <header className="min-h-14 bg-zinc-950/90 backdrop-blur-xl border-b border-white/[0.08] px-4 sm:px-8 pl-[max(1rem,env(safe-area-inset-left))] pr-[max(1rem,env(safe-area-inset-right))] flex items-center justify-between z-30 select-none pt-[var(--sat)] shadow-md">
           {/* Logo */}
           <div
             onClick={() => setActiveTab('songs')}

@@ -125,7 +125,7 @@ export const LibraryModal: React.FC<LibraryModalProps> = ({
                     <div>
                       <h4 className="text-xs font-bold text-zinc-100">{piece.title}</h4>
                       <p className="text-[10px] text-zinc-400">
-                        {piece.composer} • {piece.opus}
+                        {piece.composer}
                       </p>
                     </div>
                   </div>

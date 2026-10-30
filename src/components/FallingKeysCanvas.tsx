@@ -402,28 +402,7 @@ export const FallingKeysCanvas = React.memo<FallingKeysCanvasProps>(({
       })
 
       // -------------------------------------------------------------
-      // 3. CENTER PIECE TITLE & ANIME SUBTITLE OVERLAY (Matching Screenshot)
-      // -------------------------------------------------------------
-      ctx.save()
-      const titleCenterY = keyboardY - 70
-      if (titleCenterY > 60) {
-        ctx.textAlign = 'center'
-        // Main Title (e.g. "Ballade No. 1 in G minor")
-        ctx.font = 'bold 13px sans-serif'
-        ctx.fillStyle = curTheme === 'light' ? 'rgba(30, 41, 59, 0.85)' : '#ffffff'
-        ctx.shadowColor = curTheme === 'light' ? 'rgba(255, 255, 255, 0.8)' : 'rgba(0, 0, 0, 0.9)'
-        ctx.shadowBlur = 8
-        ctx.fillText(piece.title, width / 2, titleCenterY)
-
-        // Subtitle: ALWAYS THE COMPOSER (e.g. "Frédéric Chopin", "Ludwig van Beethoven")
-        ctx.font = '600 11px sans-serif'
-        ctx.fillStyle = curTheme === 'ylia' ? '#7dd3fc' : curTheme === 'light' ? '#64748b' : '#fbbf24'
-        ctx.fillText(piece.composer, width / 2, titleCenterY + 16)
-      }
-      ctx.restore()
-
-      // -------------------------------------------------------------
-      // 4. SUBTLE VERTICAL KEY LANE GUIDES
+      // 3. SUBTLE VERTICAL KEY LANE GUIDES
       // -------------------------------------------------------------
       ctx.strokeStyle = curTheme === 'light' ? 'rgba(0, 0, 0, 0.03)' : 'rgba(255, 255, 255, 0.04)'
       ctx.lineWidth = 1
@@ -495,7 +474,7 @@ export const FallingKeysCanvas = React.memo<FallingKeysCanvasProps>(({
         // Accurate linear note height: ensures notes never jump or "extend" upon striking the keyboard!
         const start = note.startTime
         const end = note.startTime + note.duration
-        const noteHeight = Math.max(14, note.duration * pixelsPerSecond)
+        const fullNoteHeight = Math.max(12, note.duration * pixelsPerSecond)
 
         let bottomY = 0
         let topY = 0
@@ -505,14 +484,15 @@ export const FallingKeysCanvas = React.memo<FallingKeysCanvasProps>(({
           // 1. Approaching: Note falls downward at constant speed
           const timeUntilHit = start - curTime
           bottomY = keyboardY - timeUntilHit * pixelsPerSecond
-          topY = bottomY - noteHeight
-          noteLengthPx = noteHeight
+          topY = bottomY - fullNoteHeight
+          noteLengthPx = fullNoteHeight
         } else if (curTime <= end) {
-          // 2. Active Strike: Bottom rests precisely at the strike line while top smoothly descends
+          // 2. Active Strike: Bottom rests precisely at the strike line while top smoothly descends linearly
           bottomY = keyboardY
-          const remainingTime = end - curTime
-          topY = keyboardY - Math.max(4, remainingTime * pixelsPerSecond)
-          noteLengthPx = Math.max(4, bottomY - topY)
+          const duration = Math.max(0.001, end - start)
+          const remainingRatio = Math.max(0, (end - curTime) / duration)
+          noteLengthPx = Math.max(3, fullNoteHeight * remainingRatio)
+          topY = keyboardY - noteLengthPx
         } else {
           // 3. Finished note
           return
@@ -587,7 +567,8 @@ export const FallingKeysCanvas = React.memo<FallingKeysCanvasProps>(({
         // -------------------------------------------------------------
         if (noteW >= 3.0 && noteLengthPx >= 10 && bottomY > 0 && topY < keyboardY) {
           const noteLetter = note.noteName.replace(/[0-9]/g, '')
-          const fingerDigit = note.finger || (note.hand === 'left' ? 5 : 1)
+          const rawFinger = note.finger ? Number(note.finger) : (note.hand === 'left' ? 5 : 1)
+          const fingerDigit = Math.max(1, Math.min(5, Math.round(rawFinger) || 1))
           const isNarrow = noteW < 14
           const isShort = noteLengthPx < 28
 
