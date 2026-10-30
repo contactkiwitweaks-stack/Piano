@@ -279,14 +279,13 @@ export const FlowkeyHomeView: React.FC<FlowkeyHomeViewProps> = ({
           </div>
         </div>
 
-        <div className="space-y-1">
+        <div className="space-y-0.5">
           <h3 className="font-bold text-sm sm:text-base text-zinc-100 group-hover:text-amber-400 transition-colors truncate">
             {pieceItem.title}
           </h3>
-          <div className="flex items-center justify-between text-xs text-zinc-400">
-            <span className="truncate">{pieceItem.composer}</span>
-            <span className="text-[11px] font-mono text-zinc-500 flex-shrink-0 ml-2">{pieceItem.opus}</span>
-          </div>
+          <p className="text-xs text-zinc-400 truncate">
+            {pieceItem.composer}
+          </p>
         </div>
       </div>
     )

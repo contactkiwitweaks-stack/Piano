@@ -167,8 +167,8 @@ export class MidiManager {
   }
 
   /**
-   * Connects via Web Bluetooth (BLE MIDI) directly to Roland LX-9
-   * Compatible with Bluefy, WebBLE, Chrome, and Edge on iOS/iPadOS/macOS/Windows/Android
+   * Connects via Web Bluetooth (BLE MIDI) directly to digital pianos
+   * Compatible with Bluefy, WebBLE, Chrome, Edge, and iOS WebKit Bluetooth bridges
    */
   public async connectBluetoothMidi(): Promise<boolean> {
     const nav = navigator as unknown as {
@@ -176,7 +176,7 @@ export class MidiManager {
       requestMIDIAccess?: (opt: { sysex: boolean }) => Promise<GenericMidiAccess>
     }
     if (!nav.bluetooth) {
-      console.warn('Web Bluetooth API is not available natively on this browser. Bridging to Web MIDI for system-paired Bluetooth digital pianos...')
+      console.warn('Web Bluetooth API is not available natively in Mobile Safari. Bridging to Web MIDI if supported...')
       if (nav.requestMIDIAccess) {
         return await this.connectWebMidi()
       }
@@ -184,33 +184,52 @@ export class MidiManager {
     }
 
     try {
-      // 1. First attempt: acceptAllDevices discovers Roland LX-9 even if 128-bit UUID is omitted in the 31-byte advertising packet
+      const lowerUuid = BLE_MIDI_SERVICE_UUID.toLowerCase()
+      const upperUuid = BLE_MIDI_SERVICE_UUID.toUpperCase()
+
+      // Bluefy / WebBLE on iOS: standard BLE MIDI service filter
       try {
         this.bleDevice = await nav.bluetooth.requestDevice({
-          acceptAllDevices: true,
-          optionalServices: [BLE_MIDI_SERVICE_UUID],
+          filters: [{ services: [lowerUuid] }],
+          optionalServices: [lowerUuid, upperUuid],
         })
       } catch (err: unknown) {
         const errMsg = (err as Error)?.message || ''
         if (errMsg.toLowerCase().includes('cancel') || errMsg.toLowerCase().includes('abort')) {
           return false
         }
-        // Fallback filter for browsers requiring explicit namePrefix/service filters
-        this.bleDevice = await nav.bluetooth.requestDevice({
-          filters: [
-            { services: [BLE_MIDI_SERVICE_UUID] },
-            { namePrefix: 'Roland' },
-            { namePrefix: 'LX' },
-          ],
-          optionalServices: [BLE_MIDI_SERVICE_UUID],
-        })
+        // Fallback 1: Uppercase UUID for older WebBLE wrappers
+        try {
+          this.bleDevice = await nav.bluetooth.requestDevice({
+            filters: [{ services: [upperUuid] }],
+            optionalServices: [lowerUuid, upperUuid],
+          })
+        } catch {
+          // Fallback 2: acceptAllDevices with optionalServices
+          this.bleDevice = await nav.bluetooth.requestDevice({
+            acceptAllDevices: true,
+            optionalServices: [lowerUuid, upperUuid],
+          })
+        }
       }
 
       if (!this.bleDevice || !this.bleDevice.gatt) return false
 
       const server = await this.bleDevice.gatt.connect()
-      const service = await server.getPrimaryService(BLE_MIDI_SERVICE_UUID)
-      this.bleCharacteristic = await service.getCharacteristic(BLE_MIDI_CHARACTERISTIC_UUID)
+      let service: GenericGattService
+      try {
+        service = await server.getPrimaryService(lowerUuid)
+      } catch {
+        service = await server.getPrimaryService(upperUuid)
+      }
+
+      let characteristic: GenericGattCharacteristic
+      try {
+        characteristic = await service.getCharacteristic(BLE_MIDI_CHARACTERISTIC_UUID.toLowerCase())
+      } catch {
+        characteristic = await service.getCharacteristic(BLE_MIDI_CHARACTERISTIC_UUID.toUpperCase())
+      }
+      this.bleCharacteristic = characteristic
 
       await this.bleCharacteristic.startNotifications()
       const onValChanged = (event: Event) => {
@@ -223,21 +242,22 @@ export class MidiManager {
       this.bleCharacteristic.addEventListener('characteristicvaluechanged', onValChanged)
       ;(this.bleCharacteristic as unknown as { oncharacteristicvaluechanged?: (event: Event) => void }).oncharacteristicvaluechanged = onValChanged
 
-      this.state.deviceName = this.bleDevice.name || 'Roland LX-9 (Bluetooth)'
+      this.state.deviceName = this.bleDevice.name || 'Bluetooth Digital Piano'
       this.state.isConnected = true
       this.state.connectionType = 'ble'
       this.notifyState()
 
       return true
     } catch (err) {
-      console.error('Failed to connect Roland LX-9 over BLE:', err)
+      console.error('Failed to connect Bluetooth MIDI:', err)
       return false
     }
   }
 
   /**
-   * Parses Apple/Roland BLE MIDI protocol packet
-   * Correctly handles timestamp headers, running status, and multi-note packets
+   * Parses Apple/Standard BLE MIDI protocol packet
+   * Correctly ignores Real-Time Active Sensing (0xFE) and Timing Clock (0xF8)
+   * without corrupting running status.
    */
   private parseBleMidiPacket(dataView: DataView) {
     if (dataView.byteLength < 3) return
@@ -248,18 +268,30 @@ export class MidiManager {
     while (i < len) {
       const b = dataView.getUint8(i++)
 
-      // If byte has MSB set, it's either a timestamp low byte (0x80-0xFF) or a status byte
+      // System Real-Time messages (0xF8 - 0xFF, e.g. 0xFE Active Sensing from Roland/Yamaha)
+      // Must be handled/ignored WITHOUT altering runningStatus!
+      if (b >= 0xf8) {
+        continue
+      }
+
+      // If byte has MSB set (0x80 - 0xF7): either timestamp low or status byte
       if ((b & 0x80) !== 0) {
         if (i < len) {
           const next = dataView.getUint8(i)
-          if ((next & 0x80) !== 0) {
-            // Both current and next have MSB set: b was timestamp low, next is status byte!
-            runningStatus = dataView.getUint8(i++)
+          if (next >= 0xf8) {
+            i++ // Skip interleaved real-time byte
+            continue
           }
-          // If next had MSB 0, b was timestamp low and next is data1 under existing runningStatus!
+          if ((next & 0x80) !== 0) {
+            // b was timestamp low, next is status byte!
+            runningStatus = dataView.getUint8(i++)
+          } else {
+            // b was status byte, next is data byte!
+            runningStatus = b
+          }
         }
       } else {
-        // b has MSB 0: this is data1 under running status! Step back 1 byte so data extraction reads it
+        // b has MSB 0: this is data1 under existing runningStatus
         i--
       }
 

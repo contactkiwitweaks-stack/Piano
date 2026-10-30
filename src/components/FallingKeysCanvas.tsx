@@ -408,25 +408,17 @@ export const FallingKeysCanvas = React.memo<FallingKeysCanvasProps>(({
       const titleCenterY = keyboardY - 70
       if (titleCenterY > 60) {
         ctx.textAlign = 'center'
-        // Main Title (e.g. "Ballade No.1, Op.23 (Chopin)")
+        // Main Title (e.g. "Ballade No. 1 in G minor")
         ctx.font = 'bold 13px sans-serif'
         ctx.fillStyle = curTheme === 'light' ? 'rgba(30, 41, 59, 0.85)' : '#ffffff'
         ctx.shadowColor = curTheme === 'light' ? 'rgba(255, 255, 255, 0.8)' : 'rgba(0, 0, 0, 0.9)'
         ctx.shadowBlur = 8
-        ctx.fillText(
-          `${piece.title}${piece.opus ? ` (${piece.opus})` : ''}`,
-          width / 2,
-          titleCenterY
-        )
+        ctx.fillText(piece.title, width / 2, titleCenterY)
 
-        // Subtitle (e.g. "Your Lie in April" or Composer)
+        // Subtitle: ALWAYS THE COMPOSER (e.g. "Frédéric Chopin", "Ludwig van Beethoven")
         ctx.font = '600 11px sans-serif'
         ctx.fillStyle = curTheme === 'ylia' ? '#7dd3fc' : curTheme === 'light' ? '#64748b' : '#fbbf24'
-        ctx.fillText(
-          curTheme === 'ylia' ? 'Your Lie in April' : piece.composer,
-          width / 2,
-          titleCenterY + 16
-        )
+        ctx.fillText(piece.composer, width / 2, titleCenterY + 16)
       }
       ctx.restore()
 
