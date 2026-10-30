@@ -898,12 +898,15 @@ export const FallingKeysCanvas = React.memo<FallingKeysCanvasProps>(({
     const canvas = canvasRef.current
     if (!canvas) return null
     const rect = canvas.getBoundingClientRect()
-    const x = clientX - rect.left
-    const y = clientY - rect.top
+    if (!rect.width || !rect.height) return null
 
     const dpr = window.devicePixelRatio || 1
     const width = canvas.width / dpr
     const height = canvas.height / dpr
+
+    // Exact normalized coordinates within canvas logical dimensions
+    const x = ((clientX - rect.left) / rect.width) * width
+    const y = ((clientY - rect.top) / rect.height) * height
 
     const whiteKeyWidth = width / totalWhite
     const blackKeyWidth = whiteKeyWidth * 0.64
@@ -920,35 +923,25 @@ export const FallingKeysCanvas = React.memo<FallingKeysCanvasProps>(({
       return { type: 'pedal' }
     }
 
-    // If clicked above keyboard (in falling notes highway), check if tapping in key lane
-    if (y < keyboardY) {
+    // Only allow strikes on keyboard or immediate strike zone (within 24px above keyboardY)
+    if (y < keyboardY - 24) {
+      return null
+    }
+
+    // Check black keys first (only in the upper portion where black keys exist)
+    if (y <= keyboardY + blackKeyHeight) {
       for (const bk of blackKeys) {
         const bx = (bk.whiteIndexBefore + 1) * whiteKeyWidth - blackKeyWidth / 2
         if (x >= bx && x <= bx + blackKeyWidth) {
           return { type: 'key', midi: bk.midi }
         }
       }
-      for (const wk of whiteKeys) {
-        const wx = wk.index * whiteKeyWidth
-        if (x >= wx && x <= wx + whiteKeyWidth) {
-          return { type: 'key', midi: wk.midi }
-        }
-      }
-      return null
     }
 
-    // Check black keys first
-    for (const bk of blackKeys) {
-      const bx = (bk.whiteIndexBefore + 1) * whiteKeyWidth - blackKeyWidth / 2
-      if (x >= bx && x <= bx + blackKeyWidth && y >= keyboardY && y <= keyboardY + blackKeyHeight) {
-        return { type: 'key', midi: bk.midi }
-      }
-    }
-
-    // Check white keys
+    // Check white keys (span full width of their index)
     for (const wk of whiteKeys) {
       const wx = wk.index * whiteKeyWidth
-      if (x >= wx && x <= wx + whiteKeyWidth && y >= keyboardY && y <= height) {
+      if (x >= wx && x <= wx + whiteKeyWidth) {
         return { type: 'key', midi: wk.midi }
       }
     }

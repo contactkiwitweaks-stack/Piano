@@ -69,6 +69,7 @@ export function App() {
 
   // Real-time input tracking for Wait Mode from all input sources (on-screen keyboard, MIDI)
   const screenActiveNotesRef = useRef<Set<number>>(new Set())
+  const expectedWaitMidisRef = useRef<number[]>([])
 
   // Modals
   const [isRolandModalOpen, setIsRolandModalOpen] = useState<boolean>(false)
@@ -121,6 +122,7 @@ export function App() {
     currentTimeRef.current = targetTime
     PianoAudioEngine.getInstance().stopAllVoices()
     hitWaitNotesRef.current.clear()
+    expectedWaitMidisRef.current = []
     lastMetronomeBeatRef.current = -1
     let idx = 0
     while (idx < notes.length && notes[idx].startTime < targetTime) {
@@ -132,8 +134,11 @@ export function App() {
   // Calculate upcoming expected notes for Wait-for-Note Mode target highlight
   const expectedNotes = useMemo<number[]>(() => {
     if (!isWaitMode || !activePiece) return []
+    if (expectedWaitMidisRef.current.length > 0) {
+      return [...expectedWaitMidisRef.current]
+    }
     const notesAtCurrentTime = activePiece.notes.filter(
-      (n) => n.startTime >= currentTime - 0.05 && n.startTime <= currentTime + 0.12
+      (n) => n.startTime >= currentTime - 0.08 && n.startTime <= currentTime + 0.18
     )
     const filteredByHand = notesAtCurrentTime.filter((n) => {
       if (handMode === 'right') return n.hand === 'right'
@@ -178,10 +183,7 @@ export function App() {
         hitWaitNotesRef.current.add(midi)
 
         if (activePieceRef.current && activeTabRef.current === 'player' && isWaitModeRef.current) {
-          const curTime = currentTimeRef.current
-          const currentExpected = activePieceRef.current.notes
-            .filter((n) => Math.abs(n.startTime - curTime) < 0.25)
-            .map((n) => n.midi)
+          const currentExpected = expectedWaitMidisRef.current
           if (currentExpected.length > 0 && !currentExpected.includes(midi)) {
             triggerWrongNoteAlert(midi)
           }
@@ -209,10 +211,18 @@ export function App() {
   const handleScreenKeyPress = useCallback((midi: number) => {
     screenActiveNotesRef.current.add(midi)
     hitWaitNotesRef.current.add(midi)
+
+    if (activePieceRef.current && activeTabRef.current === 'player' && isWaitModeRef.current) {
+      const currentExpected = expectedWaitMidisRef.current
+      if (currentExpected.length > 0 && !currentExpected.includes(midi)) {
+        triggerWrongNoteAlert(midi)
+      }
+    }
+
     setTimeout(() => {
       screenActiveNotesRef.current.delete(midi)
     }, 280)
-  }, [])
+  }, [triggerWrongNoteAlert])
 
   const handleTogglePedal = useCallback(() => {
     const curDepth = manualPedalDepthRef.current
@@ -267,6 +277,7 @@ export function App() {
 
             if (targetChordNotes.length > 0) {
               const expectedMidis = targetChordNotes.map((n) => n.midi)
+              expectedWaitMidisRef.current = expectedMidis
               // Check if all expected midis in this chord have been hit via MIDI or touch keyboard
               const allHit = expectedMidis.every(
                 (m) =>
@@ -287,6 +298,7 @@ export function App() {
                 setAccuracyPercent(Math.max(0, Math.min(100, Math.round((notesHitCountRef.current / total) * 100))))
               }
               hitWaitNotesRef.current.clear()
+              expectedWaitMidisRef.current = []
 
               // CRITICAL: Advance time & index past this chord so we never get trapped waiting for the same chord twice!
               nextTime = Math.max(nextTime, upcomingLeader.startTime + 0.005)

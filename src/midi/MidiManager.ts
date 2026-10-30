@@ -77,6 +77,16 @@ export class MidiManager {
           this.processRawMidiMessage(new Uint8Array(customEv.detail.data))
         }
       })
+
+      window.addEventListener('nativeMidiDeviceConnected', (e: Event) => {
+        const customEv = e as CustomEvent<{ name: string }>
+        if (customEv.detail && customEv.detail.name) {
+          this.state.deviceName = customEv.detail.name
+          this.state.isConnected = true
+          this.state.connectionType = 'usb'
+          this.notifyState()
+        }
+      })
     }
   }
 
@@ -319,42 +329,60 @@ export class MidiManager {
   }
 
   /**
-   * Processes standard 3-byte MIDI message
+   * Processes raw MIDI messages (handles single messages, continuous buffers, and chords)
    */
   public processRawMidiMessage(data: Uint8Array) {
-    const status = data[0]
-    const command = status & 0xf0
-    const note = data[1]
-    const velocity = data[2]
+    if (!data || data.length === 0) return
+    let i = 0
+    let hasChanged = false
 
-    if (command === 0x90) {
-      if (velocity > 0) {
-        this.state.activeNotes.set(note, { velocity, timestamp: performance.now() })
-        this.noteOnListeners.forEach((cb) => cb(note, velocity))
+    while (i < data.length) {
+      const status = data[i]
+      if ((status & 0x80) !== 0) {
+        const command = status & 0xf0
+        const note = data[i + 1] ?? 0
+        const velocity = data[i + 2] ?? 0
+
+        if (command === 0x90) {
+          if (velocity > 0) {
+            this.state.activeNotes.set(note, { velocity, timestamp: performance.now() })
+            this.noteOnListeners.forEach((cb) => cb(note, velocity))
+          } else {
+            this.state.activeNotes.delete(note)
+            this.noteOffListeners.forEach((cb) => cb(note))
+          }
+          hasChanged = true
+          i += 3
+        } else if (command === 0x80) {
+          this.state.activeNotes.delete(note)
+          this.noteOffListeners.forEach((cb) => cb(note))
+          hasChanged = true
+          i += 3
+        } else if (command === 0xb0) {
+          const controller = note
+          const value = velocity
+          if (controller === 64) {
+            this.state.damperPedal = value
+            this.pedalListeners.forEach((cb) => cb(value))
+          } else if (controller === 67) {
+            this.state.softPedal = value
+          } else if (controller === 66) {
+            this.state.sostenutoPedal = value
+          }
+          hasChanged = true
+          i += 3
+        } else if (command === 0xc0 || command === 0xd0) {
+          i += 2
+        } else {
+          i += 3
+        }
       } else {
-        this.state.activeNotes.delete(note)
-        this.noteOffListeners.forEach((cb) => cb(note))
+        i++
       }
-      this.notifyState()
-    } else if (command === 0x80) {
-      this.state.activeNotes.delete(note)
-      this.noteOffListeners.forEach((cb) => cb(note))
-      this.notifyState()
-    } else if (command === 0xb0) {
-      const controller = note
-      const value = velocity
+    }
 
-      if (controller === 64) {
-        this.state.damperPedal = value
-        this.pedalListeners.forEach((cb) => cb(value))
-        this.notifyState()
-      } else if (controller === 67) {
-        this.state.softPedal = value
-        this.notifyState()
-      } else if (controller === 66) {
-        this.state.sostenutoPedal = value
-        this.notifyState()
-      }
+    if (hasChanged) {
+      this.notifyState()
     }
   }
 

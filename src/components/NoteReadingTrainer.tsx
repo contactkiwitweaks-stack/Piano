@@ -554,7 +554,7 @@ export const NoteReadingTrainer: React.FC<NoteReadingTrainerProps> = ({
             ) : (
               <span className="text-zinc-400 flex items-center gap-1 text-[11px]">
                 <Music className="w-3.5 h-3.5 text-amber-400" />
-                Play on Roland LX-9, acoustic piano, or tap below
+                Play on Roland LX-9, USB-C MIDI piano, or tap below
               </span>
             )}
           </div>
