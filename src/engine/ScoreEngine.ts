@@ -1395,4 +1395,102 @@ export class ScoreEngine {
       ],
     }
   }
+
+  public static getMoonlightSonata(): Piece {
+    const notes: NoteEvent[] = []
+    const pedals: PedalEvent[] = []
+    const bpm = 54
+    const beat = 60 / bpm
+    const triplet = beat / 3
+    const bar = beat * 4
+    let t = 0
+
+    // Measures 1-4: Iconic C# minor undulating triplet pattern
+    const patterns = [
+      { bass: [37, 49], mid: [56, 61, 64], m: 1 }, // C#2, C#3 | G#3, C#4, E4
+      { bass: [35, 47], mid: [56, 61, 64], m: 2 }, // B1, B2 | G#3, C#4, E4
+      { bass: [33, 45], mid: [57, 61, 66], m: 3 }, // A1, A2 | A3, C#4, F#4
+      { bass: [32, 44], mid: [56, 59, 68], m: 4 }, // G#1, G#2 | G#3, B3, G#4
+    ]
+
+    patterns.forEach((p) => {
+      // LH Octaves held for full measure
+      notes.push({
+        id: `ml-lh1-m${p.m}`,
+        midi: p.bass[0],
+        noteName: this.midiToNoteName(p.bass[0]),
+        startTime: t,
+        duration: bar * 0.95,
+        hand: 'left',
+        finger: 5,
+        measure: p.m,
+        velocity: 45,
+      })
+      notes.push({
+        id: `ml-lh2-m${p.m}`,
+        midi: p.bass[1],
+        noteName: this.midiToNoteName(p.bass[1]),
+        startTime: t,
+        duration: bar * 0.95,
+        hand: 'left',
+        finger: 1,
+        measure: p.m,
+        velocity: 45,
+      })
+
+      // 4 sets of triplets per measure
+      for (let rep = 0; rep < 4; rep++) {
+        p.mid.forEach((pitch, tripIdx) => {
+          notes.push({
+            id: `ml-rh-m${p.m}-${rep}-${tripIdx}`,
+            midi: pitch,
+            noteName: this.midiToNoteName(pitch),
+            startTime: t + rep * beat + tripIdx * triplet,
+            duration: triplet * 0.92,
+            hand: 'right',
+            finger: tripIdx === 0 ? 1 : tripIdx === 1 ? 2 : 4,
+            measure: p.m,
+            velocity: 38,
+          })
+        })
+      }
+
+      pedals.push({
+        startTime: t,
+        duration: bar * 0.96,
+        depth: 95,
+        type: 'sustain',
+        measure: p.m,
+      })
+
+      t += bar
+    })
+
+    return {
+      id: 'beethoven-moonlight-1',
+      title: 'Sonata No. 14 Moonlight (1st Mvt)',
+      composer: 'Ludwig van Beethoven',
+      opus: 'Op. 27 No. 2 - Adagio sostenuto',
+      key: 'C# minor',
+      timeSignature: [4, 4],
+      tempoBpm: bpm,
+      duration: Math.round(t * 100) / 100,
+      notes,
+      pedalEvents: pedals,
+      annotations: [
+        {
+          id: 'ml-ann-1',
+          measureRange: [1, 4],
+          title: 'Adagio Sostenuto (Delicatissimamente)',
+          germanTerm: 'Flüsternder Klangteppich',
+          category: 'tone-color',
+          instruction: 'Play the continuous triplet accompaniment as softly and evenly as possible. Beethoven instructed this movement to be played "senza sordino" (with continuous gentle damper resonance).',
+          referenceTimestampSeconds: 0.0,
+        },
+      ],
+      sections: [
+        { id: 'ml-sec-1', title: 'Exposition: The Hypnotic C# Minor Waves', startMeasure: 1, endMeasure: 4, startTime: 0, endTime: t, tempoSuggestion: '54 BPM Adagio sostenuto', character: 'Nocturnal, hushed and haunting' },
+      ],
+    }
+  }
 }

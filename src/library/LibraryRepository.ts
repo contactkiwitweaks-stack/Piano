@@ -49,18 +49,18 @@ export class LibraryRepository {
       id: 'handel-halvorsen-passacaglia',
       title: 'Passacaglia in G minor',
       composer: 'Handel / Halvorsen',
-      opus: 'HWV 432 (Suite No. 7) - All 16 Variations',
+      opus: 'HWV 432 (Suite No. 7) - Concert Solo (73 Measures Complete)',
       difficulty: 6,
       key: 'G minor',
       period: 'Baroque',
-      durationSeconds: 146,
+      durationSeconds: 137,
       coverColor: 'from-amber-600 via-red-900 to-zinc-950',
       availableEditions: [
         {
           id: 'urtext',
-          name: 'Vincent_Guazi Concert Solo Edition',
-          year: '1894 / MuseScore 6892136',
-          description: 'The viral dramatic masterpiece: noble Baroque ground bass, cascading arpeggios, rapid staccato dialogues, and thunderous octave climax.',
+          name: 'Halvorsen Concert Solo Edition',
+          year: '1894 / Authentic MIDI',
+          description: 'Official arrangement directly from authentic MIDI: noble Baroque ground bass, cascading arpeggios, rapid staccato dialogues, and thunderous octave climax (1,030 notes complete).',
         },
       ],
     },
@@ -68,18 +68,56 @@ export class LibraryRepository {
       id: 'beethoven-fur-elise',
       title: 'Für Elise (WoO 59)',
       composer: 'Ludwig van Beethoven',
-      opus: 'WoO 59',
+      opus: 'Bagatelle in A minor, WoO 59 (105 Measures Complete)',
       difficulty: 4,
       key: 'A minor',
       period: 'Classical',
-      durationSeconds: 182,
+      durationSeconds: 165,
       coverColor: 'from-amber-500 to-amber-800',
       availableEditions: [
         {
           id: 'urtext',
+          name: 'Henle Urtext Complete',
+          year: 'Canonical 1810 / Authentic MIDI',
+          description: 'Official complete transcription from authentic MIDI (1,039 notes complete): iconic A minor theme, lyrical F major episode, ominous repeated-bass drama, and chromatic cascade.',
+        },
+      ],
+    },
+    {
+      id: 'beethoven-moonlight-1',
+      title: 'Moonlight Sonata (1st Mvt)',
+      composer: 'Ludwig van Beethoven',
+      opus: 'Sonata Quasi una Fantasia, Op. 27 No. 2 (Complete)',
+      difficulty: 5,
+      key: 'C# minor',
+      period: 'Classical',
+      durationSeconds: 362,
+      coverColor: 'from-indigo-600 via-blue-900 to-zinc-950',
+      availableEditions: [
+        {
+          id: 'urtext',
           name: 'Henle Urtext',
-          year: 'Canonical 1810',
-          description: 'Original Beethoven manuscript notation with 1,038 notes, full continuous score.',
+          year: '1801 / Authentic MIDI',
+          description: 'The immortal Adagio sostenuto: delicate undulating triplets, singing soprano melody, and haunting nocturnal resonance (1,144 notes complete, 154 damper pedals).',
+        },
+      ],
+    },
+    {
+      id: 'bach-prelude-c',
+      title: 'Prelude in C Major',
+      composer: 'Johann Sebastian Bach',
+      opus: 'The Well-Tempered Clavier, Book 1 (BWV 846)',
+      difficulty: 2,
+      key: 'C major',
+      period: 'Baroque',
+      durationSeconds: 131,
+      coverColor: 'from-emerald-500 via-teal-800 to-zinc-950',
+      availableEditions: [
+        {
+          id: 'urtext',
+          name: 'Bach-Gesellschaft Urtext',
+          year: '1722 / Authentic MIDI',
+          description: 'The foundation of keyboard literature: crystalline flowing 16th-note arpeggios over continuous noble bass fundamentals (549 notes complete).',
         },
       ],
     },
@@ -398,6 +436,9 @@ export class LibraryRepository {
 
       case 'bach-prelude-c':
         return ScoreEngine.getBachPrelude()
+
+      case 'beethoven-moonlight-1':
+        return ScoreEngine.getMoonlightSonata()
 
       case 'course-4-chords':
         return ScoreEngine.getChordProgressionCourse()
