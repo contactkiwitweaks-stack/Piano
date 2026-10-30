@@ -8,25 +8,6 @@ import { ScoreEngine } from '../engine/ScoreEngine'
 export class LibraryRepository {
   private static catalog: LibraryPieceSummary[] = [
     {
-      id: 'my-work',
-      title: 'My Work',
-      composer: 'Solo Piano (Original Masterpiece)',
-      opus: 'Op. 1 in G minor (88 Measures Complete)',
-      difficulty: 6,
-      key: 'G minor / B♭ Major',
-      period: 'Romantic',
-      durationSeconds: 301,
-      coverColor: 'from-rose-600 via-purple-900 to-zinc-950',
-      availableEditions: [
-        {
-          id: 'urtext',
-          name: 'Original Concert Solo Edition',
-          year: '2026',
-          description: 'Tragic romantic masterpiece inspired by Chopin Ballade 1, Liszt Liebestraum 3, Kreisler Liebesleid, ABBA, and Tony Ann ICARUS. Strictly <= 1 octave hand span.',
-        },
-      ],
-    },
-    {
       id: 'tony-ann-icarus',
       title: 'ICARUS',
       composer: 'Tony Ann',
@@ -376,9 +357,6 @@ export class LibraryRepository {
 
     // 2. ScoreEngine fallback for courses, drills & scales
     switch (pieceId) {
-      case 'my-work':
-        return ScoreEngine.getMyWork()
-
       case 'abba-the-winner-takes-it-all':
         return ScoreEngine.getTheWinnerTakesItAll()
 
