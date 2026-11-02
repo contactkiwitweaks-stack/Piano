@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from 'react'
 import { MidiManager } from '../midi/MidiManager'
 import { PianoAudioEngine } from '../audio/PianoAudioEngine'
+import { AcousticNoteRecognizer } from '../engine/AcousticNoteRecognizer'
 import { type LanguageCode } from '../i18n/translations'
 import {
   Bluetooth,
@@ -12,6 +13,8 @@ import {
   Activity,
   Volume2,
   Piano,
+  Mic,
+  MicOff,
 } from 'lucide-react'
 
 interface RolandLX9ModalProps {
@@ -40,6 +43,18 @@ export const RolandLX9Modal: React.FC<RolandLX9ModalProps> = ({
   const [lastNote, setLastNote] = useState<{ midi: number; name: string; velocity: number } | null>(null)
   const [pressedKeys, setPressedKeys] = useState<Set<number>>(new Set())
   const [softPedalDepth, setSoftPedalDepth] = useState<number>(0)
+  const [isMicListening, setIsMicListening] = useState<boolean>(() => AcousticNoteRecognizer.getInstance().isListening)
+
+  const handleToggleMicModal = async () => {
+    const recognizer = AcousticNoteRecognizer.getInstance()
+    if (recognizer.isListening) {
+      recognizer.stopListening()
+      setIsMicListening(false)
+    } else {
+      const ok = await recognizer.startListening()
+      setIsMicListening(ok)
+    }
+  }
 
   // Subscribe to live MIDI events when modal is open for real-time visual diagnostics
   useEffect(() => {
@@ -333,6 +348,30 @@ export const RolandLX9Modal: React.FC<RolandLX9ModalProps> = ({
                 <strong className="text-white">Drahtloses Bluetooth:</strong> Schalte Bluetooth an deinem Digitalpiano ein. Auf iOS wird Bluetooth MIDI über CoreMIDI gekoppelt (einmalig in *iOS Einstellungen* oder in einer kostenlosen App wie *GarageBand* koppeln — Virtuoso Piano empfängt es danach sofort!).
               </li>
             </ul>
+          </div>
+
+          {/* Acoustic Piano Microphone Recognition (Aubio / Stepkar2004 polyphonic note & chord listening) */}
+          <div className="p-3.5 bg-zinc-950 rounded-2xl border border-emerald-500/30 space-y-2.5">
+            <div className="flex items-center justify-between">
+              <span className="text-xs font-bold text-emerald-300 flex items-center gap-1.5">
+                <Mic className="w-4 h-4 text-emerald-400" />
+                <span>Akustisches Klavier (Mikrofon-Erkennung)</span>
+              </span>
+              <button
+                onClick={handleToggleMicModal}
+                className={`px-3 py-1.5 rounded-xl font-bold text-[11px] transition-all flex items-center gap-1.5 active:scale-95 ${
+                  isMicListening
+                    ? 'bg-emerald-500 text-zinc-950 shadow-[0_0_12px_rgba(16,185,129,0.5)] font-black'
+                    : 'bg-zinc-800 hover:bg-zinc-700 text-zinc-200 border border-white/10'
+                }`}
+              >
+                {isMicListening ? <Mic className="w-3.5 h-3.5 animate-pulse" /> : <MicOff className="w-3.5 h-3.5 text-zinc-400" />}
+                <span>{isMicListening ? 'Aktiv (Hört zu...)' : 'Mikrofon Aktivieren'}</span>
+              </button>
+            </div>
+            <p className="text-[10px] text-zinc-400 leading-snug">
+              Ideal für normale Klaviere & Flügel ohne Kabel oder Bluetooth: Virtuoso hört Akkorde und Einzeltöne in Echtzeit über das iPhone-Mikrofon und synchronisiert sie direkt mit Übe- und Wettkampf-Modus!
+            </p>
           </div>
 
           {/* Virtual Simulator Mode */}

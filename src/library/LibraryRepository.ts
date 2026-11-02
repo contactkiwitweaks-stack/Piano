@@ -9,6 +9,44 @@ import { SongStorageManager } from './SongStorageManager'
 export class LibraryRepository {
   private static catalog: LibraryPieceSummary[] = [
     {
+      id: 'carol-of-the-bells',
+      title: 'Carol of the Bells',
+      composer: 'Mykola Leontovych',
+      opus: '1914',
+      difficulty: 5,
+      key: 'G minor',
+      period: 'Contemporary',
+      durationSeconds: 141,
+      coverColor: 'from-emerald-600 via-teal-900 to-zinc-950',
+      availableEditions: [
+        {
+          id: 'urtext',
+          name: 'Authentic Concert Edition',
+          year: '1914 / Complete MIDI',
+          description: 'Full 1,568-note arrangement: four-note Ukrainian bell motif, rolling arpeggios, and festive polyphony.',
+        },
+      ],
+    },
+    {
+      id: 'sia-snowman',
+      title: 'Snowman',
+      composer: 'Sia (Arr. John Rod Dondoyano)',
+      opus: '2017',
+      difficulty: 4,
+      key: 'Db Major',
+      period: 'Contemporary',
+      durationSeconds: 163,
+      coverColor: 'from-cyan-500 via-blue-900 to-zinc-950',
+      availableEditions: [
+        {
+          id: 'urtext',
+          name: 'John Rod Dondoyano Concert Arrangement',
+          year: '2017 / YouTube Transcription',
+          description: 'Full 1,473-note arrangement: warm syncopated chord voicings, lyrical vocal line, and emotive climax.',
+        },
+      ],
+    },
+    {
       id: 'tony-ann-icarus',
       title: 'ICARUS',
       composer: 'Tony Ann',

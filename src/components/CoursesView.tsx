@@ -10,7 +10,8 @@ import {
   Check,
   Sparkles,
   GraduationCap,
-  Flame,
+  RotateCcw,
+  Eye,
 } from 'lucide-react'
 
 interface CoursesViewProps {
@@ -21,14 +22,65 @@ interface CoursesViewProps {
   onOpenTutorials?: () => void
 }
 
+const STORAGE_KEY = 'virtuoso_course_progress_v1'
+
 export const CoursesView: React.FC<CoursesViewProps> = ({
   language,
   onSelectCourseLesson,
   onOpenSightReading,
-  onOpenWarmups,
-  onOpenTutorials,
+  onOpenWarmups: _onOpenWarmups,
+  onOpenTutorials: _onOpenTutorials,
 }) => {
   const [selectedCourse, setSelectedCourse] = useState<Course | null>(null)
+  const [selectedCategory, setSelectedCategory] = useState<string>('all')
+
+  // Real Persistent Progress Map: { [lessonId: string]: boolean }
+  const [completedLessons, setCompletedLessons] = useState<Record<string, boolean>>(() => {
+    try {
+      const raw = localStorage.getItem(STORAGE_KEY)
+      return raw ? JSON.parse(raw) : {}
+    } catch {
+      return {}
+    }
+  })
+
+  const toggleLessonComplete = (lessonId: string) => {
+    setCompletedLessons((prev) => {
+      const next = { ...prev, [lessonId]: !prev[lessonId] }
+      localStorage.setItem(STORAGE_KEY, JSON.stringify(next))
+      return next
+    })
+  }
+
+  const markAllLessonsComplete = (course: Course) => {
+    setCompletedLessons((prev) => {
+      const next = { ...prev }
+      course.lessons.forEach((l) => (next[l.id] = true))
+      localStorage.setItem(STORAGE_KEY, JSON.stringify(next))
+      return next
+    })
+  }
+
+  const resetCourseProgress = (course: Course) => {
+    setCompletedLessons((prev) => {
+      const next = { ...prev }
+      course.lessons.forEach((l) => delete next[l.id])
+      localStorage.setItem(STORAGE_KEY, JSON.stringify(next))
+      return next
+    })
+  }
+
+  // Calculate real accurate progress percent for a course
+  const getCourseProgress = (course: Course) => {
+    if (!course.lessons || course.lessons.length === 0) return 0
+    const done = course.lessons.filter((l) => !!completedLessons[l.id]).length
+    return Math.round((done / course.lessons.length) * 100)
+  }
+
+  // Total stats across all courses
+  const totalLessons = coursesData.reduce((acc, c) => acc + c.lessons.length, 0)
+  const completedTotal = Object.values(completedLessons).filter(Boolean).length
+  const overallPercent = Math.min(100, Math.round((completedTotal / (totalLessons || 1)) * 100))
 
   // Circular progress ring SVG helper
   const renderProgressRing = (percent: number, size = 48, strokeWidth = 4) => {
@@ -57,7 +109,7 @@ export const CoursesView: React.FC<CoursesViewProps> = ({
             strokeDashoffset={offset}
             strokeLinecap="round"
             fill="transparent"
-            className="transition-all duration-700 ease-out"
+            className="transition-all duration-500 ease-out"
           />
         </svg>
         <span className="absolute font-mono text-[11px] font-bold text-zinc-100">
@@ -67,180 +119,144 @@ export const CoursesView: React.FC<CoursesViewProps> = ({
     )
   }
 
-  // Localized category titles
-  const categoryHeaders = {
-    beginner: {
-      en: 'Beginner Courses',
-      de: 'Anfängerkurse',
-      fr: 'Cours pour débutants',
-      ja: '初心者向けコース',
-      zh: '初级入门课程',
-    },
-    technique: {
-      en: 'Fingering & Hanon Drills',
-      de: 'Fingersatz & Hanon-Etüden',
-      fr: 'Doigtés et exercices Hanon',
-      ja: '運指とハノン練習曲',
-      zh: '指法训练与哈农练习',
-    },
-    scales: {
-      en: 'Exercises & Scales',
-      de: 'Übungen & Tonleitern',
-      fr: 'Exercices et gammes',
-      ja: '練習曲と音階',
-      zh: '基础练习与音阶专练',
-    },
-    chords: {
-      en: 'Chords & Improvisation',
-      de: 'Akkorde & Improvisation',
-      fr: 'Accords et improvisation',
-      ja: 'コードと即興演奏',
-      zh: '和弦伴奏与即兴演奏',
-    },
-  }
-
-  // If a specific course is selected: Render the Course Detail Screen (Flowkey Screenshots 3 & 4)
+  // Detail View for a selected Course
   if (selectedCourse) {
     const title = selectedCourse.title[language] || selectedCourse.title.en
     const subtitle = selectedCourse.subtitle[language] || selectedCourse.subtitle.en
-
-    // Next uncompleted lesson or first lesson
-    const nextLesson =
-      selectedCourse.lessons.find((l) => l.progressPercent < 100) || selectedCourse.lessons[0]
+    const progress = getCourseProgress(selectedCourse)
+    const nextLesson = selectedCourse.lessons.find((l) => !completedLessons[l.id]) || selectedCourse.lessons[0]
 
     return (
-      <div className="w-full h-full bg-[#0a0a0f] text-zinc-100 flex flex-col overflow-y-auto select-none px-4 sm:px-8 pl-[max(1rem,env(safe-area-inset-left))] pr-[max(1rem,env(safe-area-inset-right))] py-6 max-w-5xl mx-auto pb-[max(7rem,calc(env(safe-area-inset-bottom)+5rem))]">
-        {/* Back to Courses Button */}
-        <button
-          onClick={() => setSelectedCourse(null)}
-          className="flex items-center gap-1.5 text-zinc-400 hover:text-white text-xs font-semibold mb-6 transition-colors self-start bg-zinc-900/80 px-3 py-1.5 rounded-xl border border-white/10"
-        >
-          <ChevronLeft className="w-4 h-4" />
-          <span>
-            {language === 'de'
-              ? 'Alle Kurse'
-              : language === 'fr'
-              ? 'Tous les cours'
-              : language === 'ja'
-              ? 'すべてのコース'
-              : language === 'zh'
-              ? '返回所有课程'
-              : 'All Courses'}
-          </span>
-        </button>
+      <div className="w-full h-full bg-[#0a0a0f] text-zinc-100 flex flex-col overflow-y-auto select-none px-4 sm:px-8 pl-[max(1rem,env(safe-area-inset-left))] pr-[max(1rem,env(safe-area-inset-right))] py-6 max-w-5xl mx-auto pb-[max(7rem,calc(env(safe-area-inset-bottom)+5rem))] animate-in fade-in duration-200">
+        {/* Back Button & Top Bar */}
+        <div className="flex items-center justify-between mb-6">
+          <button
+            onClick={() => setSelectedCourse(null)}
+            className="flex items-center gap-1.5 text-zinc-400 hover:text-white text-xs font-semibold bg-zinc-900/80 px-3 py-1.5 rounded-xl border border-white/10 transition-colors"
+          >
+            <ChevronLeft className="w-4 h-4" />
+            <span>{language === 'de' ? 'Zurück zu allen Kursen' : 'All Courses'}</span>
+          </button>
 
-        {/* Course Hero Banner */}
+          <div className="flex items-center gap-2">
+            <button
+              onClick={() => markAllLessonsComplete(selectedCourse)}
+              className="text-[11px] font-semibold text-zinc-400 hover:text-emerald-400 px-2.5 py-1 rounded-lg bg-zinc-900 border border-white/5 transition-colors"
+            >
+              {language === 'de' ? 'Alle abschließen' : 'Mark all done'}
+            </button>
+            <button
+              onClick={() => resetCourseProgress(selectedCourse)}
+              className="text-[11px] font-semibold text-zinc-500 hover:text-red-400 px-2.5 py-1 rounded-lg bg-zinc-900 border border-white/5 transition-colors"
+              title="Reset progress"
+            >
+              <RotateCcw className="w-3.5 h-3.5" />
+            </button>
+          </div>
+        </div>
+
+        {/* Hero Banner */}
         <div className="rounded-3xl bg-gradient-to-br from-zinc-900 via-zinc-900/90 to-zinc-950 border border-white/10 p-6 sm:p-8 flex flex-col md:flex-row items-start md:items-center justify-between gap-6 shadow-2xl relative overflow-hidden mb-8">
           <div className="space-y-2.5 max-w-xl z-10">
             <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-amber-500/15 border border-amber-500/30 text-amber-400 text-xs font-bold tracking-wide uppercase">
               <GraduationCap className="w-3.5 h-3.5" />
               <span>
-                {selectedCourse.lessons.length}{' '}
-                {language === 'de'
-                  ? 'Lektionen'
-                  : language === 'fr'
-                  ? 'Leçons'
-                  : language === 'ja'
-                  ? 'レッスン'
-                  : language === 'zh'
-                  ? '课时'
-                  : 'Lessons'}
+                {selectedCourse.lessons.length} {language === 'de' ? 'Lektionen' : 'Lessons'}
               </span>
             </div>
             <h1 className="text-2xl sm:text-3xl font-extrabold text-white tracking-tight">{title}</h1>
             <p className="text-sm text-zinc-400 leading-relaxed">{subtitle}</p>
           </div>
 
-          {/* Right Action & Progress Ring */}
           <div className="flex items-center gap-5 z-10 w-full sm:w-auto justify-between sm:justify-start">
-            {renderProgressRing(selectedCourse.overallProgress, 64, 5)}
+            {renderProgressRing(progress, 64, 5)}
             <button
               onClick={() => {
                 if (nextLesson) {
                   onSelectCourseLesson(nextLesson.targetPieceId, nextLesson.practiceVariant)
                 }
               }}
-              className="flex items-center gap-2 px-6 py-3.5 rounded-2xl bg-gradient-to-r from-orange-500 to-amber-500 hover:from-orange-600 hover:to-amber-600 text-white font-bold text-sm shadow-[0_0_24px_rgba(249,115,22,0.4)] active:scale-95 transition-all"
+              className="flex items-center gap-2 px-6 py-3.5 rounded-2xl bg-gradient-to-r from-orange-500 to-amber-500 hover:from-orange-600 hover:to-amber-600 text-white font-black text-sm shadow-[0_0_24px_rgba(249,115,22,0.4)] active:scale-95 transition-all"
             >
               <Play className="w-4 h-4 fill-current" />
-              <span>
-                {selectedCourse.overallProgress > 0
-                  ? language === 'de'
-                    ? 'Weiterlernen'
-                    : language === 'fr'
-                    ? 'Continuer'
-                    : language === 'ja'
-                    ? '続ける'
-                    : language === 'zh'
-                    ? '继续学习'
-                    : 'Continue Learning'
-                  : language === 'de'
-                  ? 'Kurs starten'
-                  : language === 'fr'
-                  ? 'Démarrer le cours'
-                  : language === 'ja'
-                  ? 'コースを開始'
-                  : language === 'zh'
-                  ? '开始课程'
-                  : 'Start Course'}
-              </span>
+              <span>{progress > 0 ? (language === 'de' ? 'Weiterlernen' : 'Continue') : (language === 'de' ? 'Kurs starten' : 'Start Course')}</span>
             </button>
           </div>
         </div>
 
-        {/* Lessons List (Matching Screenshot 4) */}
+        {/* Lessons List */}
         <div className="space-y-3">
           <h2 className="text-sm font-bold uppercase tracking-wider text-zinc-400 px-1 mb-2">
-            {language === 'de'
-              ? 'Lektionen-Übersicht'
-              : language === 'fr'
-              ? 'Programme du cours'
-              : language === 'ja'
-              ? 'レッスン一覧'
-              : language === 'zh'
-              ? '课时列表'
-              : 'Course Curriculum'}
+            {language === 'de' ? 'Lektionen-Übersicht & Aufgaben' : 'Curriculum & Interactive Practice'}
           </h2>
 
           {selectedCourse.lessons.map((lesson) => {
             const lTitle = lesson.title[language] || lesson.title.en
-            const isCompleted = lesson.progressPercent === 100
+            const isDone = !!completedLessons[lesson.id]
+            const lDesc = lesson.description ? (lesson.description[language] || lesson.description.en) : null
 
             return (
               <div
                 key={lesson.id}
-                onClick={() => onSelectCourseLesson(lesson.targetPieceId, lesson.practiceVariant)}
-                className="group p-4 sm:p-5 rounded-2xl bg-zinc-900/60 hover:bg-zinc-900 border border-white/5 hover:border-orange-500/40 flex items-center justify-between gap-4 cursor-pointer transition-all shadow-sm active:scale-[0.99]"
+                className={`p-4 sm:p-5 rounded-2xl border transition-all ${
+                  isDone
+                    ? 'bg-zinc-950/70 border-emerald-500/30'
+                    : 'bg-zinc-900/60 hover:bg-zinc-900 border-white/5 hover:border-amber-500/40'
+                } flex flex-col sm:flex-row sm:items-center justify-between gap-4`}
               >
-                <div className="flex items-center gap-4 min-w-0">
-                  {/* Lesson Number Circle */}
-                  <div
-                    className={`w-9 h-9 rounded-xl flex items-center justify-center font-mono font-bold text-xs flex-shrink-0 border ${
-                      isCompleted
-                        ? 'bg-emerald-500/20 border-emerald-500/50 text-emerald-400'
-                        : 'bg-zinc-800 border-white/10 text-zinc-300'
+                <div className="flex items-start gap-4 min-w-0">
+                  <button
+                    onClick={() => toggleLessonComplete(lesson.id)}
+                    className={`w-9 h-9 rounded-xl flex items-center justify-center font-mono font-bold text-xs flex-shrink-0 border transition-all active:scale-95 ${
+                      isDone
+                        ? 'bg-emerald-500/25 border-emerald-400 text-emerald-300'
+                        : 'bg-zinc-800 border-white/10 text-zinc-400 hover:border-amber-400'
                     }`}
+                    title="Click to toggle lesson completion"
                   >
-                    {isCompleted ? <Check className="w-4 h-4 stroke-[3]" /> : lesson.number}
-                  </div>
+                    {isDone ? <Check className="w-4 h-4 stroke-[3]" /> : lesson.number}
+                  </button>
 
-                  <div className="min-w-0">
-                    <h3 className="text-sm sm:text-base font-semibold text-zinc-200 group-hover:text-amber-400 transition-colors truncate">
+                  <div className="min-w-0 space-y-1">
+                    <h3 className={`text-sm sm:text-base font-bold transition-colors truncate ${isDone ? 'text-zinc-300 line-through' : 'text-white'}`}>
                       {lTitle}
                     </h3>
-                    <div className="flex items-center gap-2 text-xs text-zinc-500 mt-0.5">
+                    {lDesc && <p className="text-xs text-zinc-400 leading-snug">{lDesc}</p>}
+                    <div className="flex items-center gap-2 text-[11px] text-zinc-500">
                       <span>{lesson.durationMin} Min.</span>
                       <span>•</span>
                       <span className="capitalize">{lesson.practiceVariant || 'Original'}</span>
+                      {isDone && (
+                        <>
+                          <span>•</span>
+                          <span className="text-emerald-400 font-bold">Abgeschlossen</span>
+                        </>
+                      )}
                     </div>
                   </div>
                 </div>
 
-                <div className="flex items-center gap-3">
-                  {renderProgressRing(lesson.progressPercent, 40, 3)}
-                  <div className="w-8 h-8 rounded-xl bg-zinc-800/80 group-hover:bg-orange-500 text-zinc-400 group-hover:text-white flex items-center justify-center transition-all">
-                    <Play className="w-3.5 h-3.5 fill-current ml-0.5" />
-                  </div>
+                <div className="flex items-center gap-2 self-end sm:self-center">
+                  <button
+                    onClick={() => toggleLessonComplete(lesson.id)}
+                    className={`px-3 py-1.5 rounded-xl border text-xs font-semibold transition-all ${
+                      isDone
+                        ? 'bg-emerald-950/40 border-emerald-500/40 text-emerald-300'
+                        : 'bg-zinc-800/80 hover:bg-zinc-800 border-white/10 text-zinc-400'
+                    }`}
+                  >
+                    {isDone ? 'Erledigt' : 'Als erledigt markieren'}
+                  </button>
+
+                  <button
+                    onClick={() => {
+                      onSelectCourseLesson(lesson.targetPieceId, lesson.practiceVariant)
+                    }}
+                    className="px-4 py-2 rounded-xl bg-amber-500 hover:bg-amber-400 text-zinc-950 font-black text-xs flex items-center gap-1.5 transition-all shadow-md active:scale-95"
+                  >
+                    <Play className="w-3.5 h-3.5 fill-current" />
+                    <span>Üben</span>
+                  </button>
                 </div>
               </div>
             )
@@ -250,165 +266,140 @@ export const CoursesView: React.FC<CoursesViewProps> = ({
     )
   }
 
-  // All Courses Overview (Flowkey Screenshot 5)
+  // Filter courses by category
+  const filteredCourses = coursesData.filter((c) => {
+    if (selectedCategory === 'all') return true
+    return c.category === selectedCategory
+  })
+
   return (
-    <div className="w-full h-full bg-[#0a0a0f] text-zinc-100 overflow-y-auto select-none px-4 sm:px-8 pl-[max(1rem,env(safe-area-inset-left))] pr-[max(1rem,env(safe-area-inset-right))] py-6 space-y-10 max-w-6xl mx-auto scrollbar-thin scrollbar-thumb-zinc-800 pb-[max(7rem,calc(env(safe-area-inset-bottom)+5rem))]">
-      {/* Header Banner */}
-      <div className="space-y-1">
-        <h1 className="text-2xl sm:text-3xl font-extrabold text-white tracking-tight">
-          {language === 'de'
-            ? 'Kurse & Tonleitern'
-            : language === 'fr'
-            ? 'Cours et Gammes'
-            : language === 'ja'
-            ? 'コースと音階'
-            : language === 'zh'
-            ? '钢琴课程与音阶体系'
-            : 'Courses & Scales'}
-        </h1>
-        <p className="text-xs sm:text-sm text-zinc-400">
-          {language === 'de'
-            ? 'Vom ersten Ton bis zu virtuosen Chopin-Balladen und Tonleitern.'
-            : language === 'fr'
-            ? 'Des premières notes aux ballades de Chopin et aux gammes complètes.'
-            : language === 'ja'
-            ? '最初の1音からショパンのバラード、音階練習まで網羅。'
-            : language === 'zh'
-            ? '从单音基础到肖邦叙事曲与全套大小调音阶体系。'
-            : 'From your first notes to full scales and Chopin masterpieces.'}
-        </p>
-      </div>
+    <div className="w-full h-full bg-[#0a0a0f] text-zinc-100 overflow-y-auto select-none px-4 sm:px-8 pl-[max(1rem,env(safe-area-inset-left))] pr-[max(1rem,env(safe-area-inset-right))] py-6 space-y-8 max-w-6xl mx-auto scrollbar-thin scrollbar-thumb-zinc-800 pb-[max(7rem,calc(env(safe-area-inset-bottom)+5rem))]">
+      {/* Flagship Banner: Interactive Sight-Reading & Note Reading Masterclass */}
+      <div className="rounded-3xl bg-gradient-to-r from-emerald-900/60 via-teal-900/40 to-zinc-950 border border-emerald-500/30 p-6 sm:p-7 flex flex-col md:flex-row items-start md:items-center justify-between gap-5 shadow-2xl relative overflow-hidden">
+        <div className="space-y-1.5 max-w-xl z-10">
+          <div className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-emerald-500/20 text-emerald-300 text-xs font-black tracking-wide uppercase">
+            <Sparkles className="w-3.5 h-3.5" />
+            <span>{language === 'de' ? 'Vom-Blatt-Lese Trainer' : 'Sight-Reading Trainer'}</span>
+          </div>
+          <h2 className="text-xl sm:text-2xl font-black text-white">
+            {language === 'de' ? 'Interaktiver Notenlese-Trainer' : 'Interactive Note Reading Trainer'}
+          </h2>
+          <p className="text-xs sm:text-sm text-zinc-300">
+            {language === 'de'
+              ? 'Lerne Notenlesen von Grund auf mit Sofort-Feedback über dein Mikrofon oder MIDI-Keyboard!'
+              : 'Master treble & bass clefs with instant real-time microphone or MIDI keyboard evaluation!'}
+          </p>
+        </div>
 
-      {/* 3 Quick-Action Labs & Hubs */}
-      <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-        {/* 1. Note Reading Trainer */}
-        <div
+        <button
           onClick={onOpenSightReading}
-          className="p-4 sm:p-5 rounded-3xl bg-gradient-to-br from-blue-950/40 via-zinc-900 to-indigo-950/30 border border-blue-500/30 hover:border-blue-500/60 flex items-center justify-between gap-3 cursor-pointer shadow-lg group transition-all"
+          className="px-5 py-3 rounded-2xl bg-emerald-500 hover:bg-emerald-400 text-zinc-950 font-black text-xs sm:text-sm flex items-center gap-2 shadow-[0_0_20px_rgba(16,185,129,0.4)] active:scale-95 transition-all flex-shrink-0"
         >
-          <div className="flex items-center gap-3">
-            <div className="w-10 h-10 rounded-2xl bg-blue-500/20 border border-blue-500/40 flex items-center justify-center text-blue-400 group-hover:scale-105 transition-transform flex-shrink-0">
-              <Sparkles className="w-5 h-5" />
-            </div>
-            <div>
-              <h3 className="font-bold text-xs sm:text-sm text-zinc-100 group-hover:text-blue-300 transition-colors">
-                {language === 'de' ? 'Noten lesen lernen' : 'Sight-Reading Trainer'}
-              </h3>
-              <p className="text-[11px] text-zinc-400">
-                {language === 'de' ? 'Violin- & Bass-Schlüssel' : 'Clef & interval reflex trainer'}
-              </p>
-            </div>
-          </div>
-          <ChevronRight className="w-4 h-4 text-blue-400 group-hover:translate-x-1 transition-transform flex-shrink-0" />
+          <Eye className="w-4 h-4" />
+          <span>{language === 'de' ? 'Trainer starten' : 'Launch Trainer'}</span>
+        </button>
+      </div>
+
+      {/* Header & Global Stats */}
+      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+        <div>
+          <h1 className="text-2xl sm:text-3xl font-black text-white tracking-tight flex items-center gap-2">
+            <BookOpen className="w-7 h-7 text-amber-500" />
+            <span>{language === 'de' ? 'Klavier-Akademie & Kurse' : 'Piano Academy & Courses'}</span>
+          </h1>
+          <p className="text-xs sm:text-sm text-zinc-400 mt-1">
+            {language === 'de'
+              ? 'Didaktisch strukturierte Kurse: Von der ersten Note bis zur Konzertreife.'
+              : 'Structured masterclasses: From your first note to concert mastery.'}
+          </p>
         </div>
 
-        {/* 2. Pianist Warm-Ups */}
-        <div
-          onClick={onOpenWarmups}
-          className="p-4 sm:p-5 rounded-3xl bg-gradient-to-br from-orange-950/40 via-zinc-900 to-amber-950/30 border border-orange-500/30 hover:border-orange-500/60 flex items-center justify-between gap-3 cursor-pointer shadow-lg group transition-all"
-        >
-          <div className="flex items-center gap-3">
-            <div className="w-10 h-10 rounded-2xl bg-orange-500/20 border border-orange-500/40 flex items-center justify-center text-orange-400 group-hover:scale-105 transition-transform flex-shrink-0">
-              <Flame className="w-5 h-5 fill-current" />
-            </div>
-            <div>
-              <h3 className="font-bold text-xs sm:text-sm text-zinc-100 group-hover:text-orange-300 transition-colors">
-                {language === 'de' ? 'Klavier-Einspielen' : 'Pianist Warm-Ups'}
-              </h3>
-              <p className="text-[11px] text-zinc-400">
-                {language === 'de' ? '5-Minuten Fingeraktivierung' : '5-min finger activation & stretch'}
-              </p>
+        {/* Global Progress Bar */}
+        <div className="p-3 bg-zinc-900 border border-white/10 rounded-2xl flex items-center gap-4 shadow-sm self-start sm:self-center">
+          {renderProgressRing(overallPercent, 44, 4)}
+          <div>
+            <div className="text-xs font-bold text-white">Gesamtfortschritt</div>
+            <div className="text-[11px] text-zinc-400 font-mono">
+              {completedTotal} / {totalLessons} Lektionen
             </div>
           </div>
-          <ChevronRight className="w-4 h-4 text-orange-400 group-hover:translate-x-1 transition-transform flex-shrink-0" />
-        </div>
-
-        {/* 3. Video Masterclasses */}
-        <div
-          onClick={onOpenTutorials}
-          className="p-4 sm:p-5 rounded-3xl bg-gradient-to-br from-amber-950/40 via-zinc-900 to-yellow-950/30 border border-amber-500/30 hover:border-amber-500/60 flex items-center justify-between gap-3 cursor-pointer shadow-lg group transition-all"
-        >
-          <div className="flex items-center gap-3">
-            <div className="w-10 h-10 rounded-2xl bg-amber-500/20 border border-amber-500/40 flex items-center justify-center text-amber-400 group-hover:scale-105 transition-transform flex-shrink-0">
-              <GraduationCap className="w-5 h-5" />
-            </div>
-            <div>
-              <h3 className="font-bold text-xs sm:text-sm text-zinc-100 group-hover:text-amber-300 transition-colors">
-                {language === 'de' ? 'Meisterkurs-Videos' : 'Video Masterclasses'}
-              </h3>
-              <p className="text-[11px] text-zinc-400">
-                {language === 'de' ? 'Igor Levit & Konzert-Tipps' : 'Concert pianist pedagogy & tips'}
-              </p>
-            </div>
-          </div>
-          <ChevronRight className="w-4 h-4 text-amber-400 group-hover:translate-x-1 transition-transform flex-shrink-0" />
         </div>
       </div>
 
-      {/* 4 Curriculum Categories */}
-      {(['beginner', 'technique', 'scales', 'chords'] as const).map((cat) => {
-        const catCourses = coursesData.filter((c) => c.category === cat)
-        const catTitle = categoryHeaders[cat][language] || categoryHeaders[cat].en
+      {/* Category Pills */}
+      <div className="flex items-center gap-2 overflow-x-auto pb-1 scrollbar-none">
+        {[
+          { id: 'all', label: language === 'de' ? 'Alle Kurse' : 'All Courses' },
+          { id: 'beginner', label: language === 'de' ? 'Anfänger & Notenlesen' : 'Beginner & Notes' },
+          { id: 'technique', label: language === 'de' ? 'Fingersatz & Hanon' : 'Technique & Hanon' },
+          { id: 'scales', label: language === 'de' ? 'Tonleitern' : 'Scales' },
+          { id: 'chords', label: language === 'de' ? 'Akkorde' : 'Chords' },
+        ].map((tab) => (
+          <button
+            key={tab.id}
+            onClick={() => setSelectedCategory(tab.id)}
+            className={`px-3.5 py-1.5 rounded-xl text-xs font-bold transition-all whitespace-nowrap border ${
+              selectedCategory === tab.id
+                ? 'bg-amber-500 text-zinc-950 border-amber-400 shadow-md font-extrabold'
+                : 'bg-zinc-900 border-white/10 text-zinc-400 hover:text-white'
+            }`}
+          >
+            {tab.label}
+          </button>
+        ))}
+      </div>
 
-        return (
-          <section key={cat} className="space-y-4">
-            <div className="flex items-center gap-2.5">
-              <div className="w-2 h-2 rounded-full bg-orange-500" />
-              <h2 className="text-lg font-bold text-white tracking-wide">{catTitle}</h2>
-            </div>
+      {/* Courses Grid */}
+      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-5">
+        {filteredCourses.map((course) => {
+          const title = course.title[language] || course.title.en
+          const subtitle = course.subtitle[language] || course.subtitle.en
+          const progress = getCourseProgress(course)
+          const isNoteCourse = course.id === 'course-complete-note-reading-from-zero'
 
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-              {catCourses.map((course) => {
-                const title = course.title[language] || course.title.en
-                const subtitle = course.subtitle[language] || course.subtitle.en
+          return (
+            <div
+              key={course.id}
+              onClick={() => setSelectedCourse(course)}
+              className={`p-6 rounded-3xl bg-zinc-900/70 hover:bg-zinc-900 border transition-all cursor-pointer flex flex-col justify-between group shadow-lg active:scale-[0.99] relative overflow-hidden ${
+                isNoteCourse ? 'border-emerald-500/50 shadow-[0_4px_24px_rgba(16,185,129,0.15)]' : 'border-white/10 hover:border-amber-500/40'
+              }`}
+            >
+              {isNoteCourse && (
+                <div className="absolute top-3 right-3 px-2 py-0.5 rounded-full bg-emerald-500/20 border border-emerald-500/40 text-emerald-300 font-mono text-[9px] font-black uppercase">
+                  Flaggschiff
+                </div>
+              )}
 
-                return (
-                  <div
-                    key={course.id}
-                    onClick={() => setSelectedCourse(course)}
-                    className="p-5 sm:p-6 rounded-3xl bg-zinc-900/60 hover:bg-zinc-900 border border-white/5 hover:border-orange-500/40 cursor-pointer flex flex-col justify-between gap-4 transition-all shadow-md group relative overflow-hidden"
-                  >
-                    <div className="flex items-start justify-between gap-4">
-                      <div className="space-y-1.5 min-w-0">
-                        <span className="text-[11px] font-bold text-orange-400 uppercase tracking-wider">
-                          {course.lessonCount}{' '}
-                          {language === 'de'
-                            ? 'Lektionen'
-                            : language === 'fr'
-                            ? 'Leçons'
-                            : language === 'ja'
-                            ? 'レッスン'
-                            : language === 'zh'
-                            ? '课时'
-                            : 'Lessons'}
-                        </span>
-                        <h3 className="text-base sm:text-lg font-bold text-zinc-100 group-hover:text-amber-400 transition-colors">
-                          {title}
-                        </h3>
-                        <p className="text-xs text-zinc-400 line-clamp-2 leading-relaxed">{subtitle}</p>
-                      </div>
-
-                      {/* Progress Ring */}
-                      {renderProgressRing(course.overallProgress, 50, 4)}
-                    </div>
-
-                    <div className="flex items-center justify-between pt-2 border-t border-white/5 text-xs text-zinc-500">
-                      <div className="flex items-center gap-1.5">
-                        <BookOpen className="w-3.5 h-3.5 text-zinc-400" />
-                        <span>Flowkey Master Curriculum</span>
-                      </div>
-                      <div className="flex items-center gap-1 font-bold text-orange-400 group-hover:translate-x-1 transition-transform">
-                        <span>{language === 'de' ? 'Öffnen' : 'Open'}</span>
-                        <ChevronRight className="w-4 h-4" />
-                      </div>
-                    </div>
+              <div className="space-y-3">
+                <div className="flex items-center justify-between">
+                  <div className={`w-11 h-11 rounded-2xl bg-gradient-to-br ${course.coverGradient} flex items-center justify-center text-white shadow-md`}>
+                    <GraduationCap className="w-5 h-5" />
                   </div>
-                )
-              })}
+                  {renderProgressRing(progress, 44, 3.5)}
+                </div>
+
+                <div>
+                  <h3 className="font-extrabold text-base text-white group-hover:text-amber-400 transition-colors leading-tight">
+                    {title}
+                  </h3>
+                  <p className="text-xs text-zinc-400 mt-1 line-clamp-2 leading-relaxed">
+                    {subtitle}
+                  </p>
+                </div>
+              </div>
+
+              <div className="pt-4 mt-4 border-t border-white/5 flex items-center justify-between text-xs text-zinc-500 font-medium">
+                <span>{course.lessons.length} {language === 'de' ? 'Lektionen' : 'Lessons'}</span>
+                <span className="text-amber-400 group-hover:translate-x-1 transition-transform flex items-center gap-0.5 font-bold">
+                  <span>{progress === 100 ? 'Wiederholen' : progress > 0 ? 'Fortsetzen' : 'Starten'}</span>
+                  <ChevronRight className="w-3.5 h-3.5" />
+                </span>
+              </div>
             </div>
-          </section>
-        )
-      })}
+          )
+        })}
+      </div>
     </div>
   )
 }

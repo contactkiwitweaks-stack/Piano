@@ -597,20 +597,19 @@ export const FallingKeysCanvas = React.memo<FallingKeysCanvasProps>(({
         }
 
         // -------------------------------------------------------------
-        // DYNAMIC NOTE LETTER & FINGERING (MATCHING SCREENSHOT AESTHETIC)
-        // Clean typography directly on pill: Note at top, Finger at bottom
-        // When curShowFingers is OFF, fingering numbers are completely removed!
+        // NOTE LETTER RENDERING (LOCKED STATIC AT TOP-CENTER OF PILL)
+        // Positioned cleanly at the top of the note with fixed margins.
+        // Never dynamically slides or moves during playback!
         // -------------------------------------------------------------
-        if (noteW >= 3.0 && noteLengthPx >= 10 && bottomY > 0 && topY < keyboardY) {
+        if (noteW >= 3.0 && noteLengthPx >= 8 && bottomY > 0 && topY < keyboardY) {
           const noteLetter = note.noteName.replace(/[0-9]/g, '')
           const rawFinger = note.finger ? Number(note.finger) : (note.hand === 'left' ? 5 : 1)
           const fingerDigit = Math.max(1, Math.min(5, Math.round(rawFinger) || 1))
           const isNarrow = noteW < 14
-          const isShort = noteLengthPx < 28
 
-          const pMid = projectPoint(noteX + noteW / 2, topY + noteLengthPx / 2)
-          const pTopText = projectPoint(noteX + noteW / 2, topY + Math.min(12, Math.max(7, noteLengthPx * 0.24)))
-          const pBottomText = projectPoint(noteX + noteW / 2, bottomY - Math.min(10, Math.max(6, noteLengthPx * 0.20)))
+          // Fixed vertical anchor at top of note with 10px breathing room
+          const fixedTopOffset = Math.min(10, Math.max(6, noteLengthPx * 0.35))
+          const pTopAnchor = projectPoint(noteX + noteW / 2, topY + fixedTopOffset)
 
           ctx.save()
           ctx.textAlign = 'center'
@@ -620,34 +619,19 @@ export const FallingKeysCanvas = React.memo<FallingKeysCanvasProps>(({
           ctx.shadowBlur = 4
 
           if (curShowFingers) {
-            if (!isShort) {
-              // 1. Note letter at the TOP of the pill
-              ctx.font = isNarrow ? 'bold 7.5px sans-serif' : 'bold 9px sans-serif'
-              ctx.fillText(noteLetter, pTopText.x, pTopText.y)
+            // If fingers option is toggled ON: note letter at top, finger digit below
+            ctx.font = isNarrow ? 'bold 7.5px sans-serif' : 'bold 9px sans-serif'
+            ctx.fillText(noteLetter, pTopAnchor.x, pTopAnchor.y)
 
-              // 2. Fingering digit at the BOTTOM of the pill (NO weird background circle!)
+            if (noteLengthPx >= 26) {
+              const pBottomAnchor = projectPoint(noteX + noteW / 2, bottomY - 9)
               ctx.font = isNarrow ? 'bold 8px sans-serif' : 'bold 9.5px sans-serif'
-              ctx.fillText(`${fingerDigit}`, pBottomText.x, pBottomText.y)
-            } else {
-              // Short note pill on mobile:
-              if (isNarrow) {
-                if (noteLengthPx >= 20) {
-                  ctx.font = 'bold 7px sans-serif'
-                  ctx.fillText(noteLetter, pMid.x, pMid.y - 4.5)
-                  ctx.fillText(`${fingerDigit}`, pMid.x, pMid.y + 4.5)
-                } else {
-                  ctx.font = 'bold 7.5px sans-serif'
-                  ctx.fillText(noteLetter, pMid.x, pMid.y)
-                }
-              } else {
-                ctx.font = 'bold 8.5px sans-serif'
-                ctx.fillText(`${noteLetter} · ${fingerDigit}`, pMid.x, pMid.y)
-              }
+              ctx.fillText(`${fingerDigit}`, pBottomAnchor.x, pBottomAnchor.y)
             }
           } else {
-            // FINGERS FULLY REMOVED: Only clean note letter centered perfectly
+            // Clean by default: Note letter locked at top-center, completely stable
             ctx.font = isNarrow ? 'bold 8px sans-serif' : 'bold 9.5px sans-serif'
-            ctx.fillText(noteLetter, pMid.x, pMid.y)
+            ctx.fillText(noteLetter, pTopAnchor.x, pTopAnchor.y)
           }
 
           ctx.restore()

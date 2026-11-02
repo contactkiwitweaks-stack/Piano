@@ -1,5 +1,29 @@
 [
   {
+    "id": "cloud-carol-of-the-bells",
+    "title": "Carol of the Bells",
+    "composer": "Mykola Leontovych",
+    "difficulty": 5,
+    "key": "G minor",
+    "period": "Holiday / Traditional",
+    "durationSeconds": 141,
+    "coverColor": "from-emerald-600 via-teal-900 to-zinc-950",
+    "description": "Iconic four-note Ukrainian bell motif, rolling arpeggio counterpoint, and festive holiday energy.",
+    "midiUrl": "https://raw.githubusercontent.com/contactkiwitweaks-stack/Piano/main/public/songs/carol-of-the-bells.mid"
+  },
+  {
+    "id": "cloud-sia-snowman",
+    "title": "Snowman",
+    "composer": "Sia (Arr. John Rod Dondoyano)",
+    "difficulty": 4,
+    "key": "Db Major",
+    "period": "Pop / Contemporary",
+    "durationSeconds": 163,
+    "coverColor": "from-cyan-500 via-blue-800 to-zinc-950",
+    "description": "Sia’s romantic winter ballad: warm syncopated chords, gentle vocal melody, and sweet lyrical flow.",
+    "midiUrl": "https://raw.githubusercontent.com/contactkiwitweaks-stack/Piano/main/public/songs/sia-snowman.mid"
+  },
+  {
     "id": "cloud-chopin-nocturne-op9-2",
     "title": "Nocturne in Eb Major, Op. 9 No. 2",
     "composer": "Frédéric Chopin",

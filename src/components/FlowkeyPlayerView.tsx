@@ -1,9 +1,10 @@
-import React, { useState } from 'react'
+import React, { useState, useEffect } from 'react'
 import type { Piece } from '../types/music'
 import type { MasterEditionId } from '../types/edition'
 import type { LanguageCode } from '../i18n/translations'
 import { FallingKeysCanvas, type VisualTheme } from './FallingKeysCanvas'
 import { SheetMusicView } from './SheetMusicView'
+import { AcousticNoteRecognizer } from '../engine/AcousticNoteRecognizer'
 import {
   Play,
   Pause,
@@ -11,6 +12,8 @@ import {
   Repeat,
   ChevronLeft,
   Bluetooth,
+  Mic,
+  MicOff,
   Hand,
   Layers,
   GraduationCap,
@@ -144,6 +147,35 @@ export const FlowkeyPlayerView: React.FC<FlowkeyPlayerViewProps> = ({
       localStorage.setItem('virtuoso_show_fingers', String(next))
       return next
     })
+  }
+
+  // Acoustic Microphone Piano Recognition State
+  const [isMicActive, setIsMicActive] = useState<boolean>(() => AcousticNoteRecognizer.getInstance().isListening)
+  const [micLevel, setMicLevel] = useState<number>(0)
+
+  useEffect(() => {
+    let animId: number
+    const pollLevel = () => {
+      if (AcousticNoteRecognizer.getInstance().isListening) {
+        setMicLevel(AcousticNoteRecognizer.getInstance().inputLevel)
+      } else {
+        setMicLevel(0)
+      }
+      animId = requestAnimationFrame(pollLevel)
+    }
+    animId = requestAnimationFrame(pollLevel)
+    return () => cancelAnimationFrame(animId)
+  }, [])
+
+  const handleToggleMic = async () => {
+    const recognizer = AcousticNoteRecognizer.getInstance()
+    if (recognizer.isListening) {
+      recognizer.stopListening()
+      setIsMicActive(false)
+    } else {
+      const ok = await recognizer.startListening()
+      setIsMicActive(ok)
+    }
   }
 
   // Active section based on currentTime
@@ -481,6 +513,32 @@ export const FlowkeyPlayerView: React.FC<FlowkeyPlayerViewProps> = ({
             <span className="font-mono text-[10px] hidden sm:inline">
               {isConnectedLX9 ? `LX-9` : 'Roland'}
             </span>
+          </button>
+
+          {/* Acoustic Microphone Piano Recognition (Non-Bluetooth / Upright / Grand) */}
+          <button
+            onClick={handleToggleMic}
+            className={`flex items-center gap-1.5 px-2.5 py-1.5 rounded-xl border text-[11px] font-bold transition-all active:scale-95 ${
+              isMicActive
+                ? 'bg-emerald-500/20 border-emerald-500/50 text-emerald-300 shadow-[0_0_12px_rgba(16,185,129,0.35)]'
+                : 'bg-zinc-900 border-white/10 text-zinc-400 hover:text-zinc-200'
+            }`}
+            title="Acoustic Piano Microphone Recognition (No Bluetooth/Cable needed)"
+          >
+            {isMicActive ? (
+              <div className="flex items-center gap-1">
+                <Mic className="w-3.5 h-3.5 text-emerald-400 animate-pulse" />
+                <span className="font-mono text-[10px]">Mic ON</span>
+              </div>
+            ) : (
+              <div className="flex items-center gap-1">
+                <MicOff className="w-3.5 h-3.5 text-zinc-500" />
+                <span className="font-mono text-[10px] hidden sm:inline">Mic</span>
+              </div>
+            )}
+            {isMicActive && micLevel > 0.05 && (
+              <div className="w-1.5 h-2 bg-emerald-400 rounded-full animate-bounce" />
+            )}
           </button>
 
           {/* Mobile Quick Settings Trigger (iPhone) */}
