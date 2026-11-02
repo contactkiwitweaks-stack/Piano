@@ -4,6 +4,7 @@
 import type { Piece } from '../types/music'
 import type { MasterEditionId, LibraryPieceSummary } from '../types/edition'
 import { ScoreEngine } from '../engine/ScoreEngine'
+import { SongStorageManager } from './SongStorageManager'
 
 export class LibraryRepository {
   private static catalog: LibraryPieceSummary[] = [
@@ -292,6 +293,63 @@ export class LibraryRepository {
       ],
     },
     {
+      id: 'bach-minuet-g',
+      title: 'Minuet in G Major',
+      composer: 'Johann Sebastian Bach',
+      opus: 'BWV Anh. 114',
+      difficulty: 2,
+      key: 'G major',
+      period: 'Baroque',
+      durationSeconds: 38,
+      coverColor: 'from-amber-600 to-yellow-950',
+      availableEditions: [
+        {
+          id: 'urtext',
+          name: 'Notenbüchlein für Anna Magdalena',
+          year: '1725',
+          description: 'Noble baroque 3/4 minuet dance with singing right-hand eighth-note passages and stately bassline.',
+        },
+      ],
+    },
+    {
+      id: 'c-position-starter',
+      title: 'First Notes in C Position',
+      composer: 'Beginner Foundation',
+      opus: 'Grade 1 Starter',
+      difficulty: 1,
+      key: 'C major',
+      period: 'Technique',
+      durationSeconds: 12,
+      coverColor: 'from-emerald-500 to-teal-950',
+      availableEditions: [
+        {
+          id: 'urtext',
+          name: 'First Steps',
+          year: 'Standard',
+          description: 'C4-D4-E4 right hand with fingers 1-2-3 and whole note bass grounding.',
+        },
+      ],
+    },
+    {
+      id: 'c-position-five-fingers',
+      title: 'The 5-Finger Wave',
+      composer: 'Beginner Foundation',
+      opus: 'Grade 1 Agility',
+      difficulty: 1,
+      key: 'C major',
+      period: 'Technique',
+      durationSeconds: 15,
+      coverColor: 'from-teal-500 to-cyan-950',
+      availableEditions: [
+        {
+          id: 'urtext',
+          name: 'Five Fingers',
+          year: 'Standard',
+          description: 'C4-D4-E4-F4-G4 five-finger scale and broken triad arpeggios.',
+        },
+      ],
+    },
+    {
       id: 'hanon-exercise-1',
       title: 'Hanon Virtuoso Pianist: No. 1',
       composer: 'C. L. Hanon',
@@ -313,10 +371,17 @@ export class LibraryRepository {
   ]
 
   public static getCatalog(): LibraryPieceSummary[] {
-    return this.catalog
+    const customSummaries = SongStorageManager.getCustomPieceSummaries()
+    return [...this.catalog, ...customSummaries]
   }
 
   public static async loadPiece(pieceId: string, editionId: MasterEditionId = 'urtext'): Promise<Piece> {
+    // 0. Check custom device-saved pieces first
+    const customPiece = SongStorageManager.getSavedPieces().find((p) => p.id === pieceId)
+    if (customPiece) {
+      return customPiece
+    }
+
     // 1. Try loading complete pre-parsed canonical JSON score
     try {
       let resp = await fetch(`./scores/${pieceId}.json`).catch(() => null)
@@ -442,6 +507,18 @@ export class LibraryRepository {
 
       case 'course-4-chords':
         return ScoreEngine.getChordProgressionCourse()
+
+      case 'bach-minuet-g':
+        return ScoreEngine.getMinuetInG()
+
+      case 'hanon-exercise-1':
+        return ScoreEngine.getHanonExercise1()
+
+      case 'c-position-starter':
+        return ScoreEngine.getCPositionStarter()
+
+      case 'c-position-five-fingers':
+        return ScoreEngine.getCPositionFiveFingers()
 
       default:
         return ScoreEngine.getFurElise()

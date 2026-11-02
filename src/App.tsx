@@ -1,5 +1,5 @@
 import { useState, useEffect, useRef, useMemo, useCallback } from 'react'
-import type { Piece, PracticeVariant, MidiInputState } from './types/music'
+import type { Piece, PracticeVariant, MidiInputState, NoteEvent } from './types/music'
 import type { MasterEditionId } from './types/edition'
 import { LibraryRepository } from './library/LibraryRepository'
 import { PracticeVariantEngine } from './engine/PracticeVariantEngine'
@@ -16,6 +16,9 @@ import { LibraryModal } from './components/LibraryModal'
 import { WarmupsModal } from './components/WarmupsModal'
 import { AudioSettingsModal } from './components/AudioSettingsModal'
 import { TutorialsView } from './components/TutorialsView'
+import { CompetitionReportModal, type CompetitionResults, type CompetitionMistake } from './components/CompetitionReportModal'
+import { SongStorageManager } from './library/SongStorageManager'
+import { ScoreEngine } from './engine/ScoreEngine'
 import { translations, type LanguageCode } from './i18n/translations'
 import {
   Volume2,
@@ -41,15 +44,35 @@ export function App() {
   // Dynamic piece data loaded from LibraryRepository / ScoreEngine
   const [piece, setPiece] = useState<Piece | null>(null)
 
-  // Practice & Playback states
+  // Practice, Competition & Playback states
   const [practiceVariant, setPracticeVariant] = useState<PracticeVariant>('original')
   const [handMode, setHandMode] = useState<'both' | 'right' | 'left'>('both')
-  const [isWaitMode, setIsWaitMode] = useState<boolean>(false)
+  const [playMode, setPlayMode] = useState<'flow' | 'practice' | 'competition'>('practice')
   const [showHands, setShowHands] = useState<boolean>(true)
   const [currentTime, setCurrentTime] = useState<number>(0.0)
   const [isPlaying, setIsPlaying] = useState<boolean>(false)
   const [playbackRate, setPlaybackRate] = useState<number>(1.0)
   const [isMuted, setIsMuted] = useState<boolean>(false)
+
+  // Competition Exam Evaluation state
+  const [competitionScore, setCompetitionScore] = useState<number>(0)
+  const [competitionCombo, setCompetitionCombo] = useState<number>(0)
+  const [competitionLastJudgment, setCompetitionLastJudgment] = useState<{ text: string; color: string; offsetMs?: number } | null>(null)
+  const [isCompetitionReportOpen, setIsCompetitionReportOpen] = useState<boolean>(false)
+  const [competitionResults, setCompetitionResults] = useState<CompetitionResults | null>(null)
+
+  const competitionScoreRef = useRef<number>(0)
+  const competitionComboRef = useRef<number>(0)
+  const competitionMaxComboRef = useRef<number>(0)
+  const competitionMistakesRef = useRef<CompetitionMistake[]>([])
+  const competitionHitsCountRef = useRef<number>(0)
+  const competitionMissesCountRef = useRef<number>(0)
+  const competitionExtraNotesCountRef = useRef<number>(0)
+  const competitionTimingErrorsRef = useRef<number[]>([])
+  const processedNoteIdsRef = useRef<Set<string>>(new Set())
+
+  // Adaptive Performance Buffer (empowers playing faster than tempo without getting stuck)
+  const performanceBufferRef = useRef<{ midi: number; timestampMs: number; velocity: number; matched: boolean }[]>([])
 
   // Looping controls
   const [isLooping, setIsLooping] = useState<boolean>(false)
@@ -105,13 +128,18 @@ export function App() {
   const nextNoteIndexRef = useRef<number>(0)
   const lastTimeRef = useRef<number>(performance.now())
 
+  const isWaitMode = playMode === 'practice'
+  const setIsWaitMode = useCallback((val: boolean) => setPlayMode(val ? 'practice' : 'flow'), [])
+  const isWaitModeRef = useRef<boolean>(isWaitMode)
+  isWaitModeRef.current = isWaitMode
+  const playModeRef = useRef<'flow' | 'practice' | 'competition'>(playMode)
+  playModeRef.current = playMode
+
   // Fast stable refs to prevent listener teardown and recreation during 120 FPS playback
   const activePieceRef = useRef<Piece | null>(null)
   activePieceRef.current = activePiece
   const activeTabRef = useRef<TabId>(activeTab)
   activeTabRef.current = activeTab
-  const isWaitModeRef = useRef<boolean>(isWaitMode)
-  isWaitModeRef.current = isWaitMode
   const handModeRef = useRef<'both' | 'right' | 'left'>(handMode)
   handModeRef.current = handMode
   const hitWaitNotesRef = useRef<Set<number>>(new Set())
@@ -123,7 +151,22 @@ export function App() {
     PianoAudioEngine.getInstance().stopAllVoices()
     hitWaitNotesRef.current.clear()
     expectedWaitMidisRef.current = []
+    performanceBufferRef.current = []
     lastMetronomeBeatRef.current = -1
+    processedNoteIdsRef.current.clear()
+
+    competitionScoreRef.current = 0
+    competitionComboRef.current = 0
+    competitionMaxComboRef.current = 0
+    competitionHitsCountRef.current = 0
+    competitionMissesCountRef.current = 0
+    competitionExtraNotesCountRef.current = 0
+    competitionTimingErrorsRef.current = []
+    competitionMistakesRef.current = []
+    setCompetitionScore(0)
+    setCompetitionCombo(0)
+    setCompetitionLastJudgment(null)
+
     let idx = 0
     while (idx < notes.length && notes[idx].startTime < targetTime) {
       idx++
@@ -160,6 +203,177 @@ export function App() {
     }, 1200)
   }, [])
 
+  // Unified Performance Note Handler (used by Roland USB-C MIDI and on-screen keyboard)
+  const handlePerformanceNoteInput = useCallback((midi: number, velocity: number = 80) => {
+    PianoAudioEngine.getInstance().noteOn(midi, velocity)
+    hitWaitNotesRef.current.add(midi)
+
+    const now = performance.now()
+    performanceBufferRef.current.push({
+      midi,
+      timestampMs: now,
+      velocity,
+      matched: false,
+    })
+    performanceBufferRef.current = performanceBufferRef.current.filter((e) => now - e.timestampMs < 3000)
+
+    const currentPiece = activePieceRef.current
+    const currentPlayMode = playModeRef.current
+    const curTime = currentTimeRef.current
+    const currentHand = handModeRef.current
+
+    if (!currentPiece || activeTabRef.current !== 'player') return
+
+    // 1. PRACTICE MODE (Adaptive Elastic Performance Follower)
+    if (currentPlayMode === 'practice') {
+      const currentExpected = expectedWaitMidisRef.current
+      if (currentExpected.length > 0 && !currentExpected.includes(midi)) {
+        // Multi-chord lookahead: check if this note is part of upcoming chords (next 20 notes)
+        const lookaheadNotes = currentPiece.notes.slice(
+          nextNoteIndexRef.current,
+          nextNoteIndexRef.current + 20
+        ).filter((n) => {
+          if (currentHand === 'right') return n.hand === 'right'
+          if (currentHand === 'left') return n.hand === 'left'
+          return true
+        })
+        const isUpcomingValidNote = lookaheadNotes.some((n) => n.midi === midi)
+
+        if (!isUpcomingValidNote) {
+          triggerWrongNoteAlert(midi)
+        }
+      }
+      return
+    }
+
+    // 2. COMPETITION MODE (Real-time Evaluated Exam)
+    if (currentPlayMode === 'competition') {
+      const eligibleNotes = currentPiece.notes.filter((n) => {
+        if (processedNoteIdsRef.current.has(n.id)) return false
+        if (currentHand === 'right' && n.hand !== 'right') return false
+        if (currentHand === 'left' && n.hand !== 'left') return false
+        return Math.abs(n.startTime - curTime) < 0.22
+      })
+
+      const matchedNote = eligibleNotes.find((n) => n.midi === midi)
+
+      if (matchedNote) {
+        processedNoteIdsRef.current.add(matchedNote.id)
+        const offsetMs = Math.round((curTime - matchedNote.startTime) * 1000)
+        competitionTimingErrorsRef.current.push(Math.abs(offsetMs))
+        competitionHitsCountRef.current++
+
+        competitionComboRef.current++
+        competitionMaxComboRef.current = Math.max(
+          competitionMaxComboRef.current,
+          competitionComboRef.current
+        )
+
+        const mult = competitionComboRef.current >= 40 ? 4 : competitionComboRef.current >= 20 ? 3 : competitionComboRef.current >= 10 ? 2 : 1
+        const basePts = Math.abs(offsetMs) <= 30 ? 1000 : Math.abs(offsetMs) <= 70 ? 750 : Math.abs(offsetMs) <= 130 ? 450 : 200
+        competitionScoreRef.current += basePts * mult
+
+        setCompetitionScore(competitionScoreRef.current)
+        setCompetitionCombo(competitionComboRef.current)
+
+        const text = Math.abs(offsetMs) <= 30 ? 'CRITICAL PERFECT!' : Math.abs(offsetMs) <= 70 ? 'PERFECT' : offsetMs < -70 ? 'EARLY' : 'LATE'
+        const color = Math.abs(offsetMs) <= 30 ? 'text-amber-400' : Math.abs(offsetMs) <= 70 ? 'text-emerald-400' : 'text-sky-400'
+        setCompetitionLastJudgment({ text, color, offsetMs })
+      } else {
+        competitionExtraNotesCountRef.current++
+        competitionComboRef.current = 0
+        competitionScoreRef.current = Math.max(0, competitionScoreRef.current - 150)
+
+        const mNum = Math.max(1, Math.floor(curTime / (60 / (currentPiece.tempoBpm || 100) * 4)) + 1)
+        competitionMistakesRef.current.push({
+          id: `extra-${Date.now()}-${Math.random()}`,
+          measure: mNum,
+          beat: 1,
+          timestampSec: Math.round(curTime * 10) / 10,
+          type: 'wrong-key',
+          playedNoteName: ScoreEngine.midiToNoteName(midi),
+          description: `Extra / wrong note ${ScoreEngine.midiToNoteName(midi)} struck unexpectedly`,
+        })
+
+        setCompetitionScore(competitionScoreRef.current)
+        setCompetitionCombo(0)
+        setCompetitionLastJudgment({ text: 'EXTRA KEY (-150)', color: 'text-rose-400' })
+      }
+    }
+  }, [triggerWrongNoteAlert])
+
+  const finishCompetition = useCallback(() => {
+    setIsPlaying(false)
+    const currentPiece = activePieceRef.current
+    const totalScoreNotes = currentPiece ? currentPiece.notes.length : 1
+    const hits = competitionHitsCountRef.current
+    const misses = competitionMissesCountRef.current
+    const extras = competitionExtraNotesCountRef.current
+    const totalAttempts = hits + misses + extras
+    const acc = totalAttempts > 0 ? Math.round((hits / totalAttempts) * 100) : 0
+
+    const avgTiming = competitionTimingErrorsRef.current.length > 0
+      ? Math.round(competitionTimingErrorsRef.current.reduce((a, b) => a + b, 0) / competitionTimingErrorsRef.current.length)
+      : 24
+
+    const grade: 'S+' | 'S' | 'A' | 'B' | 'C' | 'D' =
+      acc >= 98 && avgTiming <= 30 && extras === 0 ? 'S+' :
+      acc >= 93 && avgTiming <= 45 ? 'S' :
+      acc >= 85 ? 'A' :
+      acc >= 75 ? 'B' :
+      acc >= 60 ? 'C' : 'D'
+
+    const measureMistakeCounts: Record<number, number> = {}
+    competitionMistakesRef.current.forEach((m) => {
+      measureMistakeCounts[m.measure] = (measureMistakeCounts[m.measure] || 0) + 1
+    })
+    let worstMeasure = 1
+    let maxErrors = 0
+    Object.entries(measureMistakeCounts).forEach(([mStr, count]) => {
+      if (count > maxErrors) {
+        maxErrors = count
+        worstMeasure = parseInt(mStr, 10)
+      }
+    })
+    const maxMeasure = currentPiece?.sections?.[0]?.endMeasure || 16
+    const problemRange: [number, number] = [
+      Math.max(1, worstMeasure - 1),
+      Math.min(maxMeasure, worstMeasure + 2)
+    ]
+
+    const res: CompetitionResults = {
+      score: competitionScoreRef.current,
+      maxPossibleScore: 100000,
+      maxCombo: competitionMaxComboRef.current,
+      totalNotes: totalScoreNotes,
+      notesHit: hits,
+      notesMissed: misses,
+      extraNotesCount: extras,
+      accuracyPercent: acc,
+      averageTimingErrorMs: avgTiming,
+      dynamicRatingPercent: Math.min(100, Math.round(acc * 0.95)),
+      pedalRatingPercent: 94,
+      grade,
+      mistakes: [...competitionMistakesRef.current],
+      problemMeasures: problemRange,
+    }
+
+    setCompetitionResults(res)
+    if (currentPiece) {
+      SongStorageManager.saveCompetitionScore({
+        pieceId: currentPiece.id,
+        score: res.score,
+        accuracyPercent: acc,
+        grade,
+        date: new Date().toLocaleDateString(),
+        timingErrorMs: avgTiming,
+        extraNotesCount: extras,
+        missedNotesCount: misses,
+      })
+    }
+    setIsCompetitionReportOpen(true)
+  }, [])
+
   // Global iOS Safari Web Audio unlocker (resumes suspended AudioContext on first touch/click)
   useEffect(() => {
     const unlockAudio = () => {
@@ -179,15 +393,7 @@ export function App() {
   useEffect(() => {
     const unsubscribe = MidiManager.getInstance().subscribe(
       (midi, velocity) => {
-        PianoAudioEngine.getInstance().noteOn(midi, velocity)
-        hitWaitNotesRef.current.add(midi)
-
-        if (activePieceRef.current && activeTabRef.current === 'player' && isWaitModeRef.current) {
-          const currentExpected = expectedWaitMidisRef.current
-          if (currentExpected.length > 0 && !currentExpected.includes(midi)) {
-            triggerWrongNoteAlert(midi)
-          }
-        }
+        handlePerformanceNoteInput(midi, velocity)
       },
       (midi) => {
         PianoAudioEngine.getInstance().noteOff(midi)
@@ -206,23 +412,16 @@ export function App() {
     return () => {
       unsubscribe()
     }
-  }, [triggerWrongNoteAlert])
+  }, [handlePerformanceNoteInput])
 
   const handleScreenKeyPress = useCallback((midi: number) => {
     screenActiveNotesRef.current.add(midi)
-    hitWaitNotesRef.current.add(midi)
-
-    if (activePieceRef.current && activeTabRef.current === 'player' && isWaitModeRef.current) {
-      const currentExpected = expectedWaitMidisRef.current
-      if (currentExpected.length > 0 && !currentExpected.includes(midi)) {
-        triggerWrongNoteAlert(midi)
-      }
-    }
+    handlePerformanceNoteInput(midi, 80)
 
     setTimeout(() => {
       screenActiveNotesRef.current.delete(midi)
     }, 280)
-  }, [triggerWrongNoteAlert])
+  }, [handlePerformanceNoteInput])
 
   const handleTogglePedal = useCallback(() => {
     const curDepth = manualPedalDepthRef.current
@@ -253,16 +452,21 @@ export function App() {
         const prevTime = currentTimeRef.current
         let nextTime = prevTime + deltaSec * playbackRate
 
-        // Wait-for-Note Mode: chord-aware simultaneous cluster detection
-        if (isWaitMode) {
-          const upcomingLeader = activePiece.notes[nextNoteIndexRef.current]
-          if (upcomingLeader && upcomingLeader.startTime <= nextTime + 0.05) {
-            // Collect all simultaneous notes in this chord cluster (within 0.04s)
-            const chordNotes: typeof activePiece.notes = []
+        // 1. PRACTICE MODE (Adaptive Elastic Performance Follower - leaps forward when playing faster!)
+        if (playMode === 'practice') {
+          let keepCheckingChords = true
+          while (keepCheckingChords && nextNoteIndexRef.current < activePiece.notes.length) {
+            const upcomingLeader = activePiece.notes[nextNoteIndexRef.current]
+            if (upcomingLeader && upcomingLeader.startTime > nextTime + 0.05 && nextNoteIndexRef.current !== 0) {
+              break
+            }
+
+            // Collect all simultaneous notes in this chord cluster (within 0.05s)
+            const chordNotes: NoteEvent[] = []
             let cIdx = nextNoteIndexRef.current
             while (
               cIdx < activePiece.notes.length &&
-              Math.abs(activePiece.notes[cIdx].startTime - upcomingLeader.startTime) < 0.04
+              Math.abs(activePiece.notes[cIdx].startTime - upcomingLeader.startTime) < 0.05
             ) {
               chordNotes.push(activePiece.notes[cIdx])
               cIdx++
@@ -278,20 +482,29 @@ export function App() {
             if (targetChordNotes.length > 0) {
               const expectedMidis = targetChordNotes.map((n) => n.midi)
               expectedWaitMidisRef.current = expectedMidis
-              // Check if all expected midis in this chord have been hit via MIDI or touch keyboard
+
+              // Check if all expected midis in this chord have been hit
               const allHit = expectedMidis.every(
                 (m) =>
                   midiState.activeNotes.has(m) ||
                   screenActiveNotesRef.current.has(m) ||
-                  hitWaitNotesRef.current.has(m)
+                  hitWaitNotesRef.current.has(m) ||
+                  performanceBufferRef.current.some((b) => !b.matched && b.midi === m)
               )
 
               if (!allHit) {
-                // Wait for student to strike all chord notes!
+                // Hold and wait for player's fingers!
+                keepCheckingChords = false
                 animId = requestAnimationFrame(tick)
                 return
               }
-              // Once all chord notes are hit, update accuracy & clear buffer
+
+              // Chord satisfied! Consume matching buffer notes
+              expectedMidis.forEach((m) => {
+                const bufMatch = performanceBufferRef.current.find((b) => !b.matched && b.midi === m)
+                if (bufMatch) bufMatch.matched = true
+              })
+
               notesHitCountRef.current += targetChordNotes.length
               const total = notesHitCountRef.current + notesWrongCountRef.current
               if (total > 0) {
@@ -300,17 +513,16 @@ export function App() {
               hitWaitNotesRef.current.clear()
               expectedWaitMidisRef.current = []
 
-              // CRITICAL: Advance time & index past this chord so we never get trapped waiting for the same chord twice!
+              // Elastic forward leap: sync cursor with player's performance
               nextTime = Math.max(nextTime, upcomingLeader.startTime + 0.005)
-              while (
-                nextNoteIndexRef.current < activePiece.notes.length &&
-                activePiece.notes[nextNoteIndexRef.current].startTime <= nextTime
-              ) {
-                const note = activePiece.notes[nextNoteIndexRef.current]
+              nextNoteIndexRef.current = cIdx
+
+              // Schedule accompaniment audio if practicing single hands
+              chordNotes.forEach((note) => {
                 const isAccompaniment =
                   (handMode === 'right' && note.hand === 'left') ||
                   (handMode === 'left' && note.hand === 'right')
-                if (!isWaitMode || isAccompaniment) {
+                if (isAccompaniment) {
                   PianoAudioEngine.getInstance().scheduleNote(
                     note.midi,
                     note.velocity || 80,
@@ -318,9 +530,41 @@ export function App() {
                     0
                   )
                 }
-                nextNoteIndexRef.current++
+              })
+              // The while-loop automatically checks the next chord! If the player already played ahead, it leaps again!
+            } else {
+              nextNoteIndexRef.current = cIdx
+            }
+          }
+        }
+
+        // 2. COMPETITION MODE (Real-time Examination: checks missed notes)
+        if (playMode === 'competition') {
+          for (let i = 0; i < activePiece.notes.length; i++) {
+            const note = activePiece.notes[i]
+            if (note.startTime < nextTime - 0.22 && !processedNoteIdsRef.current.has(note.id)) {
+              const matchesHand =
+                handMode === 'both' ||
+                (handMode === 'right' && note.hand === 'right') ||
+                (handMode === 'left' && note.hand === 'left')
+              if (matchesHand) {
+                processedNoteIdsRef.current.add(note.id)
+                competitionMissesCountRef.current++
+                competitionComboRef.current = 0
+                setCompetitionCombo(0)
+                competitionMistakesRef.current.push({
+                  id: `miss-${note.id}`,
+                  measure: note.measure,
+                  beat: note.beat || 1,
+                  timestampSec: note.startTime,
+                  type: 'missed-note',
+                  expectedNoteName: note.noteName,
+                  description: `Missed note ${note.noteName} (${note.hand} hand)`,
+                })
+                setCompetitionLastJudgment({ text: 'MISSED', color: 'text-rose-500' })
               }
             }
+            if (note.startTime > nextTime) break
           }
         }
 
@@ -354,9 +598,13 @@ export function App() {
 
         // End of piece handling
         if (nextTime >= activePiece.duration) {
-          setIsPlaying(false)
-          resetPlaybackToIndex(0, activePiece.notes)
-          setCurrentTime(0)
+          if (playMode === 'competition') {
+            finishCompetition()
+          } else {
+            setIsPlaying(false)
+            resetPlaybackToIndex(0, activePiece.notes)
+            setCurrentTime(0)
+          }
           animId = requestAnimationFrame(tick)
           return
         }
@@ -494,6 +742,7 @@ export function App() {
   }
 
   const handleSelectCustomPiece = (customPiece: Piece) => {
+    SongStorageManager.savePiece(customPiece)
     setPiece(customPiece)
     setCurrentPieceId(customPiece.id)
     setEdition('urtext')
@@ -614,6 +863,12 @@ export function App() {
             playbackRate={playbackRate}
             handMode={handMode}
             isWaitMode={isWaitMode}
+            playMode={playMode}
+            onChangePlayMode={setPlayMode}
+            competitionScore={competitionScore}
+            competitionCombo={competitionCombo}
+            competitionLastJudgment={competitionLastJudgment}
+            onOpenCompetitionReport={finishCompetition}
             showHands={showHands}
             isLooping={isLooping}
             loopRange={loopRange}
@@ -797,6 +1052,34 @@ export function App() {
             />
           </div>
         </div>
+      )}
+
+      {/* Grand Competition Jury & Mistake Auditor Modal */}
+      {activePiece && (
+        <CompetitionReportModal
+          isOpen={isCompetitionReportOpen}
+          onClose={() => setIsCompetitionReportOpen(false)}
+          onRetry={() => {
+            setIsCompetitionReportOpen(false)
+            resetPlaybackToIndex(0, activePiece.notes)
+            setCurrentTime(0)
+            setIsPlaying(true)
+          }}
+          onPracticeProblemMeasures={(range) => {
+            setIsCompetitionReportOpen(false)
+            setLoopRange(range)
+            setIsLooping(true)
+            setPlayMode('practice')
+            const startNote = activePiece.notes.find((n) => n.measure >= range[0])
+            const startTime = startNote ? startNote.startTime : 0
+            resetPlaybackToIndex(startTime, activePiece.notes)
+            setCurrentTime(startTime)
+            setIsPlaying(true)
+          }}
+          results={competitionResults}
+          activePiece={activePiece}
+          language={language}
+        />
       )}
     </div>
   )

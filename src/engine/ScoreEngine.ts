@@ -1493,4 +1493,367 @@ export class ScoreEngine {
       ],
     }
   }
+
+  // ==========================================
+  // 17. J. S. BACH: MINUET IN G MAJOR (BWV Anh. 114)
+  // Complete two-hand counterpoint, 3/4 meter
+  // ==========================================
+  public static getMinuetInG(): Piece {
+    const n = this.noteToMidi.bind(this)
+    const notes: NoteEvent[] = []
+    const bpm = 116
+    const beat = 60 / bpm // quarter note = ~0.517s
+    const eighth = beat / 2
+    let t = 0.0
+
+    // Measure 1: RH D5 (quarter), G4-A4-B4-C5 (eighths) | LH G3-B3-D4 (chord)
+    notes.push(
+      { id: 'm-m1-rh1', midi: n('D5'), noteName: 'D5', startTime: t, duration: beat * 0.9, hand: 'right', finger: 5, measure: 1, velocity: 82 },
+      { id: 'm-m1-rh2', midi: n('G4'), noteName: 'G4', startTime: t + beat, duration: eighth * 0.9, hand: 'right', finger: 1, measure: 1, velocity: 74 },
+      { id: 'm-m1-rh3', midi: n('A4'), noteName: 'A4', startTime: t + beat + eighth, duration: eighth * 0.9, hand: 'right', finger: 2, measure: 1, velocity: 74 },
+      { id: 'm-m1-rh4', midi: n('B4'), noteName: 'B4', startTime: t + beat * 2, duration: eighth * 0.9, hand: 'right', finger: 3, measure: 1, velocity: 76 },
+      { id: 'm-m1-rh5', midi: n('C5'), noteName: 'C5', startTime: t + beat * 2 + eighth, duration: eighth * 0.9, hand: 'right', finger: 4, measure: 1, velocity: 76 },
+      { id: 'm-m1-lh1', midi: n('G3'), noteName: 'G3', startTime: t, duration: beat * 2.8, hand: 'left', finger: 5, measure: 1, velocity: 78 },
+      { id: 'm-m1-lh2', midi: n('B3'), noteName: 'B3', startTime: t + beat, duration: beat * 0.9, hand: 'left', finger: 3, measure: 1, velocity: 70 },
+      { id: 'm-m1-lh3', midi: n('D4'), noteName: 'D4', startTime: t + beat * 2, duration: beat * 0.9, hand: 'left', finger: 1, measure: 1, velocity: 70 }
+    )
+    t += beat * 3
+
+    // Measure 2: RH D5 (quarter), G4 (quarter), G4 (quarter) | LH B3
+    notes.push(
+      { id: 'm-m2-rh1', midi: n('D5'), noteName: 'D5', startTime: t, duration: beat * 0.9, hand: 'right', finger: 5, measure: 2, velocity: 80 },
+      { id: 'm-m2-rh2', midi: n('G4'), noteName: 'G4', startTime: t + beat, duration: beat * 0.9, hand: 'right', finger: 1, measure: 2, velocity: 72 },
+      { id: 'm-m2-rh3', midi: n('G4'), noteName: 'G4', startTime: t + beat * 2, duration: beat * 0.9, hand: 'right', finger: 1, measure: 2, velocity: 72 },
+      { id: 'm-m2-lh1', midi: n('B3'), noteName: 'B3', startTime: t, duration: beat * 2.8, hand: 'left', finger: 3, measure: 2, velocity: 72 }
+    )
+    t += beat * 3
+
+    // Measure 3: RH E5 (quarter), C5-D5-E5-F#5 (eighths) | LH C4
+    notes.push(
+      { id: 'm-m3-rh1', midi: n('E5'), noteName: 'E5', startTime: t, duration: beat * 0.9, hand: 'right', finger: 5, measure: 3, velocity: 84 },
+      { id: 'm-m3-rh2', midi: n('C5'), noteName: 'C5', startTime: t + beat, duration: eighth * 0.9, hand: 'right', finger: 1, measure: 3, velocity: 74 },
+      { id: 'm-m3-rh3', midi: n('D5'), noteName: 'D5', startTime: t + beat + eighth, duration: eighth * 0.9, hand: 'right', finger: 2, measure: 3, velocity: 74 },
+      { id: 'm-m3-rh4', midi: n('E5'), noteName: 'E5', startTime: t + beat * 2, duration: eighth * 0.9, hand: 'right', finger: 3, measure: 3, velocity: 76 },
+      { id: 'm-m3-rh5', midi: n('F#5'), noteName: 'F#5', startTime: t + beat * 2 + eighth, duration: eighth * 0.9, hand: 'right', finger: 4, measure: 3, velocity: 78 },
+      { id: 'm-m3-lh1', midi: n('C4'), noteName: 'C4', startTime: t, duration: beat * 2.8, hand: 'left', finger: 1, measure: 3, velocity: 76 }
+    )
+    t += beat * 3
+
+    // Measure 4: RH G5 (quarter), G4 (quarter), G4 (quarter) | LH B3
+    notes.push(
+      { id: 'm-m4-rh1', midi: n('G5'), noteName: 'G5', startTime: t, duration: beat * 0.9, hand: 'right', finger: 5, measure: 4, velocity: 86 },
+      { id: 'm-m4-rh2', midi: n('G4'), noteName: 'G4', startTime: t + beat, duration: beat * 0.9, hand: 'right', finger: 1, measure: 4, velocity: 74 },
+      { id: 'm-m4-rh3', midi: n('G4'), noteName: 'G4', startTime: t + beat * 2, duration: beat * 0.9, hand: 'right', finger: 1, measure: 4, velocity: 74 },
+      { id: 'm-m4-lh1', midi: n('B3'), noteName: 'B3', startTime: t, duration: beat * 2.8, hand: 'left', finger: 3, measure: 4, velocity: 72 }
+    )
+    t += beat * 3
+
+    // Measure 5: RH C5 (quarter), D5-C5-B4-A4 (eighths) | LH A3
+    notes.push(
+      { id: 'm-m5-rh1', midi: n('C5'), noteName: 'C5', startTime: t, duration: beat * 0.9, hand: 'right', finger: 3, measure: 5, velocity: 80 },
+      { id: 'm-m5-rh2', midi: n('D5'), noteName: 'D5', startTime: t + beat, duration: eighth * 0.9, hand: 'right', finger: 4, measure: 5, velocity: 74 },
+      { id: 'm-m5-rh3', midi: n('C5'), noteName: 'C5', startTime: t + beat + eighth, duration: eighth * 0.9, hand: 'right', finger: 3, measure: 5, velocity: 74 },
+      { id: 'm-m5-rh4', midi: n('B4'), noteName: 'B4', startTime: t + beat * 2, duration: eighth * 0.9, hand: 'right', finger: 2, measure: 5, velocity: 72 },
+      { id: 'm-m5-rh5', midi: n('A4'), noteName: 'A4', startTime: t + beat * 2 + eighth, duration: eighth * 0.9, hand: 'right', finger: 1, measure: 5, velocity: 72 },
+      { id: 'm-m5-lh1', midi: n('A3'), noteName: 'A3', startTime: t, duration: beat * 2.8, hand: 'left', finger: 4, measure: 5, velocity: 74 }
+    )
+    t += beat * 3
+
+    // Measure 6: RH B4 (quarter), C5-B4-A4-G4 (eighths) | LH G3
+    notes.push(
+      { id: 'm-m6-rh1', midi: n('B4'), noteName: 'B4', startTime: t, duration: beat * 0.9, hand: 'right', finger: 3, measure: 6, velocity: 78 },
+      { id: 'm-m6-rh2', midi: n('C5'), noteName: 'C5', startTime: t + beat, duration: eighth * 0.9, hand: 'right', finger: 4, measure: 6, velocity: 72 },
+      { id: 'm-m6-rh3', midi: n('B4'), noteName: 'B4', startTime: t + beat + eighth, duration: eighth * 0.9, hand: 'right', finger: 3, measure: 6, velocity: 72 },
+      { id: 'm-m6-rh4', midi: n('A4'), noteName: 'A4', startTime: t + beat * 2, duration: eighth * 0.9, hand: 'right', finger: 2, measure: 6, velocity: 70 },
+      { id: 'm-m6-rh5', midi: n('G4'), noteName: 'G4', startTime: t + beat * 2 + eighth, duration: eighth * 0.9, hand: 'right', finger: 1, measure: 6, velocity: 70 },
+      { id: 'm-m6-lh1', midi: n('G3'), noteName: 'G3', startTime: t, duration: beat * 2.8, hand: 'left', finger: 5, measure: 6, velocity: 72 }
+    )
+    t += beat * 3
+
+    // Measure 7: RH F#4 (quarter), G4-A4-B4-G4 | LH D4-B3-C4
+    notes.push(
+      { id: 'm-m7-rh1', midi: n('F#4'), noteName: 'F#4', startTime: t, duration: beat * 0.9, hand: 'right', finger: 2, measure: 7, velocity: 76 },
+      { id: 'm-m7-rh2', midi: n('G4'), noteName: 'G4', startTime: t + beat, duration: eighth * 0.9, hand: 'right', finger: 1, measure: 7, velocity: 72 },
+      { id: 'm-m7-rh3', midi: n('A4'), noteName: 'A4', startTime: t + beat + eighth, duration: eighth * 0.9, hand: 'right', finger: 2, measure: 7, velocity: 74 },
+      { id: 'm-m7-rh4', midi: n('B4'), noteName: 'B4', startTime: t + beat * 2, duration: eighth * 0.9, hand: 'right', finger: 3, measure: 7, velocity: 76 },
+      { id: 'm-m7-rh5', midi: n('G4'), noteName: 'G4', startTime: t + beat * 2 + eighth, duration: eighth * 0.9, hand: 'right', finger: 1, measure: 7, velocity: 72 },
+      { id: 'm-m7-lh1', midi: n('D4'), noteName: 'D4', startTime: t, duration: beat * 0.9, hand: 'left', finger: 1, measure: 7, velocity: 72 },
+      { id: 'm-m7-lh2', midi: n('B3'), noteName: 'B3', startTime: t + beat, duration: beat * 0.9, hand: 'left', finger: 3, measure: 7, velocity: 70 },
+      { id: 'm-m7-lh3', midi: n('C4'), noteName: 'C4', startTime: t + beat * 2, duration: beat * 0.9, hand: 'left', finger: 2, measure: 7, velocity: 70 }
+    )
+    t += beat * 3
+
+    // Measure 8: RH A4 (dotted half) | LH D3-F#3-D4 (cadence)
+    notes.push(
+      { id: 'm-m8-rh1', midi: n('A4'), noteName: 'A4', startTime: t, duration: beat * 2.8, hand: 'right', finger: 2, measure: 8, velocity: 80 },
+      { id: 'm-m8-lh1', midi: n('D3'), noteName: 'D3', startTime: t, duration: beat * 0.9, hand: 'left', finger: 5, measure: 8, velocity: 78 },
+      { id: 'm-m8-lh2', midi: n('F#3'), noteName: 'F#3', startTime: t + beat, duration: beat * 0.9, hand: 'left', finger: 3, measure: 8, velocity: 72 },
+      { id: 'm-m8-lh3', midi: n('D4'), noteName: 'D4', startTime: t + beat * 2, duration: beat * 0.9, hand: 'left', finger: 1, measure: 8, velocity: 72 }
+    )
+    t += beat * 3
+
+    return {
+      id: 'bach-minuet-g',
+      title: 'Minuet in G Major',
+      composer: 'Johann Sebastian Bach',
+      opus: 'BWV Anh. 114 (Notenbüchlein)',
+      key: 'G Major',
+      timeSignature: [3, 4],
+      tempoBpm: bpm,
+      duration: Math.round(t * 100) / 100,
+      notes,
+      pedalEvents: [],
+      annotations: [
+        {
+          id: 'min-ann-1',
+          measureRange: [1, 8],
+          title: 'Noble Baroque Dance (3/4)',
+          germanTerm: 'Graziöser Menuett-Schritt',
+          category: 'rubato',
+          instruction: 'Keep the right-hand articulation light and singing, while the left-hand bass grounds the noble 3/4 minuet meter.',
+          referenceTimestampSeconds: 0.0,
+        },
+      ],
+      sections: [
+        { id: 'min-sec-1', title: 'Part A (Theme in G Major)', startMeasure: 1, endMeasure: 8, startTime: 0, endTime: t, tempoSuggestion: '116 BPM Moderato', character: 'Stately, elegant, baroque counterpoint' },
+      ],
+    }
+  }
+
+  // ==========================================
+  // 18. C. L. HANON: THE VIRTUOSO PIANIST - EXERCISE NO. 1
+  // Full ascending & descending 16th-note drill for both hands
+  // ==========================================
+  public static getHanonExercise1(): Piece {
+    const n = this.noteToMidi.bind(this)
+    const notes: NoteEvent[] = []
+    const bpm = 96
+    const beat = 60 / bpm
+    const dt = beat / 4 // sixteenth note = ~0.156s
+    let t = 0.0
+
+    // Hanon No. 1 Ascending Sequence starting on C4 (RH) and C3 (LH)
+    // Pattern: 1 - 2 - 3 - 4 - 5 - 4 - 3 - 2
+    // Skips 1st to 2nd note (C to E), then stepwise up and down
+    const startMidisRH = [n('C4'), n('D4'), n('E4'), n('F4'), n('G4'), n('A4'), n('B4'), n('C5')]
+    const startMidisLH = [n('C3'), n('D3'), n('E3'), n('F3'), n('G3'), n('A3'), n('B3'), n('C4')]
+
+    startMidisRH.forEach((baseMidiRH, step) => {
+      const baseMidiLH = startMidisLH[step]
+      const offsets = [0, 4, 5, 7, 9, 7, 5, 4] // C - E - F - G - A - G - F - E in semitones approximately
+
+      offsets.forEach((off, i) => {
+        notes.push(
+          {
+            id: `h1-asc-${step}-${i}-rh`,
+            midi: baseMidiRH + off,
+            noteName: this.midiToNoteName(baseMidiRH + off),
+            startTime: t + i * dt,
+            duration: dt * 0.9,
+            hand: 'right',
+            finger: i === 0 ? 1 : i === 1 ? 2 : i === 2 ? 3 : i === 3 ? 4 : i === 4 ? 5 : i === 5 ? 4 : i === 6 ? 3 : 2,
+            measure: step + 1,
+            velocity: 78,
+          },
+          {
+            id: `h1-asc-${step}-${i}-lh`,
+            midi: baseMidiLH + off,
+            noteName: this.midiToNoteName(baseMidiLH + off),
+            startTime: t + i * dt,
+            duration: dt * 0.9,
+            hand: 'left',
+            finger: i === 0 ? 5 : i === 1 ? 4 : i === 2 ? 3 : i === 3 ? 2 : i === 4 ? 1 : i === 5 ? 2 : i === 6 ? 3 : 4,
+            measure: step + 1,
+            velocity: 76,
+          }
+        )
+      })
+      t += dt * 8
+    })
+
+    // Descending Resolution Chord
+    notes.push(
+      { id: 'h1-res-rh', midi: n('C4'), noteName: 'C4', startTime: t, duration: beat * 2, hand: 'right', finger: 1, measure: 9, velocity: 84 },
+      { id: 'h1-res-lh', midi: n('C3'), noteName: 'C3', startTime: t, duration: beat * 2, hand: 'left', finger: 5, measure: 9, velocity: 84 }
+    )
+    t += beat * 2
+
+    return {
+      id: 'hanon-exercise-1',
+      title: 'The Virtuoso Pianist: Exercise No. 1',
+      composer: 'C. L. Hanon',
+      opus: '60 Exercises for Virtuosity',
+      key: 'C Major',
+      timeSignature: [2, 4],
+      tempoBpm: bpm,
+      duration: Math.round(t * 100) / 100,
+      notes,
+      pedalEvents: [],
+      annotations: [
+        {
+          id: 'han-ann-1',
+          measureRange: [1, 9],
+          title: 'High Finger Lift & Equal Strength',
+          germanTerm: 'Unabhängigkeit der schwachen Finger (4 & 5)',
+          category: 'fingering',
+          instruction: 'Lift each finger cleanly and high without stiffening the wrist. Emphasize equal volume across the fourth and fifth fingers.',
+          referenceTimestampSeconds: 0.0,
+        },
+      ],
+      sections: [
+        { id: 'han-sec-1', title: 'Hanon No. 1 Ascending & Climax', startMeasure: 1, endMeasure: 9, startTime: 0, endTime: t, tempoSuggestion: '96 BPM Allegro moderato', character: 'Crisp, articulate, athletic drill' },
+      ],
+    }
+  }
+
+  // ==========================================
+  // 19. C POSITION STARTER (FIRST STEPS)
+  // Beginners: C4-D4-E4 with Fingers 1-2-3
+  // ==========================================
+  public static getCPositionStarter(): Piece {
+    const n = this.noteToMidi.bind(this)
+    const notes: NoteEvent[] = []
+    const bpm = 90
+    const beat = 60 / bpm
+    let t = 0.0
+
+    // Measure 1: C4 (1), D4 (2), E4 (3), C4 (1)
+    notes.push(
+      { id: 'cp-m1-1', midi: n('C4'), noteName: 'C4', startTime: t, duration: beat * 0.9, hand: 'right', finger: 1, measure: 1, velocity: 80 },
+      { id: 'cp-m1-2', midi: n('D4'), noteName: 'D4', startTime: t + beat, duration: beat * 0.9, hand: 'right', finger: 2, measure: 1, velocity: 80 },
+      { id: 'cp-m1-3', midi: n('E4'), noteName: 'E4', startTime: t + beat * 2, duration: beat * 0.9, hand: 'right', finger: 3, measure: 1, velocity: 82 },
+      { id: 'cp-m1-4', midi: n('C4'), noteName: 'C4', startTime: t + beat * 3, duration: beat * 0.9, hand: 'right', finger: 1, measure: 1, velocity: 80 },
+      { id: 'cp-m1-lh', midi: n('C3'), noteName: 'C3', startTime: t, duration: beat * 3.8, hand: 'left', finger: 5, measure: 1, velocity: 74 }
+    )
+    t += beat * 4
+
+    // Measure 2: E4 (3), D4 (2), C4 (1) half note
+    notes.push(
+      { id: 'cp-m2-1', midi: n('E4'), noteName: 'E4', startTime: t, duration: beat * 0.9, hand: 'right', finger: 3, measure: 2, velocity: 82 },
+      { id: 'cp-m2-2', midi: n('D4'), noteName: 'D4', startTime: t + beat, duration: beat * 0.9, hand: 'right', finger: 2, measure: 2, velocity: 80 },
+      { id: 'cp-m2-3', midi: n('C4'), noteName: 'C4', startTime: t + beat * 2, duration: beat * 1.9, hand: 'right', finger: 1, measure: 2, velocity: 84 },
+      { id: 'cp-m2-lh', midi: n('G3'), noteName: 'G3', startTime: t, duration: beat * 3.8, hand: 'left', finger: 1, measure: 2, velocity: 74 }
+    )
+    t += beat * 4
+
+    // Measure 3: C4-D4-E4-D4 step weave
+    notes.push(
+      { id: 'cp-m3-1', midi: n('C4'), noteName: 'C4', startTime: t, duration: beat * 0.9, hand: 'right', finger: 1, measure: 3, velocity: 80 },
+      { id: 'cp-m3-2', midi: n('D4'), noteName: 'D4', startTime: t + beat, duration: beat * 0.9, hand: 'right', finger: 2, measure: 3, velocity: 80 },
+      { id: 'cp-m3-3', midi: n('E4'), noteName: 'E4', startTime: t + beat * 2, duration: beat * 0.9, hand: 'right', finger: 3, measure: 3, velocity: 82 },
+      { id: 'cp-m3-4', midi: n('D4'), noteName: 'D4', startTime: t + beat * 3, duration: beat * 0.9, hand: 'right', finger: 2, measure: 3, velocity: 80 },
+      { id: 'cp-m3-lh', midi: n('C3'), noteName: 'C3', startTime: t, duration: beat * 3.8, hand: 'left', finger: 5, measure: 3, velocity: 74 }
+    )
+    t += beat * 4
+
+    // Measure 4: C4 whole note resolution
+    notes.push(
+      { id: 'cp-m4-1', midi: n('C4'), noteName: 'C4', startTime: t, duration: beat * 3.8, hand: 'right', finger: 1, measure: 4, velocity: 88 },
+      { id: 'cp-m4-lh', midi: n('C3'), noteName: 'C3', startTime: t, duration: beat * 3.8, hand: 'left', finger: 5, measure: 4, velocity: 80 }
+    )
+    t += beat * 4
+
+    return {
+      id: 'c-position-starter',
+      title: 'First Notes in C Position (C-D-E)',
+      composer: 'Beginner Foundation',
+      opus: 'Grade 1 First Steps',
+      key: 'C Major',
+      timeSignature: [4, 4],
+      tempoBpm: bpm,
+      duration: Math.round(t * 100) / 100,
+      notes,
+      pedalEvents: [],
+      annotations: [
+        {
+          id: 'cps-ann-1',
+          measureRange: [1, 4],
+          title: 'Curved Fingers & Relaxed Wrist',
+          germanTerm: 'Gewölbte Fingerhaltung',
+          category: 'fingering',
+          instruction: 'Place fingers 1, 2, and 3 naturally on C4, D4, and E4. Imagine holding a soft tennis ball in your palm.',
+          referenceTimestampSeconds: 0.0,
+        },
+      ],
+      sections: [
+        { id: 'cps-sec-1', title: 'C-D-E Melodic Foundation', startMeasure: 1, endMeasure: 4, startTime: 0, endTime: t, tempoSuggestion: '90 BPM Andante', character: 'Calm, steady, foundational' },
+      ],
+    }
+  }
+
+  // ==========================================
+  // 20. C POSITION FIVE FINGERS (THE 5-FINGER WAVE)
+  // Complete 5-finger pattern: C-D-E-F-G
+  // ==========================================
+  public static getCPositionFiveFingers(): Piece {
+    const n = this.noteToMidi.bind(this)
+    const notes: NoteEvent[] = []
+    const bpm = 100
+    const beat = 60 / bpm
+    let t = 0.0
+
+    // Measure 1: Ascending C4-D4-E4-F4
+    notes.push(
+      { id: 'c5-m1-1', midi: n('C4'), noteName: 'C4', startTime: t, duration: beat * 0.9, hand: 'right', finger: 1, measure: 1, velocity: 80 },
+      { id: 'c5-m1-2', midi: n('D4'), noteName: 'D4', startTime: t + beat, duration: beat * 0.9, hand: 'right', finger: 2, measure: 1, velocity: 80 },
+      { id: 'c5-m1-3', midi: n('E4'), noteName: 'E4', startTime: t + beat * 2, duration: beat * 0.9, hand: 'right', finger: 3, measure: 1, velocity: 82 },
+      { id: 'c5-m1-4', midi: n('F4'), noteName: 'F4', startTime: t + beat * 3, duration: beat * 0.9, hand: 'right', finger: 4, measure: 1, velocity: 80 },
+      { id: 'c5-m1-lh', midi: n('C3'), noteName: 'C3', startTime: t, duration: beat * 3.8, hand: 'left', finger: 5, measure: 1, velocity: 76 }
+    )
+    t += beat * 4
+
+    // Measure 2: Peak G4, then descending F4-E4-D4
+    notes.push(
+      { id: 'c5-m2-1', midi: n('G4'), noteName: 'G4', startTime: t, duration: beat * 0.9, hand: 'right', finger: 5, measure: 2, velocity: 86 },
+      { id: 'c5-m2-2', midi: n('F4'), noteName: 'F4', startTime: t + beat, duration: beat * 0.9, hand: 'right', finger: 4, measure: 2, velocity: 80 },
+      { id: 'c5-m2-3', midi: n('E4'), noteName: 'E4', startTime: t + beat * 2, duration: beat * 0.9, hand: 'right', finger: 3, measure: 2, velocity: 80 },
+      { id: 'c5-m2-4', midi: n('D4'), noteName: 'D4', startTime: t + beat * 3, duration: beat * 0.9, hand: 'right', finger: 2, measure: 2, velocity: 80 },
+      { id: 'c5-m2-lh', midi: n('G3'), noteName: 'G3', startTime: t, duration: beat * 3.8, hand: 'left', finger: 1, measure: 2, velocity: 76 }
+    )
+    t += beat * 4
+
+    // Measure 3: C4-E4-G4 Broken Triad Arpeggio
+    notes.push(
+      { id: 'c5-m3-1', midi: n('C4'), noteName: 'C4', startTime: t, duration: beat * 0.9, hand: 'right', finger: 1, measure: 3, velocity: 84 },
+      { id: 'c5-m3-2', midi: n('E4'), noteName: 'E4', startTime: t + beat, duration: beat * 0.9, hand: 'right', finger: 3, measure: 3, velocity: 84 },
+      { id: 'c5-m3-3', midi: n('G4'), noteName: 'G4', startTime: t + beat * 2, duration: beat * 0.9, hand: 'right', finger: 5, measure: 3, velocity: 88 },
+      { id: 'c5-m3-4', midi: n('E4'), noteName: 'E4', startTime: t + beat * 3, duration: beat * 0.9, hand: 'right', finger: 3, measure: 3, velocity: 82 },
+      { id: 'c5-m3-lh', midi: n('C3'), noteName: 'C3', startTime: t, duration: beat * 3.8, hand: 'left', finger: 5, measure: 3, velocity: 78 }
+    )
+    t += beat * 4
+
+    // Measure 4: C4 Full Resolution
+    notes.push(
+      { id: 'c5-m4-1', midi: n('C4'), noteName: 'C4', startTime: t, duration: beat * 3.8, hand: 'right', finger: 1, measure: 4, velocity: 90 },
+      { id: 'c5-m4-lh', midi: n('C3'), noteName: 'C3', startTime: t, duration: beat * 3.8, hand: 'left', finger: 5, measure: 4, velocity: 84 }
+    )
+    t += beat * 4
+
+    return {
+      id: 'c-position-five-fingers',
+      title: 'The 5-Finger Wave & Triad (C-D-E-F-G)',
+      composer: 'Beginner Foundation',
+      opus: 'Grade 1 Five Finger Agility',
+      key: 'C Major',
+      timeSignature: [4, 4],
+      tempoBpm: bpm,
+      duration: Math.round(t * 100) / 100,
+      notes,
+      pedalEvents: [],
+      annotations: [
+        {
+          id: 'c5-ann-1',
+          measureRange: [1, 4],
+          title: 'Pinky (5th Finger) Clarity',
+          germanTerm: 'Stärkung des 5. Fingers',
+          category: 'fingering',
+          instruction: 'Support the 5th finger on its curved tip when striking G4. Do not let the knuckle collapse.',
+          referenceTimestampSeconds: 0.0,
+        },
+      ],
+      sections: [
+        { id: 'c5-sec-1', title: '5-Finger Scale & Triad', startMeasure: 1, endMeasure: 4, startTime: 0, endTime: t, tempoSuggestion: '100 BPM Moderato', character: 'Lively, articulate, balanced' },
+      ],
+    }
+  }
 }
