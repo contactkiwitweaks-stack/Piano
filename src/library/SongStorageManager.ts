@@ -35,6 +35,30 @@ export class SongStorageManager {
   // Curated online cloud library of downloadable classical & modern pieces
   public static cloudCatalog: CloudSongPreset[] = [
     {
+      id: 'cloud-carol-of-the-bells',
+      title: 'Carol of the Bells',
+      composer: 'Mykola Leontovych',
+      difficulty: 5,
+      key: 'G minor',
+      period: 'Holiday / Contemporary',
+      durationSeconds: 141,
+      coverColor: 'from-emerald-600 via-teal-900 to-zinc-950',
+      description: 'Full 1,568-note concert arrangement: four-note Ukrainian bell motif, rolling arpeggios, and festive polyphony.',
+      midiUrl: 'https://raw.githubusercontent.com/contactkiwitweaks-stack/Piano/main/public/songs/carol-of-the-bells.mid',
+    },
+    {
+      id: 'cloud-sia-snowman',
+      title: 'Snowman',
+      composer: 'Sia (Arr. John Rod Dondoyano)',
+      difficulty: 4,
+      key: 'Db Major',
+      period: 'Holiday / Pop',
+      durationSeconds: 163,
+      coverColor: 'from-cyan-500 via-blue-900 to-zinc-950',
+      description: 'Full 1,473-note arrangement: warm syncopated chord voicings, lyrical vocal line, and emotive climax.',
+      midiUrl: 'https://raw.githubusercontent.com/contactkiwitweaks-stack/Piano/main/public/songs/sia-snowman.mid',
+    },
+    {
       id: 'cloud-chopin-nocturne-op9-2',
       title: 'Nocturne in Eb Major',
       composer: 'Frédéric Chopin',

@@ -85,6 +85,20 @@ export const FlowkeyHomeView: React.FC<FlowkeyHomeViewProps> = ({
       ja: 'すべての名曲',
       zh: '全部曲目',
     },
+    holiday: {
+      en: 'Holiday & Winter',
+      de: 'Weihnachten & Winter',
+      fr: 'Fêtes & Hiver',
+      ja: 'クリスマス・冬',
+      zh: '节日与冬季',
+    },
+    contemporary: {
+      en: 'Pop & Contemporary',
+      de: 'Pop & Modern',
+      fr: 'Pop & Contemporain',
+      ja: 'ポップス・現代曲',
+      zh: '流行与现代',
+    },
     classical: {
       en: 'Classical & Baroque',
       de: 'Klassik & Barock',
@@ -123,6 +137,8 @@ export const FlowkeyHomeView: React.FC<FlowkeyHomeViewProps> = ({
   }
 
   const quickSearchTags = [
+    { label: '🔔 Carol of the Bells', query: 'carol' },
+    { label: '⛄ Sia - Snowman', query: 'snowman' },
     { label: 'Passacaglia', query: 'passacaglia' },
     { label: 'ABBA', query: 'abba' },
     { label: 'The Winner Takes It All', query: 'winner' },
@@ -221,6 +237,19 @@ export const FlowkeyHomeView: React.FC<FlowkeyHomeViewProps> = ({
       }
 
       if (selectedGenre === 'all') return true
+      if (selectedGenre === 'holiday') {
+        return p.id === 'carol-of-the-bells' || p.id === 'sia-snowman' || p.period?.toLowerCase().includes('holiday')
+      }
+      if (selectedGenre === 'contemporary') {
+        return (
+          p.period === 'Contemporary' ||
+          p.period === 'Neoclassical' ||
+          p.id === 'carol-of-the-bells' ||
+          p.id === 'sia-snowman' ||
+          p.id === 'tony-ann-icarus' ||
+          p.id === 'abba-the-winner-takes-it-all'
+        )
+      }
       if (selectedGenre === 'classical') {
         return p.period === 'Classical' || p.period === 'Baroque'
       }
@@ -240,15 +269,21 @@ export const FlowkeyHomeView: React.FC<FlowkeyHomeViewProps> = ({
     })
   }, [catalog, searchQuery, selectedGenre])
 
+  const featuredNewPieces = useMemo(() => {
+    return catalog.filter((p) =>
+      ['carol-of-the-bells', 'sia-snowman'].includes(p.id)
+    )
+  }, [catalog])
+
   const recommendedPieces = useMemo(() => {
     return catalog.filter((p) =>
-      ['handel-halvorsen-passacaglia', 'abba-the-winner-takes-it-all', 'tony-ann-icarus', 'beethoven-fur-elise', 'chopin-ballade-1'].includes(p.id)
+      ['carol-of-the-bells', 'sia-snowman', 'handel-halvorsen-passacaglia', 'abba-the-winner-takes-it-all', 'tony-ann-icarus', 'beethoven-fur-elise', 'chopin-ballade-1'].includes(p.id)
     )
   }, [catalog])
 
   const popularPieces = useMemo(() => {
     return catalog.filter((p) =>
-      ['handel-halvorsen-passacaglia', 'abba-the-winner-takes-it-all', 'tony-ann-icarus', 'beethoven-fur-elise', 'chopin-ballade-1'].includes(p.id)
+      ['carol-of-the-bells', 'sia-snowman', 'tony-ann-icarus', 'abba-the-winner-takes-it-all', 'handel-halvorsen-passacaglia', 'beethoven-fur-elise', 'chopin-ballade-1'].includes(p.id)
     )
   }, [catalog])
 
@@ -543,7 +578,7 @@ export const FlowkeyHomeView: React.FC<FlowkeyHomeViewProps> = ({
 
       {/* Genre Filter Pills */}
       <div className="flex items-center gap-2 overflow-x-auto pb-1 scrollbar-none">
-        {['all', 'classical', 'romantic', 'technique', 'beginner', 'advanced'].map((genre) => {
+        {['all', 'holiday', 'contemporary', 'classical', 'romantic', 'technique', 'beginner', 'advanced'].map((genre) => {
           const isActive = selectedGenre === genre
           const label = genreLabels[genre]?.[language] || genre
 
@@ -602,6 +637,29 @@ export const FlowkeyHomeView: React.FC<FlowkeyHomeViewProps> = ({
         </section>
       ) : (
         <>
+          {/* FLOWKEY HERO: NEW ARRIVALS & SEASONAL CLASSICS */}
+          {featuredNewPieces.length > 0 && (
+            <section className="space-y-4">
+              <div className="flex items-center justify-between">
+                <h2 className="text-lg sm:text-xl font-extrabold text-white tracking-tight flex items-center gap-2">
+                  <Sparkles className="w-5 h-5 text-emerald-400" />
+                  <span>
+                    {language === 'de'
+                      ? 'Neu hinzugefügt & Winter-Klassiker'
+                      : 'New Arrivals & Seasonal Classics'}
+                  </span>
+                  <span className="text-[10px] px-2 py-0.5 rounded-full bg-emerald-500/20 text-emerald-300 border border-emerald-500/40 font-bold uppercase tracking-wider">
+                    NEW
+                  </span>
+                </h2>
+              </div>
+
+              <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-2 gap-5">
+                {featuredNewPieces.map((pieceItem) => renderPieceCard(pieceItem))}
+              </div>
+            </section>
+          )}
+
           {/* FLOWKEY HERO: RECOMMENDED FOR YOU */}
           <section className="space-y-4">
             <div className="flex items-center justify-between">
@@ -671,6 +729,27 @@ export const FlowkeyHomeView: React.FC<FlowkeyHomeViewProps> = ({
 
             <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-5">
               {techniquePieces.map((pieceItem) => renderPieceCard(pieceItem, true))}
+            </div>
+          </section>
+
+          {/* ALL REPERTOIRE CATALOG */}
+          <section className="space-y-4 pt-2">
+            <div className="flex items-center justify-between">
+              <h2 className="text-lg font-bold text-white tracking-tight flex items-center gap-2">
+                <Music className="w-5 h-5 text-amber-400" />
+                <span>
+                  {language === 'de'
+                    ? 'Gesamtes Repertoire & Songbibliothek'
+                    : 'Complete Repertoire Catalog'}
+                </span>
+                <span className="text-xs font-normal text-zinc-500">
+                  ({catalog.length} {language === 'de' ? 'Stücke' : 'pieces'})
+                </span>
+              </h2>
+            </div>
+
+            <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4">
+              {catalog.map((pieceItem) => renderPieceCard(pieceItem, true))}
             </div>
           </section>
 

@@ -5,6 +5,8 @@ import type { Piece } from '../types/music'
 import type { MasterEditionId, LibraryPieceSummary } from '../types/edition'
 import { ScoreEngine } from '../engine/ScoreEngine'
 import { SongStorageManager } from './SongStorageManager'
+import carolOfTheBellsScore from '../data/scores/carol-of-the-bells.json'
+import siaSnowmanScore from '../data/scores/sia-snowman.json'
 
 export class LibraryRepository {
   private static catalog: LibraryPieceSummary[] = [
@@ -418,6 +420,14 @@ export class LibraryRepository {
     const customPiece = SongStorageManager.getSavedPieces().find((p) => p.id === pieceId)
     if (customPiece) {
       return customPiece
+    }
+
+    // Direct bundled canonical scores (zero network dependency)
+    if (pieceId === 'carol-of-the-bells') {
+      return carolOfTheBellsScore as unknown as Piece
+    }
+    if (pieceId === 'sia-snowman') {
+      return siaSnowmanScore as unknown as Piece
     }
 
     // 1. Try loading complete pre-parsed canonical JSON score
