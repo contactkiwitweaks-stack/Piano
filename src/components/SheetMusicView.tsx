@@ -63,7 +63,7 @@ export const SheetMusicView: React.FC<SheetMusicViewProps> = ({
   loopRange = [1, 4],
   onLoopRangeChange,
   onToggleLoop,
-  showFingering = false,
+  showFingering: _showFingering = false,
 }) => {
   const scrollContainerRef = useRef<HTMLDivElement>(null)
 
@@ -731,20 +731,7 @@ export const SheetMusicView: React.FC<SheetMusicViewProps> = ({
                           />
                         )}
 
-                        {/* Fingering (Clean by default, shown only when showFingering option is enabled) */}
-                        {showFingering && note.finger && (
-                          <text
-                            x={x}
-                            y={isStemUp ? y + 13 : y - 9}
-                            fontSize="9.5"
-                            fontWeight="bold"
-                            fill={isActive ? '#ea580c' : '#78716c'}
-                            fontFamily="sans-serif"
-                            textAnchor="middle"
-                          >
-                            {note.finger}
-                          </text>
-                        )}
+
                       </g>
                     )
                   })}

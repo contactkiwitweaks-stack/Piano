@@ -289,7 +289,6 @@ export const FallingKeysCanvas = React.memo<FallingKeysCanvasProps>(({
         const curExpectedNotes = expectedNotesRef.current
         const curHandMode = handModeRef.current
         const curTheme = themeRef.current
-        const curShowFingers = showFingersRef.current
         const curPressedKeys = pressedKeysRef.current
 
         // Sleek tactile keyboard: takes only 19% of screen, giving 81% vertical space to falling notes!
@@ -603,8 +602,6 @@ export const FallingKeysCanvas = React.memo<FallingKeysCanvasProps>(({
         // -------------------------------------------------------------
         if (noteW >= 3.0 && noteLengthPx >= 8 && bottomY > 0 && topY < keyboardY) {
           const noteLetter = note.noteName.replace(/[0-9]/g, '')
-          const rawFinger = note.finger ? Number(note.finger) : (note.hand === 'left' ? 5 : 1)
-          const fingerDigit = Math.max(1, Math.min(5, Math.round(rawFinger) || 1))
           const isNarrow = noteW < 14
 
           // Fixed vertical anchor at top of note with 10px breathing room
@@ -618,21 +615,9 @@ export const FallingKeysCanvas = React.memo<FallingKeysCanvasProps>(({
           ctx.shadowColor = 'rgba(0, 0, 0, 0.95)'
           ctx.shadowBlur = 4
 
-          if (curShowFingers) {
-            // If fingers option is toggled ON: note letter at top, finger digit below
-            ctx.font = isNarrow ? 'bold 7.5px sans-serif' : 'bold 9px sans-serif'
-            ctx.fillText(noteLetter, pTopAnchor.x, pTopAnchor.y)
-
-            if (noteLengthPx >= 26) {
-              const pBottomAnchor = projectPoint(noteX + noteW / 2, bottomY - 9)
-              ctx.font = isNarrow ? 'bold 8px sans-serif' : 'bold 9.5px sans-serif'
-              ctx.fillText(`${fingerDigit}`, pBottomAnchor.x, pBottomAnchor.y)
-            }
-          } else {
-            // Clean by default: Note letter locked at top-center, completely stable
-            ctx.font = isNarrow ? 'bold 8px sans-serif' : 'bold 9.5px sans-serif'
-            ctx.fillText(noteLetter, pTopAnchor.x, pTopAnchor.y)
-          }
+          // Clean note lettering locked at top-center, completely stable (zero fingering clutter)
+          ctx.font = isNarrow ? 'bold 8px sans-serif' : 'bold 9.5px sans-serif'
+          ctx.fillText(noteLetter, pTopAnchor.x, pTopAnchor.y)
 
           ctx.restore()
         }

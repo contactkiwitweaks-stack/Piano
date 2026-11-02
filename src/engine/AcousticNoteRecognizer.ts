@@ -57,15 +57,23 @@ export class AcousticNoteRecognizer {
         await this.audioCtx.resume()
       }
 
-      // CRITICAL for acoustic pianos: disable noise suppression & echo cancellation
-      // so natural piano soundboard harmonics and sustain aren't filtered out!
-      this.micStream = await navigator.mediaDevices.getUserMedia({
-        audio: {
-          echoCancellation: false,
-          noiseSuppression: false,
-          autoGainControl: false,
-        },
-      })
+      if (!navigator.mediaDevices || !navigator.mediaDevices.getUserMedia) {
+        alert('Microphone access is not supported in this environment.')
+        return false
+      }
+
+      // Try with low-latency acoustic piano constraints, fallback to { audio: true } if iOS rejects constraints
+      try {
+        this.micStream = await navigator.mediaDevices.getUserMedia({
+          audio: {
+            echoCancellation: false,
+            noiseSuppression: false,
+            autoGainControl: false,
+          },
+        })
+      } catch {
+        this.micStream = await navigator.mediaDevices.getUserMedia({ audio: true })
+      }
 
       const source = this.audioCtx.createMediaStreamSource(this.micStream)
       this.analyser = this.audioCtx.createAnalyser()
@@ -76,8 +84,10 @@ export class AcousticNoteRecognizer {
       this._isListening = true
       this.processLoop()
       return true
-    } catch (err) {
+    } catch (err: unknown) {
       console.error('Failed to access microphone for acoustic note recognition:', err)
+      const msg = err instanceof Error ? err.message : String(err)
+      alert(`Microphone permission error: ${msg}. Please ensure microphone access is enabled in iOS Settings > Virtuoso Piano.`)
       this.stopListening()
       return false
     }
