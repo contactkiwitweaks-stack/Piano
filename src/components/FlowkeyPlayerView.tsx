@@ -84,7 +84,7 @@ export const FlowkeyPlayerView: React.FC<FlowkeyPlayerViewProps> = ({
   handMode,
   isWaitMode: _isWaitMode,
   playMode = 'practice',
-  showHands,
+  showHands: _showHands,
   isLooping,
   loopRange,
   activeNotes,
@@ -108,7 +108,7 @@ export const FlowkeyPlayerView: React.FC<FlowkeyPlayerViewProps> = ({
   onRateChange,
   onHandModeChange,
   onToggleWaitMode,
-  onToggleHands,
+  onToggleHands: _onToggleHands,
   onToggleLoop,
   onLoopRangeChange,
   onToggleMetronome,
@@ -134,6 +134,17 @@ export const FlowkeyPlayerView: React.FC<FlowkeyPlayerViewProps> = ({
     return localStorage.getItem('virtuoso_ylia_wallpaper') || '/images/ylia_bg.png'
   })
   const [mobileSettingsOpen, setMobileSettingsOpen] = useState(false)
+  const [showFingersLocal, setShowFingersLocal] = useState<boolean>(() => {
+    return localStorage.getItem('virtuoso_show_fingers') === 'true' // OFF by default
+  })
+
+  const handleToggleFingers = () => {
+    setShowFingersLocal((prev) => {
+      const next = !prev
+      localStorage.setItem('virtuoso_show_fingers', String(next))
+      return next
+    })
+  }
 
   // Active section based on currentTime
   const currentSection =
@@ -260,7 +271,7 @@ export const FlowkeyPlayerView: React.FC<FlowkeyPlayerViewProps> = ({
         {/* Right: Section Selector & Status Tools */}
         <div className="flex items-center gap-1.5 sm:gap-2 flex-shrink-0">
           {/* Section Selector (Desktop & Tablet) */}
-          <div className="relative hidden md:block">
+          <div className="relative hidden lg:block">
             <button
               onClick={() => setSectionsMenuOpen(!sectionsMenuOpen)}
               className="flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-zinc-900 hover:bg-zinc-800 border border-white/10 text-xs font-semibold text-zinc-200 transition-colors shadow-sm"
@@ -326,19 +337,19 @@ export const FlowkeyPlayerView: React.FC<FlowkeyPlayerViewProps> = ({
           {/* 2D Overhead vs 3D Perspective Waterfall Toggle (Desktop) */}
           <button
             onClick={() => setViewPerspective(viewPerspective === '2d' ? '3d' : '2d')}
-            className={`hidden sm:flex items-center gap-1 px-2.5 py-1.5 rounded-xl border text-xs font-bold transition-all ${
+            className={`flex items-center gap-1 px-2 py-1 rounded-xl border text-xs font-bold transition-all active:scale-95 shadow-sm ${
               viewPerspective === '3d'
-                ? 'bg-amber-500/20 border-amber-500/50 text-amber-300 shadow-sm'
-                : 'bg-zinc-900 hover:bg-zinc-800 border-white/10 text-zinc-400 hover:text-white'
+                ? 'bg-gradient-to-r from-amber-500 to-orange-500 text-zinc-950 font-black shadow-[0_0_12px_rgba(245,158,11,0.5)]'
+                : 'bg-zinc-900 hover:bg-zinc-800 border-white/10 text-zinc-300'
             }`}
-            title="Toggle 2D Overhead vs 3D Perspective Waterfall"
+            title="Toggle 2D Overhead vs 3D Synthesia Perspective"
           >
-            <Box className="w-3.5 h-3.5" />
-            <span className="font-mono text-[10px]">{viewPerspective.toUpperCase()}</span>
+            <Box className="w-3 h-3" />
+            <span className="font-mono text-[10px] font-black">{viewPerspective.toUpperCase()}</span>
           </button>
 
           {/* Visual Theme Selector (Desktop) */}
-          <div className="relative hidden sm:block">
+          <div className="relative hidden lg:block">
             <button
               onClick={() => setThemeMenuOpen(!themeMenuOpen)}
               className="flex items-center gap-1.5 px-2.5 py-1.5 rounded-xl bg-zinc-900 hover:bg-zinc-800 border border-white/10 text-xs font-bold text-sky-400 hover:text-sky-300 transition-all shadow-sm active:scale-95"
@@ -429,7 +440,7 @@ export const FlowkeyPlayerView: React.FC<FlowkeyPlayerViewProps> = ({
           {onOpenAudioSettings && (
             <button
               onClick={onOpenAudioSettings}
-              className="hidden sm:flex w-8 h-8 rounded-xl bg-zinc-900 hover:bg-zinc-800 border border-white/10 items-center justify-center text-zinc-400 hover:text-white transition-colors"
+              className="hidden lg:flex w-8 h-8 rounded-xl bg-zinc-900 hover:bg-zinc-800 border border-white/10 items-center justify-center text-zinc-400 hover:text-white transition-colors"
               title="Acoustic Reverb & Touch Velocity"
             >
               <Sliders className="w-3.5 h-3.5 text-orange-400" />
@@ -439,7 +450,7 @@ export const FlowkeyPlayerView: React.FC<FlowkeyPlayerViewProps> = ({
           {/* Masterclass Tips Toggle (Desktop) */}
           <button
             onClick={() => setIsMasterclassOpen(!isMasterclassOpen)}
-            className={`hidden sm:flex items-center gap-1 px-2.5 py-1.5 rounded-xl border text-xs font-semibold transition-all ${
+            className={`hidden lg:flex items-center gap-1 px-2.5 py-1.5 rounded-xl border text-xs font-semibold transition-all ${
               isMasterclassOpen
                 ? 'bg-amber-500/20 border-amber-500/50 text-amber-300'
                 : 'bg-zinc-900 hover:bg-zinc-800 border-white/10 text-zinc-300'
@@ -475,7 +486,7 @@ export const FlowkeyPlayerView: React.FC<FlowkeyPlayerViewProps> = ({
           {/* Mobile Quick Settings Trigger (iPhone) */}
           <button
             onClick={() => setMobileSettingsOpen(true)}
-            className="flex sm:hidden items-center justify-center w-8 h-8 rounded-xl bg-zinc-900 border border-white/10 text-amber-400 hover:text-amber-300 active:scale-95 transition-all shadow-sm"
+            className="flex lg:hidden items-center justify-center w-8 h-8 rounded-xl bg-zinc-900 hover:bg-zinc-800 border border-white/10 text-amber-400 hover:text-amber-300 active:scale-95 transition-all shadow-sm"
             title="Settings & Controls"
           >
             <Settings className="w-4 h-4" />
@@ -504,6 +515,32 @@ export const FlowkeyPlayerView: React.FC<FlowkeyPlayerViewProps> = ({
             <div className="p-4 space-y-4 overflow-y-auto">
               {/* 1. Visual Theme & Wallpapers */}
               <div className="space-y-2">
+                <div className="space-y-1.5">
+                  <div className="text-[11px] font-bold text-amber-400 uppercase tracking-wider">Perspektive (2D / 3D)</div>
+                  <div className="grid grid-cols-2 gap-2">
+                    <button
+                      onClick={() => setViewPerspective('2d')}
+                      className={`py-2 rounded-xl text-xs font-bold border transition-all ${
+                        viewPerspective === '2d'
+                          ? 'bg-amber-500 text-zinc-950 font-black'
+                          : 'bg-zinc-800 border-white/10 text-zinc-400'
+                      }`}
+                    >
+                      2D Draufsicht (Klassisch)
+                    </button>
+                    <button
+                      onClick={() => setViewPerspective('3d')}
+                      className={`py-2 rounded-xl text-xs font-bold border transition-all ${
+                        viewPerspective === '3d'
+                          ? 'bg-gradient-to-r from-amber-500 to-orange-500 text-zinc-950 font-black'
+                          : 'bg-zinc-800 border-white/10 text-zinc-400'
+                      }`}
+                    >
+                      3D Synthesia (Perspektive)
+                    </button>
+                  </div>
+                </div>
+
                 <div className="text-[11px] font-bold text-sky-400 uppercase tracking-wider">Visual Theme</div>
                 <div className="grid grid-cols-3 gap-2">
                   {[
@@ -643,18 +680,18 @@ export const FlowkeyPlayerView: React.FC<FlowkeyPlayerViewProps> = ({
                   )}
 
                   <button
-                    onClick={onToggleHands}
+                    onClick={handleToggleFingers}
                     className={`p-2.5 rounded-xl border flex items-center justify-between text-xs font-bold transition-all ${
-                      showHands
-                        ? 'bg-amber-500/25 border-amber-400 text-amber-200'
+                      showFingersLocal
+                        ? 'bg-amber-500/25 border-amber-400 text-amber-200 shadow-sm'
                         : 'bg-zinc-800/60 border-white/10 text-zinc-400'
                     }`}
                   >
                     <span className="flex items-center gap-1.5">
                       <Hand className="w-3.5 h-3.5" />
-                      <span>Fingering</span>
+                      <span>Fingersatz anzeigen</span>
                     </span>
-                    <span className="font-mono text-[10px]">{showHands ? 'ON' : 'OFF'}</span>
+                    <span className="font-mono text-[10px] font-bold">{showFingersLocal ? 'AN' : 'AUS (Sauber)'}</span>
                   </button>
 
                   <button
@@ -821,7 +858,7 @@ export const FlowkeyPlayerView: React.FC<FlowkeyPlayerViewProps> = ({
             expectedNotes={expectedNotes}
             onScreenKeyPress={onScreenKeyPress}
             onTogglePedal={onTogglePedal}
-            showFingers={showHands}
+            showFingers={showFingersLocal}
             wallpaperUrl={yliaWallpaper}
           />
         </div>
@@ -874,16 +911,16 @@ export const FlowkeyPlayerView: React.FC<FlowkeyPlayerViewProps> = ({
           {/* Quick auxiliary toggles visible on mobile in top tier */}
           <div className="flex sm:hidden items-center gap-1.5">
             <button
-              onClick={onToggleHands}
-              className={`px-2.5 py-1.5 rounded-xl border text-xs font-bold flex items-center gap-1 transition-all ${
-                showHands
-                  ? 'bg-amber-500/20 border-amber-500/60 text-amber-300'
+              onClick={handleToggleFingers}
+              className={`px-2 py-1 rounded-xl border text-xs font-bold flex items-center gap-1 transition-all active:scale-95 ${
+                showFingersLocal
+                  ? 'bg-amber-500/25 border-amber-400 text-amber-300'
                   : 'bg-zinc-900 border-white/10 text-zinc-500'
               }`}
-              title="Fingering numbers"
+              title="Fingering numbers toggle (Off by default for clean view)"
             >
               <Hand className="w-3 h-3" />
-              <span className="text-[11px]">{showHands ? 'Fingers' : 'No Fig'}</span>
+              <span className="text-[10px]">{showFingersLocal ? 'Fig: ON' : 'Fig: AUS'}</span>
             </button>
             <button
               onClick={onToggleLoop}
@@ -1021,16 +1058,16 @@ export const FlowkeyPlayerView: React.FC<FlowkeyPlayerViewProps> = ({
         <div className="hidden sm:flex items-center gap-2">
           {/* Fingering Guide Toggle */}
           <button
-            onClick={onToggleHands}
-            className={`flex items-center gap-1.5 px-3 py-2 rounded-2xl border text-xs font-bold transition-all shadow-sm active:scale-95 ${
-              showHands
+            onClick={handleToggleFingers}
+            className={`flex items-center gap-1.5 px-2.5 py-1.5 rounded-xl border text-xs font-bold transition-all shadow-sm active:scale-95 ${
+              showFingersLocal
                 ? 'bg-amber-500/20 border-amber-500/60 text-amber-300 shadow-[0_0_12px_rgba(245,158,11,0.3)]'
                 : 'bg-zinc-900 hover:bg-zinc-800 border-white/10 text-zinc-500'
             }`}
             title="Toggle Fingering Numbers & Guides"
           >
             <Hand className="w-3.5 h-3.5" />
-            <span>Fingers {showHands ? 'ON' : 'OFF'}</span>
+            <span>Fingers {showFingersLocal ? 'ON' : 'AUS'}</span>
           </button>
 
           {/* Loop Mode Toggle */}
@@ -1100,6 +1137,7 @@ export const FlowkeyPlayerView: React.FC<FlowkeyPlayerViewProps> = ({
             onLoopRangeChange={onLoopRangeChange}
             onToggleLoop={onToggleLoop}
             language={language}
+            showFingering={showFingersLocal}
           />
         </div>
       )}

@@ -306,7 +306,8 @@ export const FallingKeysCanvas = React.memo<FallingKeysCanvasProps>(({
         const projectPoint = (x: number, y: number) => {
           if (viewMode === '2d') return { x, y }
           const progressY = Math.max(0, Math.min(1, y / keyboardY))
-          const depthScale = 0.82 + progressY * 0.18
+          // Horizon scale at top (y=0) is 0.60, expanding to 1.0 at keyboard strike line
+          const depthScale = 0.60 + progressY * 0.40
           const centerX = width / 2
           return { x: centerX + (x - centerX) * depthScale, y }
         }
@@ -383,19 +384,21 @@ export const FallingKeysCanvas = React.memo<FallingKeysCanvasProps>(({
           const lineY = keyboardY - timeFromCurrent * pixelsPerSecond
           if (lineY >= 0 && lineY <= keyboardY) {
             ctx.save()
-            // Subtle horizontal measure divider line
-            ctx.strokeStyle = curTheme === 'light' ? 'rgba(0, 0, 0, 0.08)' : 'rgba(255, 255, 255, 0.12)'
-            ctx.lineWidth = 1
+            const pL = projectPoint(0, lineY)
+            const pR = projectPoint(width, lineY)
+            // Subtle horizontal measure divider line with perspective projection
+            ctx.strokeStyle = curTheme === 'light' ? 'rgba(0, 0, 0, 0.08)' : 'rgba(255, 255, 255, 0.14)'
+            ctx.lineWidth = viewMode === '3d' ? 1.4 : 1
             ctx.beginPath()
-            ctx.moveTo(0, lineY)
-            ctx.lineTo(width, lineY)
+            ctx.moveTo(pL.x, pL.y)
+            ctx.lineTo(pR.x, pR.y)
             ctx.stroke()
 
             // Measure number on the left margin
-            ctx.fillStyle = curTheme === 'light' ? 'rgba(71, 85, 105, 0.7)' : 'rgba(226, 232, 240, 0.65)'
+            ctx.fillStyle = curTheme === 'light' ? 'rgba(71, 85, 105, 0.7)' : 'rgba(226, 232, 240, 0.75)'
             ctx.font = 'bold 10px sans-serif'
             ctx.textAlign = 'left'
-            ctx.fillText(`${measureNum}`, 8, lineY - 4)
+            ctx.fillText(`${measureNum}`, Math.max(8, pL.x + 8), pL.y - 4)
             ctx.restore()
           }
         }
@@ -404,10 +407,10 @@ export const FallingKeysCanvas = React.memo<FallingKeysCanvasProps>(({
       // -------------------------------------------------------------
       // 3. SUBTLE VERTICAL KEY LANE GUIDES
       // -------------------------------------------------------------
-      ctx.strokeStyle = curTheme === 'light' ? 'rgba(0, 0, 0, 0.03)' : 'rgba(255, 255, 255, 0.04)'
+      ctx.strokeStyle = curTheme === 'light' ? 'rgba(0, 0, 0, 0.03)' : 'rgba(255, 255, 255, 0.06)'
       ctx.lineWidth = 1
       whiteKeys.forEach((wk) => {
-        if (wk.midi % 12 === 0) {
+        if (wk.midi % 12 === 0 || (viewMode === '3d' && wk.midi % 12 === 5)) {
           const x = wk.index * whiteKeyWidth
           const p1 = projectPoint(x, 0)
           const p2 = projectPoint(x, keyboardY)
@@ -547,23 +550,56 @@ export const FallingKeysCanvas = React.memo<FallingKeysCanvasProps>(({
           ctx.shadowBlur = 6
         }
 
-        // Draw smooth rounded pill rectangle
-        drawSafeRoundRect(ctx, noteX, topY, noteW, noteLengthPx, cornerR)
+        if (viewMode === '3d') {
+          // 3D Perspective Highway: Notes expand realistically towards the keyboard strike line
+          const pTL = projectPoint(noteX, topY)
+          const pTR = projectPoint(noteX + noteW, topY)
+          const pBR = projectPoint(noteX + noteW, bottomY)
+          const pBL = projectPoint(noteX, bottomY)
 
-        const noteGrad = ctx.createLinearGradient(noteX, topY, noteX, bottomY)
-        noteGrad.addColorStop(0, gradTop)
-        noteGrad.addColorStop(1, baseColor)
-        ctx.fillStyle = noteGrad
-        ctx.fill()
+          ctx.beginPath()
+          ctx.moveTo(pTL.x, pTL.y)
+          ctx.lineTo(pTR.x, pTR.y)
+          ctx.lineTo(pBR.x, pBR.y)
+          ctx.lineTo(pBL.x, pBL.y)
+          ctx.closePath()
 
-        ctx.strokeStyle = borderColor
-        ctx.lineWidth = 1.2
-        ctx.stroke()
+          const noteGrad = ctx.createLinearGradient((pTL.x + pTR.x) / 2, topY, (pBL.x + pBR.x) / 2, bottomY)
+          noteGrad.addColorStop(0, gradTop)
+          noteGrad.addColorStop(1, baseColor)
+          ctx.fillStyle = noteGrad
+          ctx.fill()
+
+          ctx.strokeStyle = borderColor
+          ctx.lineWidth = 1.3
+          ctx.stroke()
+
+          // 3D Specular depth bevel: subtle bright inner edge on left, subtle dark edge on right
+          ctx.strokeStyle = 'rgba(255, 255, 255, 0.45)'
+          ctx.lineWidth = 1
+          ctx.beginPath()
+          ctx.moveTo(pTL.x + 1, pTL.y)
+          ctx.lineTo(pBL.x + 1, pBL.y)
+          ctx.stroke()
+        } else {
+          // 2D Overhead View: Precise flat rounded pills
+          drawSafeRoundRect(ctx, noteX, topY, noteW, noteLengthPx, cornerR)
+
+          const noteGrad = ctx.createLinearGradient(noteX, topY, noteX, bottomY)
+          noteGrad.addColorStop(0, gradTop)
+          noteGrad.addColorStop(1, baseColor)
+          ctx.fillStyle = noteGrad
+          ctx.fill()
+
+          ctx.strokeStyle = borderColor
+          ctx.lineWidth = 1.2
+          ctx.stroke()
+        }
 
         // -------------------------------------------------------------
         // DYNAMIC NOTE LETTER & FINGERING (MATCHING SCREENSHOT AESTHETIC)
         // Clean typography directly on pill: Note at top, Finger at bottom
-        // Never hides note letters on mobile portrait or landscape!
+        // When curShowFingers is OFF, fingering numbers are completely removed!
         // -------------------------------------------------------------
         if (noteW >= 3.0 && noteLengthPx >= 10 && bottomY > 0 && topY < keyboardY) {
           const noteLetter = note.noteName.replace(/[0-9]/g, '')
@@ -571,6 +607,10 @@ export const FallingKeysCanvas = React.memo<FallingKeysCanvasProps>(({
           const fingerDigit = Math.max(1, Math.min(5, Math.round(rawFinger) || 1))
           const isNarrow = noteW < 14
           const isShort = noteLengthPx < 28
+
+          const pMid = projectPoint(noteX + noteW / 2, topY + noteLengthPx / 2)
+          const pTopText = projectPoint(noteX + noteW / 2, topY + Math.min(12, Math.max(7, noteLengthPx * 0.24)))
+          const pBottomText = projectPoint(noteX + noteW / 2, bottomY - Math.min(10, Math.max(6, noteLengthPx * 0.20)))
 
           ctx.save()
           ctx.textAlign = 'center'
@@ -582,37 +622,32 @@ export const FallingKeysCanvas = React.memo<FallingKeysCanvasProps>(({
           if (curShowFingers) {
             if (!isShort) {
               // 1. Note letter at the TOP of the pill
-              const topTextY = topY + Math.min(12, Math.max(7, noteLengthPx * 0.24))
               ctx.font = isNarrow ? 'bold 7.5px sans-serif' : 'bold 9px sans-serif'
-              ctx.fillText(noteLetter, noteX + noteW / 2, topTextY)
+              ctx.fillText(noteLetter, pTopText.x, pTopText.y)
 
               // 2. Fingering digit at the BOTTOM of the pill (NO weird background circle!)
-              const bottomTextY = bottomY - Math.min(10, Math.max(6, noteLengthPx * 0.20))
               ctx.font = isNarrow ? 'bold 8px sans-serif' : 'bold 9.5px sans-serif'
-              ctx.fillText(`${fingerDigit}`, noteX + noteW / 2, bottomTextY)
+              ctx.fillText(`${fingerDigit}`, pBottomText.x, pBottomText.y)
             } else {
               // Short note pill on mobile:
-              const centerY = topY + noteLengthPx / 2
               if (isNarrow) {
-                // Squeezed mobile portrait: stack note letter slightly higher and finger lower if room, or show note letter
                 if (noteLengthPx >= 20) {
                   ctx.font = 'bold 7px sans-serif'
-                  ctx.fillText(noteLetter, noteX + noteW / 2, centerY - 4.5)
-                  ctx.fillText(`${fingerDigit}`, noteX + noteW / 2, centerY + 4.5)
+                  ctx.fillText(noteLetter, pMid.x, pMid.y - 4.5)
+                  ctx.fillText(`${fingerDigit}`, pMid.x, pMid.y + 4.5)
                 } else {
                   ctx.font = 'bold 7.5px sans-serif'
-                  ctx.fillText(noteLetter, noteX + noteW / 2, centerY)
+                  ctx.fillText(noteLetter, pMid.x, pMid.y)
                 }
               } else {
                 ctx.font = 'bold 8.5px sans-serif'
-                ctx.fillText(`${noteLetter} · ${fingerDigit}`, noteX + noteW / 2, centerY)
+                ctx.fillText(`${noteLetter} · ${fingerDigit}`, pMid.x, pMid.y)
               }
             }
           } else {
-            // Fingers toggle OFF: Just the note letter centered cleanly
-            const centerY = topY + noteLengthPx / 2
+            // FINGERS FULLY REMOVED: Only clean note letter centered perfectly
             ctx.font = isNarrow ? 'bold 8px sans-serif' : 'bold 9.5px sans-serif'
-            ctx.fillText(noteLetter, noteX + noteW / 2, centerY)
+            ctx.fillText(noteLetter, pMid.x, pMid.y)
           }
 
           ctx.restore()
@@ -646,13 +681,30 @@ export const FallingKeysCanvas = React.memo<FallingKeysCanvasProps>(({
         const kW = !posInfo.isBlack ? whiteKeyWidth : blackKeyWidth
 
         ctx.save()
-        const bloomH = 8
-        const bloomGrad = ctx.createLinearGradient(kX + kW / 2, keyboardY, kX + kW / 2, keyboardY - bloomH)
-        const bloomColor = info.isRight ? 'rgba(56, 189, 248, 0.28)' : 'rgba(244, 114, 182, 0.28)'
-        bloomGrad.addColorStop(0, bloomColor)
-        bloomGrad.addColorStop(1, 'rgba(0, 0, 0, 0)')
-        ctx.fillStyle = bloomGrad
-        ctx.fillRect(kX, keyboardY - bloomH, kW, bloomH)
+        if (viewMode === '3d') {
+          const p1 = projectPoint(kX, keyboardY - 38)
+          const p2 = projectPoint(kX + kW, keyboardY - 38)
+          ctx.beginPath()
+          ctx.moveTo(kX, keyboardY)
+          ctx.lineTo(kX + kW, keyboardY)
+          ctx.lineTo(p2.x, p2.y)
+          ctx.lineTo(p1.x, p1.y)
+          ctx.closePath()
+          const bloomGrad = ctx.createLinearGradient(kX + kW / 2, keyboardY, (p1.x + p2.x) / 2, p1.y)
+          const bloomColor = info.isRight ? 'rgba(56, 189, 248, 0.45)' : 'rgba(244, 114, 182, 0.45)'
+          bloomGrad.addColorStop(0, bloomColor)
+          bloomGrad.addColorStop(1, 'rgba(0, 0, 0, 0)')
+          ctx.fillStyle = bloomGrad
+          ctx.fill()
+        } else {
+          const bloomH = 8
+          const bloomGrad = ctx.createLinearGradient(kX + kW / 2, keyboardY, kX + kW / 2, keyboardY - bloomH)
+          const bloomColor = info.isRight ? 'rgba(56, 189, 248, 0.28)' : 'rgba(244, 114, 182, 0.28)'
+          bloomGrad.addColorStop(0, bloomColor)
+          bloomGrad.addColorStop(1, 'rgba(0, 0, 0, 0)')
+          ctx.fillStyle = bloomGrad
+          ctx.fillRect(kX, keyboardY - bloomH, kW, bloomH)
+        }
         ctx.restore()
       })
 

@@ -13,6 +13,7 @@ interface SheetMusicViewProps {
   onLoopRangeChange?: (range: [number, number]) => void
   onToggleLoop?: () => void
   language?: LanguageCode
+  showFingering?: boolean
 }
 
 const LETTER_TO_STEP: { [letter: string]: number } = {
@@ -62,6 +63,7 @@ export const SheetMusicView: React.FC<SheetMusicViewProps> = ({
   loopRange = [1, 4],
   onLoopRangeChange,
   onToggleLoop,
+  showFingering = false,
 }) => {
   const scrollContainerRef = useRef<HTMLDivElement>(null)
 
@@ -729,8 +731,8 @@ export const SheetMusicView: React.FC<SheetMusicViewProps> = ({
                           />
                         )}
 
-                        {/* Fingering */}
-                        {note.finger && (
+                        {/* Fingering (Clean by default, shown only when showFingering option is enabled) */}
+                        {showFingering && note.finger && (
                           <text
                             x={x}
                             y={isStemUp ? y + 13 : y - 9}

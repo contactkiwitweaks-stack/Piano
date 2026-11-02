@@ -1,0 +1,86 @@
+[
+  {
+    "id": "cloud-chopin-nocturne-op9-2",
+    "title": "Nocturne in Eb Major, Op. 9 No. 2",
+    "composer": "Frédéric Chopin",
+    "difficulty": 6,
+    "key": "Eb Major",
+    "period": "Romantic",
+    "durationSeconds": 270,
+    "coverColor": "from-blue-600 via-indigo-900 to-zinc-950",
+    "description": "Chopin’s immortal bel canto nocturne: singing right-hand fiorituras over gentle 12/8 waltz bass.",
+    "midiUrl": "https://raw.githubusercontent.com/fuun/chopin-midi/master/nocturne-op9-no2.mid"
+  },
+  {
+    "id": "cloud-debussy-clair-de-lune",
+    "title": "Clair de Lune",
+    "composer": "Claude Debussy",
+    "difficulty": 6,
+    "key": "Db Major",
+    "period": "Impressionist",
+    "durationSeconds": 310,
+    "coverColor": "from-cyan-600 via-blue-900 to-zinc-950",
+    "description": "Ethereal moonlight harmonies, rolling 9/8 arpeggios, and delicate pianissimo pedal colors.",
+    "midiUrl": "https://raw.githubusercontent.com/fuun/classical-midi/master/debussy-clair-de-lune.mid"
+  },
+  {
+    "id": "cloud-satie-gymnopedie-1",
+    "title": "Gymnopédie No. 1",
+    "composer": "Erik Satie",
+    "difficulty": 3,
+    "key": "D Major",
+    "period": "Modern / Ambient",
+    "durationSeconds": 195,
+    "coverColor": "from-amber-500 via-stone-800 to-zinc-950",
+    "description": "Hypnotic, melancholic 3/4 chords and serene, solitary melodic lines. Perfect for touch & pedal control.",
+    "midiUrl": "https://raw.githubusercontent.com/fuun/classical-midi/master/satie-gymnopedie-1.mid"
+  },
+  {
+    "id": "cloud-mozart-rondo-alla-turca",
+    "title": "Rondo alla Turca",
+    "composer": "W. A. Mozart",
+    "difficulty": 5,
+    "key": "A minor",
+    "period": "Classical",
+    "durationSeconds": 215,
+    "coverColor": "from-red-600 via-orange-800 to-zinc-950",
+    "description": "Dazzling 16th-note staccato runs, fiery Janissary march octaves, and exuberant classical humor.",
+    "midiUrl": "https://raw.githubusercontent.com/fuun/classical-midi/master/mozart-turkish-march.mid"
+  },
+  {
+    "id": "cloud-joplin-the-entertainer",
+    "title": "The Entertainer",
+    "composer": "Scott Joplin",
+    "difficulty": 4,
+    "key": "C Major",
+    "period": "Ragtime",
+    "durationSeconds": 230,
+    "coverColor": "from-amber-600 via-yellow-800 to-zinc-950",
+    "description": "Syncopated stride piano, bouncing left-hand tenths, and joyful vintage swing rhythms.",
+    "midiUrl": "https://raw.githubusercontent.com/fuun/classical-midi/master/joplin-the-entertainer.mid"
+  },
+  {
+    "id": "cloud-yiruma-river-flows-in-you",
+    "title": "River Flows in You",
+    "composer": "Yiruma",
+    "difficulty": 4,
+    "key": "A Major",
+    "period": "Neoclassical",
+    "durationSeconds": 200,
+    "coverColor": "from-teal-600 via-slate-900 to-zinc-950",
+    "description": "Gentle, introspective neoclassical pattern loved worldwide. Great for flow and dynamic shading.",
+    "midiUrl": "https://raw.githubusercontent.com/fuun/classical-midi/master/yiruma-river-flows-in-you.mid"
+  },
+  {
+    "id": "cloud-your-lie-in-april-again",
+    "title": "Again (Your Lie in April OST)",
+    "composer": "Masaru Yokoyama",
+    "difficulty": 5,
+    "key": "D Major",
+    "period": "Anime Soundtrack",
+    "durationSeconds": 165,
+    "coverColor": "from-pink-500 via-rose-800 to-zinc-950",
+    "description": "Heart-wrenching anime piano solo featuring lyrical romantic rubato and expressive chord climaxes.",
+    "midiUrl": "https://raw.githubusercontent.com/fuun/anime-midi/master/your-lie-in-april-again.mid"
+  }
+]

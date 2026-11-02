@@ -120,6 +120,40 @@ export class SongStorageManager {
     },
   ]
 
+  // Dynamic cloud catalog fetch from GitHub repo (auto-updates when songs are uploaded from PC)
+  public static async fetchCloudCatalog(): Promise<CloudSongPreset[]> {
+    try {
+      const res = await fetch(
+        'https://raw.githubusercontent.com/contactkiwitweaks-stack/Piano/main/public/songs/catalog.json',
+        { cache: 'no-store' }
+      )
+      if (res.ok) {
+        const remoteSongs = (await res.json()) as CloudSongPreset[]
+        if (Array.isArray(remoteSongs) && remoteSongs.length > 0) {
+          // Merge remote songs with static defaults, avoiding duplicate IDs
+          const map = new Map<string, CloudSongPreset>()
+          remoteSongs.forEach((s) => map.set(s.id, s))
+          this.cloudCatalog.forEach((s) => {
+            if (!map.has(s.id)) map.set(s.id, s)
+          })
+          return Array.from(map.values())
+        }
+      }
+    } catch (e) {
+      console.warn('Using cached cloud catalog:', e)
+    }
+    return this.cloudCatalog
+  }
+
+  // Fetch songs directly from PC over local home Wi-Fi
+  public static async fetchLocalPcSongs(pcIp: string): Promise<Array<{ id: string; title: string; composer: string; fileName: string; downloadUrl: string }>> {
+    const cleanIp = pcIp.trim().replace(/^https?:\/\//, '').replace(/\/.*$/, '')
+    const url = `http://${cleanIp}:8080/api/songs`
+    const res = await fetch(url, { signal: AbortSignal.timeout(4000) })
+    if (!res.ok) throw new Error(`HTTP ${res.status}: Failed to reach PC on ${cleanIp}:8080`)
+    return (await res.json()) as Array<{ id: string; title: string; composer: string; fileName: string; downloadUrl: string }>
+  }
+
   // Retrieve all permanently saved custom pieces from local storage
   public static getSavedPieces(): Piece[] {
     try {
