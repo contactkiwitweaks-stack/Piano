@@ -375,5 +375,66 @@ export const warmupsList: WarmupExercise[] = [
     targetPiece: 'Foundational Piano Technique',
     description: 'Black key F# navigation with right hand finger 4 and left hand finger 2.',
     exercisePiece: ScoreEngine.getScaleCourseG()
+  },
+  {
+    id: 'warmup-scale-a-minor',
+    title: 'Tonleiter A-Moll Harmonisch (Für Elise Prep)',
+    category: 'thumb-agility',
+    difficulty: 3,
+    targetPiece: 'Beethoven: Für Elise (WoO 59)',
+    description: 'G# leading-tone navigation and thumb-under crossing (1-2-3-1) without tension in the wrist.',
+    exercisePiece: ScoreEngine.getScaleCourseAm()
+  },
+  {
+    id: 'warmup-octave-wrist-snap',
+    title: 'Chopin Ballade: Octave Wrist Drop & Staccato Snap',
+    category: 'coda-velocity',
+    difficulty: 8,
+    targetPiece: 'Chopin: Ballade No. 1 & Virtuoso Repertoire',
+    description: 'Supple vertical wrist trampoline action for rapid fortissimo octaves without forearm fatigue.',
+    exercisePiece: {
+      id: 'warmup-octave-wrist-snap',
+      title: 'Octave Rebound Drill',
+      composer: 'Virtuoso Masterclass',
+      opus: 'Ergonomic Mechanics',
+      key: 'G minor',
+      timeSignature: [4, 4],
+      tempoBpm: 92,
+      duration: 4.2,
+      notes: [
+        { id: 'oct1', midi: 43, noteName: 'G2', startTime: 0.0, duration: 0.2, hand: 'left', finger: 5, measure: 1, velocity: 85, isStaccato: true },
+        { id: 'oct2', midi: 55, noteName: 'G3', startTime: 0.0, duration: 0.2, hand: 'left', finger: 1, measure: 1, velocity: 85, isStaccato: true },
+        { id: 'oct3', midi: 45, noteName: 'A2', startTime: 0.5, duration: 0.2, hand: 'left', finger: 5, measure: 1, velocity: 88, isStaccato: true },
+        { id: 'oct4', midi: 57, noteName: 'A3', startTime: 0.5, duration: 0.2, hand: 'left', finger: 1, measure: 1, velocity: 88, isStaccato: true },
+        { id: 'oct5', midi: 46, noteName: 'Bb2', startTime: 1.0, duration: 0.2, hand: 'left', finger: 5, measure: 1, velocity: 92, isStaccato: true },
+        { id: 'oct6', midi: 58, noteName: 'Bb3', startTime: 1.0, duration: 0.2, hand: 'left', finger: 1, measure: 1, velocity: 92, isStaccato: true },
+        { id: 'oct7', midi: 48, noteName: 'C3', startTime: 1.5, duration: 0.2, hand: 'left', finger: 5, measure: 1, velocity: 95, isStaccato: true },
+        { id: 'oct8', midi: 60, noteName: 'C4', startTime: 1.5, duration: 0.2, hand: 'left', finger: 1, measure: 1, velocity: 95, isStaccato: true },
+        { id: 'oct9', midi: 67, noteName: 'G4', startTime: 2.0, duration: 0.2, hand: 'right', finger: 1, measure: 1, velocity: 90, isStaccato: true },
+        { id: 'oct10', midi: 79, noteName: 'G5', startTime: 2.0, duration: 0.2, hand: 'right', finger: 5, measure: 1, velocity: 90, isStaccato: true },
+        { id: 'oct11', midi: 69, noteName: 'A4', startTime: 2.5, duration: 0.2, hand: 'right', finger: 1, measure: 1, velocity: 92, isStaccato: true },
+        { id: 'oct12', midi: 81, noteName: 'A5', startTime: 2.5, duration: 0.2, hand: 'right', finger: 5, measure: 1, velocity: 92, isStaccato: true },
+        { id: 'oct13', midi: 70, noteName: 'Bb4', startTime: 3.0, duration: 0.2, hand: 'right', finger: 1, measure: 1, velocity: 96, isStaccato: true },
+        { id: 'oct14', midi: 82, noteName: 'Bb5', startTime: 3.0, duration: 0.2, hand: 'right', finger: 5, measure: 1, velocity: 96, isStaccato: true },
+        { id: 'oct15', midi: 72, noteName: 'C5', startTime: 3.5, duration: 0.2, hand: 'right', finger: 1, measure: 1, velocity: 100, isStaccato: true },
+        { id: 'oct16', midi: 84, noteName: 'C6', startTime: 3.5, duration: 0.2, hand: 'right', finger: 5, measure: 1, velocity: 100, isStaccato: true }
+      ],
+      pedalEvents: [],
+      annotations: [
+        {
+          id: 'oct-ann-1',
+          measureRange: [1, 1],
+          title: 'Loose Wrist Rebound (Taubman Principle)',
+          germanTerm: 'Handgelenks-Federung',
+          category: 'fingering',
+          instruction: 'Drop forearm weight onto fingers 1 and 5 and let the wrist rebound upward like bouncing on a trampoline. Do not squeeze the hand into rigidity.',
+          wristGuidance: 'The hand maintains an unstrained octave arch; all shock absorption occurs in the wrist joint.',
+          referenceTimestampSeconds: 0.0
+        }
+      ],
+      sections: [
+        { id: 'oct-sec-1', title: 'Octave Rebound Drill', startMeasure: 1, endMeasure: 1, startTime: 0, endTime: 4.2, tempoSuggestion: 'Allegro vigoroso', character: 'Snappy and buoyant' }
+      ]
+    }
   }
 ]

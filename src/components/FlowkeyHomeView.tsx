@@ -2,6 +2,7 @@ import React, { useState, useMemo, useRef, useEffect } from 'react'
 import type { PracticeVariant } from '../types/music'
 import type { MasterEditionId, LibraryPieceSummary } from '../types/edition'
 import { LibraryRepository } from '../library/LibraryRepository'
+import { SongStorageManager } from '../library/SongStorageManager'
 import type { LanguageCode } from '../i18n/translations'
 import type { TabId } from './FlowkeyTabBar'
 import {
@@ -17,8 +18,9 @@ import {
   Clock,
   BookOpen,
   Bookmark,
-  History,
   SlidersHorizontal,
+  Trophy,
+  Trash2,
 } from 'lucide-react'
 
 interface FlowkeyHomeViewProps {
@@ -46,6 +48,21 @@ export const FlowkeyHomeView: React.FC<FlowkeyHomeViewProps> = ({
 }) => {
   const catalog = useMemo(() => LibraryRepository.getCatalog(), [])
   const searchInputRef = useRef<HTMLInputElement>(null)
+  const [savedCustomPieces, setSavedCustomPieces] = useState(() => SongStorageManager.getSavedPieces())
+  const [competitionScores, setCompetitionScores] = useState(() => SongStorageManager.getAllCompetitionScores())
+
+  useEffect(() => {
+    if (viewTab === 'mySongs') {
+      setSavedCustomPieces(SongStorageManager.getSavedPieces())
+      setCompetitionScores(SongStorageManager.getAllCompetitionScores())
+    }
+  }, [viewTab])
+
+  const handleDeleteSavedPiece = (id: string, e: React.MouseEvent) => {
+    e.stopPropagation()
+    SongStorageManager.removePiece(id)
+    setSavedCustomPieces(SongStorageManager.getSavedPieces())
+  }
 
   // Search & Filter state
   const [searchQuery, setSearchQuery] = useState('')
@@ -295,120 +312,166 @@ export const FlowkeyHomeView: React.FC<FlowkeyHomeViewProps> = ({
   if (viewTab === 'mySongs') {
     return (
       <div className="w-full h-full bg-[#0a0a0f] text-zinc-100 overflow-y-auto select-none px-4 sm:px-8 pl-[max(1rem,env(safe-area-inset-left))] pr-[max(1rem,env(safe-area-inset-right))] py-6 space-y-8 max-w-7xl mx-auto scrollbar-thin scrollbar-thumb-zinc-800 pb-[max(7rem,calc(env(safe-area-inset-bottom)+5rem))]">
-        <div className="space-y-1">
-          <h1 className="text-2xl sm:text-3xl font-extrabold text-white tracking-tight flex items-center gap-2.5">
-            <Bookmark className="w-7 h-7 text-orange-500" />
-            <span>
-              {language === 'de'
-                ? 'Meine Songs'
-                : language === 'fr'
-                ? 'Mes morceaux'
-                : language === 'ja'
-                ? 'マイソング'
-                : language === 'zh'
-                ? '我的乐曲'
-                : 'My Songs'}
-            </span>
-          </h1>
-          <p className="text-xs sm:text-sm text-zinc-400">
-            {language === 'de'
-              ? 'Deine favorisierten Stücke, Fortschritte und importierte Partituren.'
-              : 'Your favorite pieces, practice history, and custom imported scores.'}
-          </p>
+        <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4 p-6 rounded-3xl bg-gradient-to-r from-zinc-900 via-zinc-900/90 to-amber-950/20 border border-white/10 shadow-xl">
+          <div className="flex items-center gap-4">
+            <div className="w-12 h-12 rounded-2xl bg-orange-500/20 border border-orange-500/40 flex items-center justify-center text-orange-400 shadow-md">
+              <Bookmark className="w-6 h-6" />
+            </div>
+            <div>
+              <h1 className="text-xl sm:text-2xl font-extrabold text-white flex items-center gap-2.5">
+                <span>{language === 'de' ? 'Meine Bibliothek & Rekorde' : 'My Library & Achievements'}</span>
+                <span className="text-xs font-mono bg-amber-500/10 text-amber-400 border border-amber-500/30 px-2.5 py-0.5 rounded-full">
+                  {savedCustomPieces.length} {language === 'de' ? 'eigene Songs' : 'custom songs'}
+                </span>
+              </h1>
+              <p className="text-xs text-zinc-400">
+                {language === 'de'
+                  ? 'Deine auf dem iPhone gespeicherten Noten, Downloads und Wettbewerbsergebnisse.'
+                  : 'Your locally saved pieces, Song Cloud downloads, and competition juror scorecards.'}
+              </p>
+            </div>
+          </div>
+          <button
+            onClick={onOpenImportModal}
+            className="px-4 py-2.5 rounded-xl bg-gradient-to-r from-orange-500 to-amber-500 hover:brightness-110 text-zinc-950 font-bold text-xs shadow-md flex items-center gap-2 active:scale-95 transition-all"
+          >
+            <Upload className="w-4 h-4" />
+            <span>{language === 'de' ? '+ Song hinzufügen' : '+ Add New Song'}</span>
+          </button>
         </div>
 
-        {/* Section 1: In Progress & Continue Playing */}
+        {/* Section 1: User's Custom & Downloaded Scores */}
         <section className="space-y-4">
           <h2 className="text-base sm:text-lg font-bold text-zinc-200 flex items-center gap-2">
-            <History className="w-5 h-5 text-amber-400" />
-            <span>
-              {language === 'de'
-                ? 'Zuletzt geübt'
-                : language === 'fr'
-                ? 'En cours d’apprentissage'
-                : language === 'ja'
-                ? '最近練習した曲'
-                : language === 'zh'
-                ? '最近在练'
-                : 'Continue Practicing'}
-            </span>
+            <Music className="w-5 h-5 text-orange-400" />
+            <span>{language === 'de' ? 'Eigene & Heruntergeladene Noten' : 'Custom & Downloaded Pieces'}</span>
+            <span className="text-xs text-zinc-500">({savedCustomPieces.length})</span>
           </h2>
-          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
-            {recommendedPieces.slice(0, 3).map((p, idx) => (
-              <div
-                key={p.id}
-                onClick={() => handleLaunchPiece(p)}
-                className="p-4 rounded-2xl bg-zinc-900 border border-white/10 hover:border-orange-500/50 cursor-pointer flex items-center justify-between gap-4 group transition-all"
+
+          {savedCustomPieces.length === 0 ? (
+            <div className="p-8 text-center bg-zinc-900/40 rounded-3xl border border-white/5 space-y-3">
+              <Music className="w-10 h-10 text-zinc-600 mx-auto" />
+              <div className="space-y-1">
+                <p className="text-sm font-semibold text-zinc-300">
+                  {language === 'de' ? 'Noch keine eigenen Songs gespeichert' : 'No custom songs saved yet'}
+                </p>
+                <p className="text-xs text-zinc-500 max-w-sm mx-auto">
+                  {language === 'de'
+                    ? 'Lade eigene MIDI/MusicXML-Dateien hoch oder lade beliebte Stücke aus der Song Cloud herunter.'
+                    : 'Import your own MIDI or MusicXML files, or 1-click download classics from the Song Cloud.'}
+                </p>
+              </div>
+              <button
+                onClick={onOpenImportModal}
+                className="px-4 py-2 rounded-xl bg-zinc-800 hover:bg-zinc-700 text-amber-300 font-bold text-xs border border-amber-500/30 transition-all inline-flex items-center gap-1.5"
               >
-                <div className="flex items-center gap-3.5 min-w-0">
-                  <div className={`w-12 h-12 rounded-xl bg-gradient-to-tr ${p.coverColor} flex items-center justify-center text-white flex-shrink-0 shadow-md`}>
-                    <Play className="w-5 h-5 fill-current ml-0.5" />
+                <Upload className="w-3.5 h-3.5" />
+                <span>{language === 'de' ? 'Song Cloud & Import öffnen' : 'Open Song Cloud & Import'}</span>
+              </button>
+            </div>
+          ) : (
+            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
+              {savedCustomPieces.map((piece) => (
+                <div
+                  key={piece.id}
+                  onClick={() => {
+                    onSelectPieceAndEdition(piece.id, 'urtext', 'original')
+                    onOpenPlayer()
+                  }}
+                  className="p-4 rounded-2xl bg-zinc-900 border border-white/5 hover:border-amber-500/40 cursor-pointer group transition-all flex items-center justify-between gap-3 shadow-md"
+                >
+                  <div className="space-y-1 min-w-0">
+                    <h4 className="font-bold text-sm text-zinc-100 group-hover:text-amber-300 transition-colors truncate">
+                      {piece.title}
+                    </h4>
+                    <div className="flex items-center gap-2 text-xs text-zinc-400">
+                      <span>{piece.composer || 'Custom Composer'}</span>
+                      <span>•</span>
+                      <span className="font-mono">{piece.notes.length} notes</span>
+                    </div>
                   </div>
-                  <div className="min-w-0">
-                    <h3 className="font-bold text-sm text-zinc-100 group-hover:text-amber-400 transition-colors truncate">
-                      {p.title}
-                    </h3>
-                    <p className="text-xs text-zinc-400 truncate">{p.composer}</p>
-                    <div className="flex items-center gap-2 mt-1.5">
-                      <div className="w-24 h-1.5 bg-zinc-800 rounded-full overflow-hidden">
-                        <div
-                          className="h-full bg-gradient-to-r from-orange-500 to-amber-400 rounded-full"
-                          style={{ width: `${(idx + 1) * 28}%` }}
-                        />
-                      </div>
-                      <span className="text-[10px] font-mono text-zinc-400">{(idx + 1) * 28}%</span>
+                  <div className="flex items-center gap-2">
+                    <button
+                      onClick={(e) => handleDeleteSavedPiece(piece.id, e)}
+                      className="w-8 h-8 rounded-lg bg-zinc-800/80 hover:bg-rose-500/20 text-zinc-500 hover:text-rose-400 flex items-center justify-center transition-colors"
+                      title="Delete piece"
+                    >
+                      <Trash2 className="w-4 h-4" />
+                    </button>
+                    <div className="w-8 h-8 rounded-lg bg-orange-500/20 group-hover:bg-orange-500 text-orange-400 group-hover:text-zinc-950 flex items-center justify-center transition-colors shadow-sm">
+                      <Play className="w-4 h-4 fill-current" />
                     </div>
                   </div>
                 </div>
-                <ChevronRight className="w-4 h-4 text-zinc-500 group-hover:text-orange-400 transition-colors flex-shrink-0" />
-              </div>
-            ))}
-          </div>
+              ))}
+            </div>
+          )}
         </section>
 
-        {/* Section 2: Bookmarked Repertoire */}
+        {/* Section 2: Competition Juror Honor Roll & Best Scores */}
+        <section className="space-y-4">
+          <h2 className="text-base sm:text-lg font-bold text-zinc-200 flex items-center gap-2">
+            <Trophy className="w-5 h-5 text-amber-400" />
+            <span>{language === 'de' ? 'Wettbewerbs-Ehrentafel & Rekorde' : 'Competition Hall of Fame'}</span>
+            <span className="text-xs text-zinc-500">({competitionScores.length})</span>
+          </h2>
+
+          {competitionScores.length === 0 ? (
+            <div className="p-6 text-center bg-zinc-900/40 rounded-3xl border border-white/5 space-y-2">
+              <Trophy className="w-8 h-8 text-zinc-600 mx-auto" />
+              <p className="text-xs text-zinc-400">
+                {language === 'de'
+                  ? 'Noch keine Wettbewerbe abgeschlossen. Starte ein beliebiges Stück im "Wettbewerb"-Modus für strenge Jury-Bewertung!'
+                  : 'No competition records yet. Play any piece in "Compete" mode to earn high scores and jury critique!'}
+              </p>
+            </div>
+          ) : (
+            <div className="space-y-2.5">
+              {competitionScores.slice(0, 10).map((record, rIdx) => (
+                <div
+                  key={rIdx}
+                  className="p-3.5 rounded-xl bg-zinc-900 border border-white/5 flex items-center justify-between gap-3 text-xs"
+                >
+                  <div className="flex items-center gap-3 min-w-0">
+                    <div className="w-9 h-9 rounded-xl bg-amber-500/20 border border-amber-500/40 flex items-center justify-center text-amber-400 font-extrabold text-sm flex-shrink-0">
+                      {record.grade}
+                    </div>
+                    <div className="min-w-0">
+                      <div className="font-bold text-zinc-100 truncate">{record.pieceId}</div>
+                      <div className="text-[11px] text-zinc-500 flex items-center gap-2">
+                        <span>{record.date ? new Date(record.date).toLocaleDateString() : 'Recent'}</span>
+                        <span>•</span>
+                        <span>Genauigkeit: {record.accuracyPercent}%</span>
+                        <span>•</span>
+                        <span>+{record.extraNotesCount} Extranoten</span>
+                      </div>
+                    </div>
+                  </div>
+                  <div className="text-right flex-shrink-0">
+                    <div className="font-mono font-bold text-amber-400 text-sm">
+                      {record.score.toLocaleString()} pts
+                    </div>
+                  </div>
+                </div>
+              ))}
+            </div>
+          )}
+        </section>
+
+        {/* Section 3: Recommended Favorites */}
         <section className="space-y-4">
           <h2 className="text-base sm:text-lg font-bold text-zinc-200 flex items-center gap-2">
             <Sparkles className="w-5 h-5 text-orange-400" />
             <span>
               {language === 'de'
-                ? 'Favoriten & Meisterwerke'
-                : language === 'fr'
-                ? 'Favoris & Chefs-d’œuvre'
-                : language === 'ja'
-                ? 'お気に入りの名曲'
-                : language === 'zh'
-                ? '收藏的曲目'
-                : 'Bookmarked Repertoire'}
+                ? 'Empfohlene Meisterwerke'
+                : 'Recommended Repertoire'}
             </span>
           </h2>
           <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4">
-            {catalog.slice(0, 8).map((p) => renderPieceCard(p, true))}
+            {catalog.slice(0, 4).map((p) => renderPieceCard(p, true))}
           </div>
         </section>
-
-        {/* Section 3: Import Sheet Music Banner */}
-        <div
-          onClick={onOpenImportModal}
-          className="p-5 rounded-3xl bg-gradient-to-r from-zinc-900 to-zinc-950 border border-white/10 hover:border-amber-500/40 flex items-center justify-between gap-4 cursor-pointer shadow-lg group transition-all"
-        >
-          <div className="flex items-center gap-4">
-            <div className="w-11 h-11 rounded-2xl bg-amber-500/15 border border-amber-500/30 flex items-center justify-center text-amber-400 group-hover:scale-105 transition-transform">
-              <Upload className="w-5 h-5" />
-            </div>
-            <div>
-              <h3 className="font-bold text-sm text-zinc-100 group-hover:text-amber-400 transition-colors">
-                {language === 'de' ? 'Eigene Noten & MIDI importieren' : 'Import Custom Sheet Music & MIDI'}
-              </h3>
-              <p className="text-xs text-zinc-400">
-                {language === 'de'
-                  ? 'Lade eigene .mid oder MusicXML-Dateien hoch und spiele sie direkt im Player.'
-                  : 'Upload your own MIDI or MusicXML files to practice with interactive hands & wait mode.'}
-              </p>
-            </div>
-          </div>
-          <ChevronRight className="w-5 h-5 text-zinc-500 group-hover:text-amber-400 transition-colors flex-shrink-0" />
-        </div>
       </div>
     )
   }

@@ -64,6 +64,11 @@ export class PianoAudioEngine {
   private wetGain: GainNode | null = null
   private convolver: ConvolverNode | null = null
   private soundboardFilter: BiquadFilterNode | null = null
+  private unaCordaFilter: BiquadFilterNode | null = null
+  private unaCordaGain: GainNode | null = null
+  private isUnaCorda: boolean = false
+  private mechanicalNoiseEnabled: boolean = true
+  private masterTuningHz: number = 440
   private samples: Map<number, AudioBuffer> = new Map()
   private isLoadingSamples: boolean = false
   private samplesLoaded: boolean = false
@@ -100,6 +105,14 @@ export class PianoAudioEngine {
     this.soundboardFilter.frequency.setValueAtTime(14000, this.ctx.currentTime)
     this.soundboardFilter.Q.setValueAtTime(0.7, this.ctx.currentTime)
 
+    // Una Corda (Soft Pedal CC67) acoustic filter & intimate attenuation
+    this.unaCordaFilter = this.ctx.createBiquadFilter()
+    this.unaCordaFilter.type = 'lowpass'
+    this.unaCordaFilter.frequency.setValueAtTime(14000, this.ctx.currentTime)
+
+    this.unaCordaGain = this.ctx.createGain()
+    this.unaCordaGain.gain.setValueAtTime(1.0, this.ctx.currentTime)
+
     // Master, Dry, and Wet Reverb Gains
     this.masterGain = this.ctx.createGain()
     this.masterGain.gain.setValueAtTime(0.9, this.ctx.currentTime)
@@ -113,11 +126,14 @@ export class PianoAudioEngine {
     this.convolver = this.ctx.createConvolver()
     this.convolver.buffer = this.generateImpulseResponse(2.2, 2.4)
 
-    // Routing: soundboardFilter -> dryGain -> masterGain
-    //          soundboardFilter -> convolver -> wetGain -> masterGain
+    // Routing: soundboardFilter -> unaCordaFilter -> unaCordaGain -> dryGain -> masterGain
+    //                                                             -> convolver -> wetGain -> masterGain
     //          masterGain -> destination
-    this.soundboardFilter.connect(this.dryGain)
-    this.soundboardFilter.connect(this.convolver)
+    this.soundboardFilter.connect(this.unaCordaFilter)
+    this.unaCordaFilter.connect(this.unaCordaGain)
+
+    this.unaCordaGain.connect(this.dryGain)
+    this.unaCordaGain.connect(this.convolver)
     this.convolver.connect(this.wetGain)
 
     this.dryGain.connect(this.masterGain)
@@ -288,10 +304,96 @@ export class PianoAudioEngine {
   }
 
   public isMechanicalNoiseEnabled(): boolean {
-    return false
+    return this.mechanicalNoiseEnabled
   }
 
-  public toggleMechanicalNoise() {}
+  public toggleMechanicalNoise(enable?: boolean) {
+    this.mechanicalNoiseEnabled = enable !== undefined ? enable : !this.mechanicalNoiseEnabled
+  }
+
+  public setMasterTuning(hz: number) {
+    this.masterTuningHz = Math.max(430, Math.min(450, hz))
+  }
+
+  public getMasterTuning(): number {
+    return this.masterTuningHz
+  }
+
+  /**
+   * Procedural Damper Lift Soundboard "Whoosh" (Authentic Grand Piano Damper Action)
+   */
+  public playDamperLiftNoise(depth: number) {
+    if (!this.mechanicalNoiseEnabled || !this.ctx || this.isMuted) return
+    if (depth < 25) return
+
+    const now = this.ctx.currentTime
+    const bufferSize = Math.floor(this.ctx.sampleRate * 0.18) // 180ms subtle wooden acoustic breath
+    const noiseBuffer = this.ctx.createBuffer(1, bufferSize, this.ctx.sampleRate)
+    const output = noiseBuffer.getChannelData(0)
+    for (let i = 0; i < bufferSize; i++) {
+      output[i] = Math.random() * 2 - 1
+    }
+
+    const whiteNoise = this.ctx.createBufferSource()
+    whiteNoise.buffer = noiseBuffer
+
+    // Bandpass filter centered at 280 Hz simulating the spruce soundboard displacement
+    const filter = this.ctx.createBiquadFilter()
+    filter.type = 'bandpass'
+    filter.frequency.setValueAtTime(280, now)
+    filter.Q.setValueAtTime(1.8, now)
+
+    const noiseGain = this.ctx.createGain()
+    const intensity = (depth / 127) * 0.08
+    noiseGain.gain.setValueAtTime(0.001, now)
+    noiseGain.gain.exponentialRampToValueAtTime(intensity, now + 0.035)
+    noiseGain.gain.exponentialRampToValueAtTime(0.0001, now + 0.18)
+
+    whiteNoise.connect(filter)
+    filter.connect(noiseGain)
+    noiseGain.connect(this.soundboardFilter || this.ctx.destination)
+
+    whiteNoise.start(now)
+  }
+
+  /**
+   * Key Release Felt Damping Acoustic Transient (Damper dropping back onto string)
+   */
+  public playKeyReleaseAcoustic(midi: number) {
+    if (!this.mechanicalNoiseEnabled || !this.ctx || this.isMuted) return
+    const now = this.ctx.currentTime
+
+    // Damper thump frequency correlates inversely with string register
+    const centerFreq = Math.min(750, Math.max(120, 850 - (midi - 21) * 7.5))
+    const osc = this.ctx.createOscillator()
+    osc.type = 'triangle'
+    osc.frequency.setValueAtTime(centerFreq, now)
+    osc.frequency.exponentialRampToValueAtTime(45, now + 0.035)
+
+    const releaseGain = this.ctx.createGain()
+    releaseGain.gain.setValueAtTime(0.022, now)
+    releaseGain.gain.exponentialRampToValueAtTime(0.0001, now + 0.035)
+
+    osc.connect(releaseGain)
+    releaseGain.connect(this.soundboardFilter || this.ctx.destination)
+    osc.start(now)
+    osc.stop(now + 0.04)
+  }
+
+  /**
+   * Continuous Soft Pedal (Una Corda CC67: 0 - 127)
+   */
+  public setSoftPedal(depth: number) {
+    if (!this.ctx || !this.unaCordaFilter || !this.unaCordaGain) return
+    const now = this.ctx.currentTime
+    this.isUnaCorda = depth >= 32
+
+    const targetFreq = this.isUnaCorda ? 6800 : 14000 // Veiled romantic coloration
+    const targetGain = this.isUnaCorda ? 0.78 : 1.0   // 2.2dB delicate attenuation
+
+    this.unaCordaFilter.frequency.setTargetAtTime(targetFreq, now, 0.04)
+    this.unaCordaGain.gain.setTargetAtTime(targetGain, now, 0.04)
+  }
 
   public isPedalActive(): boolean {
     return this.isPedalDown
@@ -307,9 +409,14 @@ export class PianoAudioEngine {
    */
   public setDamperPedal(depth: number) {
     if (this.currentPedalDepth === depth) return
-    this.currentPedalDepth = depth
     const wasPedalDown = this.isPedalDown
+    this.currentPedalDepth = depth
     this.isPedalDown = depth >= 30
+
+    // Trigger acoustic damper lift whoosh when pedal is depressed
+    if (!wasPedalDown && this.isPedalDown) {
+      this.playDamperLiftNoise(depth)
+    }
 
     // When pedal is released (felt dampers drop onto released strings)
     if (wasPedalDown && !this.isPedalDown && this.ctx) {
@@ -425,8 +532,8 @@ export class PianoAudioEngine {
         pedaled: this.isPedalDown,
       })
     } else {
-      // Fallback: Multi-harmonic synthesis
-      const f0 = 440 * Math.pow(2, (midi - 69) / 12)
+      // Fallback: Multi-harmonic synthesis with master concert tuning
+      const f0 = this.masterTuningHz * Math.pow(2, (midi - 69) / 12)
       const oscillators: OscillatorNode[] = []
       const partials = [
         { n: 1, type: 'sine' as OscillatorType, amp: 1.0, decay: 4.5 },
@@ -484,6 +591,9 @@ export class PianoAudioEngine {
           voice.pedaled = true
           return
         }
+
+        // Play subtle acoustic felt damper drop transient
+        this.playKeyReleaseAcoustic(midi)
 
         try {
           voice.gainNode.gain.cancelScheduledValues(now)

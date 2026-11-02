@@ -196,6 +196,16 @@ export class SongStorageManager {
     }
   }
 
+  // Get all competition scores
+  public static getAllCompetitionScores(): CompetitionScoreRecord[] {
+    try {
+      const raw = localStorage.getItem(COMPETITION_SCORES_KEY)
+      return raw ? JSON.parse(raw) : []
+    } catch {
+      return []
+    }
+  }
+
   // Get best score for a piece
   public static getBestScore(pieceId: string): CompetitionScoreRecord | null {
     try {

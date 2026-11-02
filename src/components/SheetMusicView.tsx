@@ -221,6 +221,19 @@ export const SheetMusicView: React.FC<SheetMusicViewProps> = ({
     return 0
   }, [piece.key])
 
+  const isNoteCoveredByKeySignature = useCallback((noteName: string): boolean => {
+    const root = noteName.charAt(0).toUpperCase()
+    if (noteName.includes('#')) {
+      const sharpsInKey = ['F', 'C', 'G', 'D', 'A', 'E', 'B'].slice(0, keySharpsCount)
+      return sharpsInKey.includes(root)
+    }
+    if (noteName.includes('b')) {
+      const flatsInKey = ['B', 'E', 'A', 'D', 'G', 'C', 'F'].slice(0, keyFlatsCount)
+      return flatsInKey.includes(root)
+    }
+    return false
+  }, [keySharpsCount, keyFlatsCount])
+
   // Ledger line positions for any note y coordinate
   const calculateLedgerLines = (y: number): number[] => {
     const lines: number[] = []
@@ -578,6 +591,30 @@ export const SheetMusicView: React.FC<SheetMusicViewProps> = ({
                   />
                 ))}
 
+                {/* Dynamic Marking (Urtext expression between Treble and Bass staves) */}
+                {(() => {
+                  const avgVel = sortedNotes.length > 0 
+                    ? sortedNotes.reduce((sum, n) => sum + (n.velocity || 75), 0) / sortedNotes.length 
+                    : 0
+                  const dyn = avgVel >= 105 ? 'ff' : avgVel >= 92 ? 'f' : avgVel >= 78 ? 'mf' : avgVel >= 64 ? 'mp' : avgVel >= 48 ? 'p' : avgVel > 0 ? 'pp' : null
+                  if (!dyn) return null
+                  return (
+                    <text
+                      x="10"
+                      y={middleCY + 3.5}
+                      fontSize="12"
+                      fontFamily="serif"
+                      fontStyle="italic"
+                      fontWeight="bold"
+                      fill="#854d0e"
+                      textAnchor="start"
+                      className="select-none pointer-events-none"
+                    >
+                      {dyn}
+                    </text>
+                  )
+                })()}
+
                 {/* Only render note SVG nodes for visible measures to maintain 120 FPS */}
                 {isVisible &&
                   sortedNotes.map((note) => {
@@ -610,12 +647,12 @@ export const SheetMusicView: React.FC<SheetMusicViewProps> = ({
 
                     const noteColor = isActive ? '#ea580c' : '#1a1a1a'
 
-                    // Determine if accidental is required
+                    // Determine if accidental is required (suppress if already defined in key signature)
                     const hasSharp = note.noteName.includes('#')
                     const hasFlat = note.noteName.includes('b')
-                    // In G minor, Bb and Eb are key signature standard; don't show flat sign unless outside key signature
-                    const showFlatSymbol = hasFlat && !(keyFlatsCount >= 2 && (note.noteName.startsWith('B') || note.noteName.startsWith('E')))
-                    const showSharpSymbol = hasSharp
+                    const isCovered = isNoteCoveredByKeySignature(note.noteName)
+                    const showSharpSymbol = hasSharp && !isCovered
+                    const showFlatSymbol = hasFlat && !isCovered
 
                     return (
                       <g key={note.id}>

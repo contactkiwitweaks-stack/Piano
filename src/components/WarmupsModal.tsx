@@ -1,4 +1,4 @@
-import React from 'react'
+import React, { useState, useMemo } from 'react'
 import type { Piece } from '../types/music'
 import { warmupsList } from '../data/warmups'
 import { translations, type LanguageCode } from '../i18n/translations'
@@ -22,7 +22,16 @@ export const WarmupsModal: React.FC<WarmupsModalProps> = ({
   language,
   onSelectWarmupPiece,
 }) => {
+  const [selectedCat, setSelectedCat] = useState<'all' | 'scales' | 'arpeggios' | 'velocity'>('all')
   const t = translations[language].warmups
+
+  const filteredWarmups = useMemo(() => {
+    if (selectedCat === 'all') return warmupsList
+    if (selectedCat === 'scales') return warmupsList.filter(w => w.category === 'thumb-agility' || w.id.includes('scale'))
+    if (selectedCat === 'arpeggios') return warmupsList.filter(w => w.category === 'arpeggio' || w.id.includes('arpeggio'))
+    if (selectedCat === 'velocity') return warmupsList.filter(w => w.category === 'coda-velocity' || w.category === 'trill' || w.category === 'independence')
+    return warmupsList
+  }, [selectedCat])
 
   if (!isOpen) return null
 
@@ -48,9 +57,31 @@ export const WarmupsModal: React.FC<WarmupsModalProps> = ({
           </button>
         </div>
 
+        {/* Category Selector Pills */}
+        <div className="px-5 py-2.5 bg-zinc-950/60 border-b border-zinc-800/60 flex items-center gap-2 overflow-x-auto scrollbar-none">
+          {[
+            { id: 'all', label: language === 'de' ? 'Alle Übungen' : 'All Warmups' },
+            { id: 'scales', label: language === 'de' ? 'Tonleitern' : 'Scales' },
+            { id: 'arpeggios', label: language === 'de' ? 'Arpeggien' : 'Arpeggios' },
+            { id: 'velocity', label: language === 'de' ? 'Geläufigkeit & Oktaven' : 'Velocity & Octaves' },
+          ].map((cat) => (
+            <button
+              key={cat.id}
+              onClick={() => setSelectedCat(cat.id as typeof selectedCat)}
+              className={`px-3 py-1.5 rounded-xl text-xs font-bold transition-all whitespace-nowrap ${
+                selectedCat === cat.id
+                  ? 'bg-amber-500 text-zinc-950 font-extrabold shadow-sm'
+                  : 'bg-zinc-800 hover:bg-zinc-700 text-zinc-300'
+              }`}
+            >
+              {cat.label}
+            </button>
+          ))}
+        </div>
+
         {/* Content List */}
         <div className="p-4 overflow-y-auto space-y-3">
-          {warmupsList.map((exercise) => (
+          {filteredWarmups.map((exercise) => (
             <div
               key={exercise.id}
               className="p-4 rounded-xl bg-zinc-950/70 border border-zinc-800/80 hover:border-amber-500/40 transition-all flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3 group"

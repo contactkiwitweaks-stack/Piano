@@ -34,6 +34,12 @@ export const AudioSettingsModal: React.FC<AudioSettingsModalProps> = ({
   const [metronomeVol, setMetronomeVol] = useState<number>(
     engine.getMetronomeVolume()
   )
+  const [mechanicalNoise, setMechanicalNoise] = useState<boolean>(
+    engine.isMechanicalNoiseEnabled()
+  )
+  const [tuningHz, setTuningHz] = useState<number>(
+    engine.getMasterTuning()
+  )
 
   if (!isOpen) return null
 
@@ -50,6 +56,22 @@ export const AudioSettingsModal: React.FC<AudioSettingsModalProps> = ({
   const handleMetronomeVolChange = (val: number) => {
     setMetronomeVol(val)
     engine.setMetronomeVolume(val)
+  }
+
+  const handleToggleMechanical = () => {
+    const next = !mechanicalNoise
+    setMechanicalNoise(next)
+    engine.toggleMechanicalNoise(next)
+  }
+
+  const handleTuningChange = (hz: number) => {
+    setTuningHz(hz)
+    engine.setMasterTuning(hz)
+  }
+
+  const handleTestDamperNoise = () => {
+    engine.unlockAudio()
+    engine.playDamperLiftNoise(100)
   }
 
   const handleTestClick = (isDown: boolean) => {
@@ -282,6 +304,71 @@ export const AudioSettingsModal: React.FC<AudioSettingsModalProps> = ({
               onChange={(e) => handleMetronomeVolChange(parseFloat(e.target.value))}
               className="w-full accent-emerald-500 cursor-pointer"
             />
+          </div>
+
+          {/* 4. Acoustic Damper & Key Mechanical Noise */}
+          <div className="space-y-3 pt-1 border-t border-zinc-800/80">
+            <div className="flex items-center justify-between">
+              <div className="space-y-0.5">
+                <span className="text-xs font-bold text-zinc-200">
+                  {language === 'de' ? 'Dämpfer- & Mechanik-Akustik' : 'Acoustic Damper & Felt Noise'}
+                </span>
+                <p className="text-[10px] text-zinc-400">
+                  {language === 'de'
+                    ? 'Simuliert das echte Heben der 88 Filzdämpfer (Klangbrett-Atem) und Tasten-Rückfall'
+                    : 'Authentic 88-damper felt lift soundboard breath and key release thud'}
+                </p>
+              </div>
+              <div className="flex items-center gap-2">
+                <button
+                  onClick={handleTestDamperNoise}
+                  className="text-[10px] bg-zinc-800 hover:bg-zinc-700 text-amber-300 px-2 py-1 rounded-lg border border-white/10 font-medium"
+                >
+                  Test Whoosh
+                </button>
+                <button
+                  onClick={handleToggleMechanical}
+                  className={`px-3 py-1 rounded-xl text-xs font-bold transition-all ${
+                    mechanicalNoise
+                      ? 'bg-amber-500 text-zinc-950 font-extrabold shadow-sm'
+                      : 'bg-zinc-800 text-zinc-400'
+                  }`}
+                >
+                  {mechanicalNoise ? 'ON' : 'OFF'}
+                </button>
+              </div>
+            </div>
+          </div>
+
+          {/* 5. Master Concert Tuning */}
+          <div className="space-y-3 pt-1 border-t border-zinc-800/80">
+            <div className="flex items-center justify-between">
+              <div className="space-y-0.5">
+                <span className="text-xs font-bold text-zinc-200">
+                  {language === 'de' ? 'Konzertstimmung (Kammerton A4)' : 'Concert Pitch Master Tuning (A4)'}
+                </span>
+                <p className="text-[10px] text-zinc-400">
+                  {language === 'de'
+                    ? '440 Hz (Standard) oder 442 Hz (Wiener/Berliner Philharmoniker Glanz)'
+                    : '440 Hz (Standard) or 442 Hz (European Symphony & Philharmonic brilliance)'}
+                </p>
+              </div>
+              <div className="flex items-center gap-1.5">
+                {[440, 442].map((hz) => (
+                  <button
+                    key={hz}
+                    onClick={() => handleTuningChange(hz)}
+                    className={`px-2.5 py-1 rounded-xl text-xs font-mono font-bold transition-all ${
+                      tuningHz === hz
+                        ? 'bg-orange-500 text-white shadow-sm'
+                        : 'bg-zinc-800 text-zinc-400 hover:text-white'
+                    }`}
+                  >
+                    {hz} Hz
+                  </button>
+                ))}
+              </div>
+            </div>
           </div>
         </div>
 

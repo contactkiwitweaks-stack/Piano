@@ -1,6 +1,7 @@
 // Roland LX-9 Bluetooth MIDI (BLE) & Web MIDI Manager
 
 import type { MidiInputState } from '../types/music'
+import { PianoAudioEngine } from '../audio/PianoAudioEngine'
 
 type NoteCallback = (midi: number, velocity: number) => void
 type NoteOffCallback = (midi: number) => void
@@ -366,6 +367,9 @@ export class MidiManager {
             this.pedalListeners.forEach((cb) => cb(value))
           } else if (controller === 67) {
             this.state.softPedal = value
+            try {
+              PianoAudioEngine.getInstance().setSoftPedal(value)
+            } catch {}
           } else if (controller === 66) {
             this.state.sostenutoPedal = value
           }
@@ -396,6 +400,10 @@ export class MidiManager {
 
   public simulatePedal(depth: number) {
     this.processRawMidiMessage(new Uint8Array([0xb0, 64, Math.max(0, Math.min(127, depth))]))
+  }
+
+  public simulateSoftPedal(depth: number) {
+    this.processRawMidiMessage(new Uint8Array([0xb0, 67, Math.max(0, Math.min(127, depth))]))
   }
 
   public enableSimulator() {

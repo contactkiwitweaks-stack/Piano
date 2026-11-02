@@ -604,7 +604,77 @@ export const FlowkeyPlayerView: React.FC<FlowkeyPlayerViewProps> = ({
                 </div>
               </div>
 
-              {/* 4. Connectivity & Audio */}
+              {/* 4. Practice & Tempo Tools (Mobile Cockpit) */}
+              <div className="space-y-2 pt-2 border-t border-white/10">
+                <div className="text-[11px] font-bold text-emerald-400 uppercase tracking-wider">Practice & Tempo Tools</div>
+                <div className="grid grid-cols-2 gap-2">
+                  {onToggleMetronome && (
+                    <button
+                      onClick={onToggleMetronome}
+                      className={`p-2.5 rounded-xl border flex items-center justify-between text-xs font-bold transition-all ${
+                        isMetronomeOn
+                          ? 'bg-emerald-500/25 border-emerald-400 text-emerald-200'
+                          : 'bg-zinc-800/60 border-white/10 text-zinc-400'
+                      }`}
+                    >
+                      <span className="flex items-center gap-1.5">
+                        <Timer className="w-3.5 h-3.5" />
+                        <span>Metronome</span>
+                      </span>
+                      <span className="font-mono text-[10px]">{isMetronomeOn ? 'ON' : 'OFF'}</span>
+                    </button>
+                  )}
+
+                  {onToggleSpeedRamp && (
+                    <button
+                      onClick={onToggleSpeedRamp}
+                      className={`p-2.5 rounded-xl border flex items-center justify-between text-xs font-bold transition-all ${
+                        isSpeedRamp
+                          ? 'bg-gradient-to-r from-orange-500/30 to-amber-500/30 border-amber-400 text-amber-200'
+                          : 'bg-zinc-800/60 border-white/10 text-zinc-400'
+                      }`}
+                    >
+                      <span className="flex items-center gap-1.5">
+                        <TrendingUp className="w-3.5 h-3.5" />
+                        <span>Speed Ramp</span>
+                      </span>
+                      <span className="font-mono text-[10px]">{isSpeedRamp ? '+5% ON' : 'OFF'}</span>
+                    </button>
+                  )}
+
+                  <button
+                    onClick={onToggleHands}
+                    className={`p-2.5 rounded-xl border flex items-center justify-between text-xs font-bold transition-all ${
+                      showHands
+                        ? 'bg-amber-500/25 border-amber-400 text-amber-200'
+                        : 'bg-zinc-800/60 border-white/10 text-zinc-400'
+                    }`}
+                  >
+                    <span className="flex items-center gap-1.5">
+                      <Hand className="w-3.5 h-3.5" />
+                      <span>Fingering</span>
+                    </span>
+                    <span className="font-mono text-[10px]">{showHands ? 'ON' : 'OFF'}</span>
+                  </button>
+
+                  <button
+                    onClick={onToggleLoop}
+                    className={`p-2.5 rounded-xl border flex items-center justify-between text-xs font-bold transition-all ${
+                      isLooping
+                        ? 'bg-blue-500/25 border-blue-400 text-blue-200'
+                        : 'bg-zinc-800/60 border-white/10 text-zinc-400'
+                    }`}
+                  >
+                    <span className="flex items-center gap-1.5">
+                      <Repeat className="w-3.5 h-3.5" />
+                      <span>Loop Range</span>
+                    </span>
+                    <span className="font-mono text-[10px]">M.{loopRange[0]}–{loopRange[1]}</span>
+                  </button>
+                </div>
+              </div>
+
+              {/* 5. Connectivity & Audio */}
               <div className="pt-2 border-t border-white/10 flex gap-2">
                 <button
                   onClick={() => {
