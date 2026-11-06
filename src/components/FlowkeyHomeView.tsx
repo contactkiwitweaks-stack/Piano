@@ -139,20 +139,20 @@ export const FlowkeyHomeView: React.FC<FlowkeyHomeViewProps> = ({
   }
 
   const quickSearchTags = [
-    { label: '🌸 Flower Dance', query: 'flower dance' },
-    { label: '🌊 River Flows in You', query: 'river flows' },
-    { label: '🔔 La Campanella', query: 'campanella' },
-    { label: '🩸 Chainsaw Man', query: 'chainsaw' },
-    { label: '🎻 Hikaru Nara', query: 'hikaru' },
-    { label: '🌙 Chopin Nocturne', query: 'nocturne' },
-    { label: '☁️ Spirited Away', query: 'summer' },
-    { label: '🏰 Howl Castle', query: 'merry' },
-    { label: '🔔 Carol of the Bells', query: 'carol' },
-    { label: '⛄ Sia - Snowman', query: 'snowman' },
-    { label: '🪽 ICARUS', query: 'icarus' },
-    { label: '🎹 Für Elise', query: 'fur elise' },
-    { label: '🎼 Moonlight Sonata', query: 'moonlight' },
-    { label: '🏛️ Passacaglia', query: 'passacaglia' },
+    { label: 'Flower Dance', query: 'flower dance' },
+    { label: 'River Flows in You', query: 'river flows' },
+    { label: 'La Campanella', query: 'campanella' },
+    { label: 'Chainsaw Man', query: 'chainsaw' },
+    { label: 'Hikaru Nara', query: 'hikaru' },
+    { label: 'Chopin Nocturne', query: 'nocturne' },
+    { label: 'Spirited Away', query: 'summer' },
+    { label: 'Howl Castle', query: 'merry' },
+    { label: 'Carol of the Bells', query: 'carol' },
+    { label: 'Sia - Snowman', query: 'snowman' },
+    { label: 'ICARUS', query: 'icarus' },
+    { label: 'Für Elise', query: 'fur elise' },
+    { label: 'Moonlight Sonata', query: 'moonlight' },
+    { label: 'Passacaglia', query: 'passacaglia' },
   ]
 
   const difficultyBadge = (diff: number) => {
@@ -631,13 +631,14 @@ export const FlowkeyHomeView: React.FC<FlowkeyHomeViewProps> = ({
             <button
               key={tag.label}
               onClick={() => setSearchQuery(tag.query)}
-              className={`px-3 py-1.5 rounded-xl border text-xs whitespace-nowrap transition-colors flex items-center gap-1 ${
+              className={`px-3 py-1.5 rounded-xl border text-xs whitespace-nowrap transition-colors flex items-center gap-1.5 ${
                 normalize(searchQuery) === tag.query
                   ? 'bg-orange-500/25 border-orange-500/70 text-orange-300 shadow-sm'
                   : 'bg-zinc-900/90 border-white/5 text-zinc-400 hover:text-white hover:bg-zinc-800'
               }`}
             >
-              {tag.label}
+              <Music className="w-3 h-3 text-orange-400/80" />
+              <span>{tag.label}</span>
             </button>
           ))}
         </div>
@@ -756,10 +757,11 @@ export const FlowkeyHomeView: React.FC<FlowkeyHomeViewProps> = ({
 
                     <button
                       onClick={() => setSpotlightIndex((prev) => prev + 1)}
-                      className="px-4 py-3 rounded-2xl bg-zinc-900/80 hover:bg-zinc-800 text-zinc-300 hover:text-white border border-white/10 text-xs font-bold transition-colors"
+                      className="px-4 py-3 rounded-2xl bg-zinc-900/80 hover:bg-zinc-800 text-zinc-300 hover:text-white border border-white/10 text-xs font-bold transition-colors flex items-center gap-1.5"
                       title="Next spotlight song"
                     >
-                      Next Spotlight ➔
+                      <span>Next Spotlight</span>
+                      <ChevronRight className="w-3.5 h-3.5 text-zinc-400" />
                     </button>
                   </div>
                 </div>

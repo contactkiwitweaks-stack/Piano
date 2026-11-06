@@ -14,7 +14,11 @@ dist-ssr
 .gemini
 .antigravity
 
-# Editor directories and files
+# Build / test binaries and media
+scripts/*.exe
+scripts/*.mp3
+scripts/*.pcm
+scripts/*.webm
 .vscode/*
 !.vscode/extensions.json
 .idea
