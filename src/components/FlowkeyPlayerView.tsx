@@ -255,39 +255,42 @@ export const FlowkeyPlayerView: React.FC<FlowkeyPlayerViewProps> = ({
           </div>
         </div>
 
-        {/* Center: View Layout Switcher (Keyboard vs Split vs Sheet on Desktop/Tablet) */}
-        <div className="hidden md:flex items-center bg-zinc-900 border border-white/10 rounded-xl p-0.5 shadow-inner">
+        {/* Center: View Layout Switcher (Keys vs Split vs Sheet on Mobile & Desktop) */}
+        <div className="flex items-center bg-zinc-900/90 border border-white/10 rounded-xl p-0.5 shadow-inner flex-shrink-0">
           <button
             onClick={() => setViewLayout('keyboard')}
-            className={`flex items-center gap-1.5 px-3 py-1 rounded-lg text-xs font-bold transition-all ${
+            className={`flex items-center gap-1 sm:gap-1.5 px-2 sm:px-3 py-1 rounded-lg text-[11px] sm:text-xs font-bold transition-all ${
               viewLayout === 'keyboard'
                 ? 'bg-amber-500 text-zinc-950 shadow-sm'
                 : 'text-zinc-400 hover:text-zinc-200'
             }`}
+            title="Keyboard View"
           >
-            <Layers className="w-3.5 h-3.5" />
-            <span>Keyboard</span>
+            <Layers className="w-3 h-3 sm:w-3.5 sm:h-3.5" />
+            <span>Keys</span>
           </button>
           <button
             onClick={() => setViewLayout('split')}
-            className={`flex items-center gap-1.5 px-3 py-1 rounded-lg text-xs font-bold transition-all ${
+            className={`flex items-center gap-1 sm:gap-1.5 px-1.5 sm:px-3 py-1 rounded-lg text-[11px] sm:text-xs font-bold transition-all ${
               viewLayout === 'split'
                 ? 'bg-amber-500 text-zinc-950 shadow-sm'
                 : 'text-zinc-400 hover:text-zinc-200'
             }`}
+            title="Split Piano + Sheet Music"
           >
-            <Columns className="w-3.5 h-3.5" />
-            <span>Split</span>
+            <Columns className="w-3 h-3 sm:w-3.5 sm:h-3.5" />
+            <span className="hidden xs:inline">Split</span>
           </button>
           <button
             onClick={() => setViewLayout('sheet')}
-            className={`flex items-center gap-1.5 px-3 py-1 rounded-lg text-xs font-bold transition-all ${
+            className={`flex items-center gap-1 sm:gap-1.5 px-2 sm:px-3 py-1 rounded-lg text-[11px] sm:text-xs font-bold transition-all ${
               viewLayout === 'sheet'
                 ? 'bg-amber-500 text-zinc-950 shadow-sm'
                 : 'text-zinc-400 hover:text-zinc-200'
             }`}
+            title="Sheet Music Notation"
           >
-            <FileText className="w-3.5 h-3.5" />
+            <FileText className="w-3 h-3 sm:w-3.5 sm:h-3.5" />
             <span>Sheet</span>
           </button>
         </div>

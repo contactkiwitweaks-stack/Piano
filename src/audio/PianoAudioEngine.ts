@@ -99,37 +99,53 @@ export class PianoAudioEngine {
       (window as unknown as { webkitAudioContext: typeof AudioContext }).webkitAudioContext
     this.ctx = new AudioCtx({ latencyHint: 'interactive' })
 
-    // Acoustic soundboard body warmth filter (warm spruce wood resonance)
+    // Bösendorfer Imperial 290 Acoustic Tone & Soundboard Shaping Chain:
+    // 1. Deep Sub-Bass Low Shelf (+3.0 dB at 110 Hz, rich 97-key imperial acoustic authority)
+    const lowShelf = this.ctx.createBiquadFilter()
+    lowShelf.type = 'lowshelf'
+    lowShelf.frequency.setValueAtTime(110, this.ctx.currentTime)
+    lowShelf.gain.setValueAtTime(3.0, this.ctx.currentTime)
+
+    // 2. Solid Spruce Soundboard Body Resonance (+2.0 dB at 280 Hz, warm wooden projection)
+    const spruceResonance = this.ctx.createBiquadFilter()
+    spruceResonance.type = 'peaking'
+    spruceResonance.frequency.setValueAtTime(280, this.ctx.currentTime)
+    spruceResonance.gain.setValueAtTime(2.0, this.ctx.currentTime)
+    spruceResonance.Q.setValueAtTime(1.0, this.ctx.currentTime)
+
+    // 3. Acoustic Air Lowpass: Silky concert grand presence, eliminating metallic/digital harshness
     this.soundboardFilter = this.ctx.createBiquadFilter()
     this.soundboardFilter.type = 'lowpass'
-    this.soundboardFilter.frequency.setValueAtTime(14000, this.ctx.currentTime)
+    this.soundboardFilter.frequency.setValueAtTime(14500, this.ctx.currentTime)
     this.soundboardFilter.Q.setValueAtTime(0.7, this.ctx.currentTime)
 
-    // Una Corda (Soft Pedal CC67) acoustic filter & intimate attenuation
+    // 4. Una Corda (Soft Pedal CC67) acoustic filter & intimate attenuation
     this.unaCordaFilter = this.ctx.createBiquadFilter()
     this.unaCordaFilter.type = 'lowpass'
-    this.unaCordaFilter.frequency.setValueAtTime(14000, this.ctx.currentTime)
+    this.unaCordaFilter.frequency.setValueAtTime(14500, this.ctx.currentTime)
 
     this.unaCordaGain = this.ctx.createGain()
     this.unaCordaGain.gain.setValueAtTime(1.0, this.ctx.currentTime)
 
-    // Master, Dry, and Wet Reverb Gains
+    // 5. Master, Dry, and Wet Reverb Gains
     this.masterGain = this.ctx.createGain()
-    this.masterGain.gain.setValueAtTime(0.9, this.ctx.currentTime)
+    this.masterGain.gain.setValueAtTime(0.95, this.ctx.currentTime)
 
     this.dryGain = this.ctx.createGain()
     this.dryGain.gain.setValueAtTime(1.0, this.ctx.currentTime)
 
     this.wetGain = this.ctx.createGain()
-    this.wetGain.gain.setValueAtTime(0.22, this.ctx.currentTime) // default 22% concert hall acoustic bloom
+    this.wetGain.gain.setValueAtTime(0.25, this.ctx.currentTime) // default 25% concert hall acoustic bloom
 
     this.convolver = this.ctx.createConvolver()
-    this.convolver.buffer = this.generateImpulseResponse(2.2, 2.4)
+    this.convolver.buffer = this.generateImpulseResponse(2.6, 2.1)
 
-    // Routing: soundboardFilter -> unaCordaFilter -> unaCordaGain -> dryGain -> masterGain
-    //                                                             -> convolver -> wetGain -> masterGain
-    //          masterGain -> destination
-    this.soundboardFilter.connect(this.unaCordaFilter)
+    // Routing: soundboardFilter -> lowShelf -> spruceResonance -> unaCordaFilter -> unaCordaGain
+    //          unaCordaGain -> dryGain -> masterGain -> destination
+    //          unaCordaGain -> convolver -> wetGain -> masterGain
+    this.soundboardFilter.connect(lowShelf)
+    lowShelf.connect(spruceResonance)
+    spruceResonance.connect(this.unaCordaFilter)
     this.unaCordaFilter.connect(this.unaCordaGain)
 
     this.unaCordaGain.connect(this.dryGain)
@@ -139,6 +155,19 @@ export class PianoAudioEngine {
     this.dryGain.connect(this.masterGain)
     this.wetGain.connect(this.masterGain)
     this.masterGain.connect(this.ctx.destination)
+
+    // Eagerly unlock audio graph on first iOS touch or pointer interaction
+    const unlockHandler = () => {
+      this.unlockAudio()
+      window.removeEventListener('pointerdown', unlockHandler)
+      window.removeEventListener('touchstart', unlockHandler)
+      window.removeEventListener('click', unlockHandler)
+    }
+    if (typeof window !== 'undefined') {
+      window.addEventListener('pointerdown', unlockHandler, { once: true, passive: true })
+      window.addEventListener('touchstart', unlockHandler, { once: true, passive: true })
+      window.addEventListener('click', unlockHandler, { once: true, passive: true })
+    }
 
     this.loadSamples()
   }
@@ -293,7 +322,36 @@ export class PianoAudioEngine {
       src.connect(this.ctx.destination)
       src.start(0)
     } catch {}
+
+    // Resilient auto-retry: if samples haven't decoded yet, trigger background loading
+    if (this.samples.size < SAMPLE_FILES.length && !this.isLoadingSamples) {
+      this.loadSamples()
+    }
+
     return this.ctx.state === 'running'
+  }
+
+  /**
+   * Resilient audio decoding with OfflineAudioContext to prevent iOS suspended-context freeze
+   */
+  private async decodeAudioBuffer(arrayBuf: ArrayBuffer): Promise<AudioBuffer | null> {
+    const OfflineCtxClass =
+      window.OfflineAudioContext ||
+      (window as unknown as { webkitOfflineAudioContext: typeof OfflineAudioContext }).webkitOfflineAudioContext
+
+    if (OfflineCtxClass) {
+      try {
+        const offlineCtx = new OfflineCtxClass(1, 44100, 44100)
+        return await new Promise<AudioBuffer>((resolve, reject) => {
+          offlineCtx.decodeAudioData(arrayBuf.slice(0), resolve, reject)
+        })
+      } catch {}
+    }
+
+    if (!this.ctx) return null
+    return await new Promise<AudioBuffer>((resolve, reject) => {
+      this.ctx!.decodeAudioData(arrayBuf.slice(0), resolve, reject)
+    })
   }
 
   /**
@@ -303,13 +361,17 @@ export class PianoAudioEngine {
     if (this.isLoadingSamples || this.samplesLoaded || !this.ctx) return
     this.isLoadingSamples = true
 
+    const origin = typeof window !== 'undefined' && window.location ? window.location.origin : ''
     const tryFetchAudio = async (name: string): Promise<ArrayBuffer | null> => {
       const paths = [
         `./samples/piano/${name}.mp3`,
         `/samples/piano/${name}.mp3`,
         `samples/piano/${name}.mp3`,
+        origin ? `${origin}/samples/piano/${name}.mp3` : '',
         `https://raw.githubusercontent.com/contactkiwitweaks-stack/Piano/main/public/samples/piano/${name}.mp3`,
-      ]
+        `https://cdn.jsdelivr.net/gh/contactkiwitweaks-stack/Piano@main/public/samples/piano/${name}.mp3`,
+      ].filter(Boolean) as string[]
+
       for (const p of paths) {
         try {
           const resp = await fetch(p)
@@ -325,9 +387,11 @@ export class PianoAudioEngine {
       const loadPromises = SAMPLE_FILES.map(async ({ midi, name }) => {
         try {
           const arrayBuf = await tryFetchAudio(name)
-          if (arrayBuf && this.ctx) {
-            const audioBuf = await this.ctx.decodeAudioData(arrayBuf)
-            this.samples.set(midi, audioBuf)
+          if (arrayBuf) {
+            const audioBuf = await this.decodeAudioBuffer(arrayBuf)
+            if (audioBuf) {
+              this.samples.set(midi, audioBuf)
+            }
           }
         } catch {}
       })
@@ -339,6 +403,18 @@ export class PianoAudioEngine {
     } finally {
       this.isLoadingSamples = false
     }
+  }
+
+  public getLoadedSampleCount(): number {
+    return this.samples.size
+  }
+
+  public getTotalSampleCount(): number {
+    return SAMPLE_FILES.length
+  }
+
+  public isUsingAcousticSamples(): boolean {
+    return this.samples.size > 0
   }
 
   public toggleMute() {

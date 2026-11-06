@@ -37,14 +37,14 @@ export class LibraryRepository {
       difficulty: 4,
       key: 'Db Major',
       period: 'Contemporary',
-      durationSeconds: 163,
+      durationSeconds: 131,
       coverColor: 'from-cyan-500 via-blue-900 to-zinc-950',
       availableEditions: [
         {
           id: 'urtext',
-          name: 'John Rod Dondoyano Concert Arrangement',
-          year: '2017 / YouTube Transcription',
-          description: 'Full 1,473-note arrangement: warm syncopated chord voicings, lyrical vocal line, and emotive climax.',
+          name: 'John Rod Dondoyano Concert Arrangement (Takt 20 Edition)',
+          year: '2017 / Direct Verse Edition',
+          description: 'Special Direct Edition starting right at the iconic Takt 20 theme: warm syncopated chord voicings, lyrical vocal line, and emotive climax.',
         },
       ],
     },
