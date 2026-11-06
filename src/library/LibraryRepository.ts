@@ -7,6 +7,14 @@ import { ScoreEngine } from '../engine/ScoreEngine'
 import { SongStorageManager } from './SongStorageManager'
 import carolOfTheBellsScore from '../data/scores/carol-of-the-bells.json'
 import siaSnowmanScore from '../data/scores/sia-snowman.json'
+import riverFlowsInYouScore from '../data/scores/river-flows-in-you.json'
+import lisztLaCampanellaScore from '../data/scores/liszt-la-campanella.json'
+import kensukeInTheSeaScore from '../data/scores/kensuke-ushio-in-the-sea.json'
+import hikaruNaraScore from '../data/scores/hikaru-nara.json'
+import chopinNocturneScore from '../data/scores/chopin-nocturne-c-sharp-minor.json'
+import hisaishiOneSummerDayScore from '../data/scores/joe-hisaishi-one-summers-day.json'
+import hisaishiMerryGoRoundScore from '../data/scores/joe-hisaishi-merry-go-round.json'
+import djOkawariFlowerDanceScore from '../data/scores/dj-okawari-flower-dance.json'
 
 export class LibraryRepository {
   private static catalog: LibraryPieceSummary[] = [
@@ -45,6 +53,158 @@ export class LibraryRepository {
           name: 'John Rod Dondoyano Concert Arrangement (Takt 20 Edition)',
           year: '2017 / Direct Verse Edition',
           description: 'Special Direct Edition starting right at the iconic Takt 20 theme: warm syncopated chord voicings, lyrical vocal line, and emotive climax.',
+        },
+      ],
+    },
+    {
+      id: 'river-flows-in-you',
+      title: 'River Flows in You',
+      composer: 'Yiruma',
+      opus: '2001 (First Love)',
+      difficulty: 3,
+      key: 'A Major',
+      period: 'Contemporary',
+      durationSeconds: 168,
+      coverColor: 'from-sky-500 via-indigo-900 to-zinc-950',
+      availableEditions: [
+        {
+          id: 'urtext',
+          name: 'Original Concert Edition',
+          year: '2001 / Canonical Arrangement',
+          description: 'Flowing romantic ballad with gentle rubato arpeggios, graceful ornaments, and a lyrical cantabile melody.',
+        },
+      ],
+    },
+    {
+      id: 'liszt-la-campanella',
+      title: 'La Campanella',
+      composer: 'Franz Liszt',
+      opus: 'S. 141 No. 3 (1851)',
+      difficulty: 6,
+      key: 'G# minor',
+      period: 'Romantic',
+      durationSeconds: 245,
+      coverColor: 'from-amber-500 via-orange-950 to-zinc-950',
+      availableEditions: [
+        {
+          id: 'urtext',
+          name: 'Grandes études de Paganini',
+          year: '1851 Urtext Edition',
+          description: 'Legendary virtuoso bravura showpiece with lightning-fast right-hand bell leaps (up to two octaves) and sparkling trills.',
+        },
+      ],
+    },
+    {
+      id: 'kensuke-ushio-in-the-sea',
+      title: 'In the Sea (Chainsaw Man)',
+      composer: 'Kensuke Ushio (Arr. Henry Garcia)',
+      opus: '2022 (Chainsaw Man OST)',
+      difficulty: 2,
+      key: 'A minor',
+      period: 'Contemporary',
+      durationSeconds: 52,
+      coverColor: 'from-blue-600 via-slate-900 to-zinc-950',
+      availableEditions: [
+        {
+          id: 'urtext',
+          name: 'Acoustic Piano Transcription',
+          year: '2022 / Henry Garcia Arr.',
+          description: 'Atmospheric, haunting minimalist piano theme evoking deep ocean solitude, breath-like pauses, and emotional stillness.',
+        },
+      ],
+    },
+    {
+      id: 'hikaru-nara',
+      title: 'Hikaru Nara (Your Lie in April)',
+      composer: 'Goose house',
+      opus: '2014 (Shigatsu wa Kimi no Uso)',
+      difficulty: 4,
+      key: 'Eb Major',
+      period: 'Contemporary',
+      durationSeconds: 94,
+      coverColor: 'from-pink-500 via-rose-950 to-zinc-950',
+      availableEditions: [
+        {
+          id: 'urtext',
+          name: 'Opening Theme Concert Arr.',
+          year: '2014 / Anime Master Edition',
+          description: 'Exuberant, passionate theme song of Your Lie in April arranged into a spirited, virtuosic piano arrangement with driving pulse.',
+        },
+      ],
+    },
+    {
+      id: 'chopin-nocturne-c-sharp-minor',
+      title: 'Nocturne in C-sharp minor',
+      composer: 'Frédéric Chopin',
+      opus: 'Op. posth., B. 49 (1830)',
+      difficulty: 4,
+      key: 'C# minor',
+      period: 'Romantic',
+      durationSeconds: 235,
+      coverColor: 'from-violet-600 via-purple-950 to-zinc-950',
+      availableEditions: [
+        {
+          id: 'urtext',
+          name: 'Henle Urtext (KK IVa/16)',
+          year: '1830 Canonical Edition',
+          description: 'Intensely poignant masterpiece with flowing broken-chord accompaniment, expressive rubato, and famous 35-note downward arabesque.',
+        },
+      ],
+    },
+    {
+      id: 'joe-hisaishi-one-summers-day',
+      title: "One Summer's Day (Spirited Away)",
+      composer: 'Joe Hisaishi (Arr. Tuan-Anh Le)',
+      opus: '2001 (Studio Ghibli)',
+      difficulty: 3,
+      key: 'C Major',
+      period: 'Contemporary',
+      durationSeconds: 192,
+      coverColor: 'from-emerald-500 via-teal-950 to-zinc-950',
+      availableEditions: [
+        {
+          id: 'urtext',
+          name: 'Studio Ghibli Concert Edition',
+          year: '2001 / Official Score',
+          description: 'Nostalgic, timeless Ghibli masterpiece opening with reflective suspended chords before blossoming into lush warmth and yearning.',
+        },
+      ],
+    },
+    {
+      id: 'joe-hisaishi-merry-go-round',
+      title: 'Merry-Go-Round of Life',
+      composer: 'Joe Hisaishi',
+      opus: "2004 (Howl's Moving Castle)",
+      difficulty: 4,
+      key: 'G minor',
+      period: 'Contemporary',
+      durationSeconds: 353,
+      coverColor: 'from-amber-600 via-yellow-950 to-zinc-950',
+      availableEditions: [
+        {
+          id: 'urtext',
+          name: "Howl's Moving Castle Symphonic Piano",
+          year: '2004 / Studio Ghibli',
+          description: 'Swirling Viennese waltz theme with dramatic dynamic arches, spirited rubato, dancing bass octaves, and lush orchestral chords.',
+        },
+      ],
+    },
+    {
+      id: 'dj-okawari-flower-dance',
+      title: 'Flower Dance',
+      composer: 'DJ Okawari',
+      opus: '2010 (A Cup of Coffee)',
+      difficulty: 4,
+      key: 'G minor',
+      period: 'Contemporary',
+      durationSeconds: 259,
+      coverColor: 'from-fuchsia-500 via-pink-950 to-zinc-950',
+      availableEditions: [
+        {
+          id: 'urtext',
+          name: 'Official Solo Piano Transcription',
+          year: '2010 / Melodic Master Edition',
+          description: 'Electrifying, driving contemporary piano masterpiece with relentless running semiquaver arpeggios and crystalline melody.',
         },
       ],
     },
@@ -428,6 +588,30 @@ export class LibraryRepository {
     }
     if (pieceId === 'sia-snowman') {
       return siaSnowmanScore as unknown as Piece
+    }
+    if (pieceId === 'river-flows-in-you') {
+      return riverFlowsInYouScore as unknown as Piece
+    }
+    if (pieceId === 'liszt-la-campanella') {
+      return lisztLaCampanellaScore as unknown as Piece
+    }
+    if (pieceId === 'kensuke-ushio-in-the-sea') {
+      return kensukeInTheSeaScore as unknown as Piece
+    }
+    if (pieceId === 'hikaru-nara') {
+      return hikaruNaraScore as unknown as Piece
+    }
+    if (pieceId === 'chopin-nocturne-c-sharp-minor') {
+      return chopinNocturneScore as unknown as Piece
+    }
+    if (pieceId === 'joe-hisaishi-one-summers-day') {
+      return hisaishiOneSummerDayScore as unknown as Piece
+    }
+    if (pieceId === 'joe-hisaishi-merry-go-round') {
+      return hisaishiMerryGoRoundScore as unknown as Piece
+    }
+    if (pieceId === 'dj-okawari-flower-dance') {
+      return djOkawariFlowerDanceScore as unknown as Piece
     }
 
     // 1. Try loading complete pre-parsed canonical JSON score
