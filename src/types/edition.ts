@@ -26,6 +26,10 @@ export interface LibraryPieceSummary {
     description: string
   }[]
   coverColor: string
+  coverImage?: string
+  badge?: string
+  quote?: string
+  tags?: string[]
 }
 
 export interface EditionConfig {

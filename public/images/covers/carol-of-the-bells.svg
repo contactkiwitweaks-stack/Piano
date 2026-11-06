@@ -1,0 +1,55 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 600 600" width="100%" height="100%">
+  <defs>
+    <radialGradient id="bg" cx="50%" cy="30%" r="80%">
+      <stop offset="0%" stop-color="#0f2b2b" />
+      <stop offset="50%" stop-color="#071717" />
+      <stop offset="100%" stop-color="#020808" />
+    </radialGradient>
+    <linearGradient id="gold" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="#fef08a" />
+      <stop offset="50%" stop-color="#eab308" />
+      <stop offset="100%" stop-color="#854d0e" />
+    </linearGradient>
+    <radialGradient id="glow" cx="50%" cy="50%" r="50%">
+      <stop offset="0%" stop-color="#f59e0b" stop-opacity="0.4" />
+      <stop offset="100%" stop-color="#f59e0b" stop-opacity="0" />
+    </radialGradient>
+    <linearGradient id="aurora" x1="0%" y1="0%" x2="100%" y2="0%">
+      <stop offset="0%" stop-color="#10b981" stop-opacity="0.2" />
+      <stop offset="50%" stop-color="#06b6d4" stop-opacity="0.3" />
+      <stop offset="100%" stop-color="#8b5cf6" stop-opacity="0.1" />
+    </linearGradient>
+  </defs>
+  <rect width="600" height="600" fill="url(#bg)" />
+  <path d="M0,150 Q150,80 300,120 T600,100 L600,280 L0,280 Z" fill="url(#aurora)" filter="blur(20px)" />
+  
+  <!-- Snow Stars -->
+  <g fill="#ffffff" opacity="0.7">
+    <circle cx="80" cy="90" r="2" />
+    <circle cx="140" cy="50" r="1.5" />
+    <circle cx="220" cy="110" r="2.5" />
+    <circle cx="380" cy="70" r="1.5" />
+    <circle cx="480" cy="120" r="2" />
+    <circle cx="530" cy="60" r="1" />
+    <circle cx="90" cy="220" r="1.5" />
+    <circle cx="520" cy="240" r="2" />
+    <circle cx="310" cy="40" r="3" />
+  </g>
+
+  <!-- Glowing Bells -->
+  <circle cx="300" cy="280" r="160" fill="url(#glow)" />
+  
+  <!-- Big Bell Silhouette -->
+  <path d="M300,170 C280,170 240,210 230,280 C220,350 200,370 190,380 L410,380 C400,370 380,350 370,280 C360,210 320,170 300,170 Z" fill="url(#gold)" />
+  <ellipse cx="300" cy="380" rx="110" ry="16" fill="#ca8a04" />
+  <circle cx="300" cy="400" r="18" fill="#713f12" />
+  
+  <!-- Acoustic Soundwaves -->
+  <circle cx="300" cy="280" r="190" fill="none" stroke="#facc15" stroke-width="1.5" stroke-dasharray="8 12" opacity="0.3" />
+  <circle cx="300" cy="280" r="230" fill="none" stroke="#facc15" stroke-width="1" stroke-dasharray="4 8" opacity="0.2" />
+
+  <!-- Frost Pines at Base -->
+  <path d="M0,600 L0,500 L60,440 L120,520 L180,430 L240,510 L300,420 L360,510 L420,440 L480,530 L540,450 L600,520 L600,600 Z" fill="#041212" />
+  <text x="300" y="520" font-family="system-ui, sans-serif" font-weight="900" font-size="28" fill="#ffffff" text-anchor="middle" letter-spacing="4">CAROL OF THE BELLS</text>
+  <text x="300" y="555" font-family="system-ui, sans-serif" font-weight="600" font-size="16" fill="#38bdf8" text-anchor="middle" letter-spacing="2">UKRAINIAN BELL MOTIF • 1914</text>
+</svg>

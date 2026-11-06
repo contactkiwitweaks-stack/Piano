@@ -1,0 +1,49 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 600 600" width="100%" height="100%">
+  <defs>
+    <linearGradient id="bgRiver" x1="0%" y1="0%" x2="0%" y2="100%">
+      <stop offset="0%" stop-color="#021024" />
+      <stop offset="50%" stop-color="#052659" />
+      <stop offset="100%" stop-color="#020914" />
+    </linearGradient>
+    <linearGradient id="waterFlow" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="#7bf1a8" />
+      <stop offset="50%" stop-color="#38bdf8" />
+      <stop offset="100%" stop-color="#6366f1" />
+    </linearGradient>
+    <radialGradient id="waterGlow" cx="50%" cy="50%" r="50%">
+      <stop offset="0%" stop-color="#38bdf8" stop-opacity="0.5" />
+      <stop offset="100%" stop-color="#38bdf8" stop-opacity="0" />
+    </radialGradient>
+  </defs>
+  <rect width="600" height="600" fill="url(#bgRiver)" />
+  
+  <!-- Glowing Moon & Ripples -->
+  <circle cx="300" cy="180" r="160" fill="url(#waterGlow)" />
+  <circle cx="300" cy="180" r="50" fill="#e0f2fe" opacity="0.9" />
+
+  <!-- Lyrical River Path curving like musical stave -->
+  <path d="M-50,480 C150,460 180,360 260,320 C340,280 370,250 400,210 C430,170 520,180 650,150 L650,600 L-50,600 Z" fill="url(#waterFlow)" opacity="0.85" />
+  <path d="M-50,520 C180,500 220,400 300,360 C380,320 420,290 460,230 C500,190 560,190 650,180" fill="none" stroke="#ffffff" stroke-width="2.5" opacity="0.6" />
+  <path d="M-50,550 C190,530 250,430 330,390 C410,350 450,310 500,260 C550,220 590,210 650,200" fill="none" stroke="#7bf1a8" stroke-width="1.5" opacity="0.7" />
+
+  <!-- Grand Piano on Riverside Cliff -->
+  <g transform="translate(140, 220) scale(0.7)">
+    <path d="M50,100 C70,40 140,30 220,50 C250,90 260,150 240,200 L60,200 Z" fill="#020914" />
+    <!-- Piano lid prop -->
+    <line x1="90" y1="90" x2="160" y2="20" stroke="#38bdf8" stroke-width="3" />
+    <!-- Keyboard strip -->
+    <rect x="60" y="195" width="180" height="12" fill="#ffffff" />
+    <!-- Leg 1 -->
+    <line x1="80" y1="200" x2="80" y2="280" stroke="#020914" stroke-width="6" />
+    <!-- Leg 2 -->
+    <line x1="220" y1="200" x2="220" y2="280" stroke="#020914" stroke-width="6" />
+  </g>
+
+  <!-- Water Droplets / Floating Note Orbs -->
+  <circle cx="280" cy="300" r="5" fill="#ffffff" filter="drop-shadow(0 0 8px #38bdf8)" />
+  <circle cx="340" cy="270" r="4" fill="#ffffff" filter="drop-shadow(0 0 8px #7bf1a8)" />
+  <circle cx="420" cy="240" r="6" fill="#ffffff" filter="drop-shadow(0 0 10px #38bdf8)" />
+
+  <text x="300" y="525" font-family="system-ui, sans-serif" font-weight="900" font-size="28" fill="#ffffff" text-anchor="middle" letter-spacing="3">RIVER FLOWS IN YOU</text>
+  <text x="300" y="560" font-family="system-ui, sans-serif" font-weight="600" font-size="16" fill="#7dd3fc" text-anchor="middle" letter-spacing="2">YIRUMA • FIRST LOVE</text>
+</svg>

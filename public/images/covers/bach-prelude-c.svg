@@ -1,0 +1,26 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 600 600" width="100%" height="100%">
+  <defs>
+    <radialGradient id="bgBach" cx="50%" cy="30%" r="85%">
+      <stop offset="0%" stop-color="#064e3b" />
+      <stop offset="50%" stop-color="#022c22" />
+      <stop offset="100%" stop-color="#01140e" />
+    </radialGradient>
+  </defs>
+  <rect width="600" height="600" fill="url(#bgBach)" />
+
+  <!-- Baroque Organ Pipe Harmonics -->
+  <g fill="#10b981" opacity="0.8">
+    <rect x="180" y="240" width="18" height="160" rx="3" />
+    <rect x="210" y="200" width="18" height="200" rx="3" />
+    <rect x="240" y="160" width="18" height="240" rx="3" />
+    <rect x="270" y="120" width="18" height="280" rx="3" fill="#34d399" />
+    <rect x="300" y="100" width="20" height="300" rx="3" fill="#6ee7b7" />
+    <rect x="330" y="120" width="18" height="280" rx="3" fill="#34d399" />
+    <rect x="360" y="160" width="18" height="240" rx="3" />
+    <rect x="390" y="200" width="18" height="200" rx="3" />
+    <rect x="420" y="240" width="18" height="160" rx="3" />
+  </g>
+
+  <text x="300" y="515" font-family="system-ui, sans-serif" font-weight="900" font-size="28" fill="#ffffff" text-anchor="middle" letter-spacing="3">PRELUDE IN C MAJOR</text>
+  <text x="300" y="555" font-family="system-ui, sans-serif" font-weight="600" font-size="16" fill="#6ee7b7" text-anchor="middle" letter-spacing="2">J. S. BACH • BWV 846</text>
+</svg>

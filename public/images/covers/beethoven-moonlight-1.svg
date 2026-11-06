@@ -1,0 +1,32 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 600 600" width="100%" height="100%">
+  <defs>
+    <radialGradient id="bgMoonlight" cx="50%" cy="25%" r="85%">
+      <stop offset="0%" stop-color="#1e1b4b" />
+      <stop offset="45%" stop-color="#0f172a" />
+      <stop offset="100%" stop-color="#020617" />
+    </radialGradient>
+    <radialGradient id="fullMoon" cx="50%" cy="50%" r="50%">
+      <stop offset="0%" stop-color="#e0e7ff" stop-opacity="0.9" />
+      <stop offset="100%" stop-color="#e0e7ff" stop-opacity="0" />
+    </radialGradient>
+  </defs>
+  <rect width="600" height="600" fill="url(#bgMoonlight)" />
+
+  <!-- Full Silver Moon over Lake Lucerne -->
+  <circle cx="300" cy="180" r="140" fill="url(#fullMoon)" />
+  <circle cx="300" cy="180" r="60" fill="#f8fafc" />
+
+  <!-- Lake surface reflections (Undulating triplets) -->
+  <g stroke="#c7d2fe" stroke-width="2" opacity="0.6">
+    <ellipse cx="300" cy="360" rx="80" ry="6" fill="none" />
+    <ellipse cx="300" cy="390" rx="130" ry="8" fill="none" />
+    <ellipse cx="300" cy="425" rx="190" ry="10" fill="none" />
+  </g>
+
+  <!-- Cypress tree silhouettes -->
+  <path d="M120,440 C110,320 135,260 140,220 C145,260 170,320 160,440 Z" fill="#020617" />
+  <path d="M480,440 C470,330 495,270 500,230 C505,270 530,330 520,440 Z" fill="#020617" />
+
+  <text x="300" y="515" font-family="system-ui, sans-serif" font-weight="900" font-size="28" fill="#ffffff" text-anchor="middle" letter-spacing="3">MOONLIGHT SONATA</text>
+  <text x="300" y="555" font-family="system-ui, sans-serif" font-weight="600" font-size="16" fill="#818cf8" text-anchor="middle" letter-spacing="2">L. V. BEETHOVEN • OP. 27 NO. 2</text>
+</svg>

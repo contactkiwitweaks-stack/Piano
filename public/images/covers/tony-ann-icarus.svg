@@ -1,0 +1,41 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 600 600" width="100%" height="100%">
+  <defs>
+    <radialGradient id="bgIcarus" cx="50%" cy="40%" r="80%">
+      <stop offset="0%" stop-color="#451a03" />
+      <stop offset="50%" stop-color="#1c1917" />
+      <stop offset="100%" stop-color="#09090b" />
+    </radialGradient>
+    <linearGradient id="goldWing" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="#fef08a" />
+      <stop offset="40%" stop-color="#f59e0b" />
+      <stop offset="100%" stop-color="#b45309" />
+    </linearGradient>
+    <radialGradient id="sunGlow" cx="50%" cy="50%" r="50%">
+      <stop offset="0%" stop-color="#f59e0b" stop-opacity="0.6" />
+      <stop offset="100%" stop-color="#f59e0b" stop-opacity="0" />
+    </radialGradient>
+  </defs>
+  <rect width="600" height="600" fill="url(#bgIcarus)" />
+  
+  <circle cx="300" cy="200" r="160" fill="url(#sunGlow)" />
+  <circle cx="300" cy="200" r="65" fill="#fef08a" />
+
+  <!-- Soaring Wings of Icarus made of Piano Keys / Golden Feathers -->
+  <g fill="url(#goldWing)">
+    <!-- Left Wing -->
+    <path d="M280,240 C220,180 120,130 60,110 C80,180 130,260 270,270 Z" />
+    <path d="M260,260 C200,220 130,190 90,180 C110,240 160,300 250,290 Z" />
+    <!-- Right Wing -->
+    <path d="M320,240 C380,180 480,130 540,110 C520,180 470,260 330,270 Z" />
+    <path d="M340,260 C400,220 470,190 510,180 C490,240 440,300 350,290 Z" />
+  </g>
+
+  <!-- Golden Piano Key Grid Wave below -->
+  <g stroke="#f59e0b" stroke-width="2" opacity="0.6">
+    <path d="M50,420 C180,380 420,440 550,400" fill="none" />
+    <path d="M50,440 C180,400 420,460 550,420" fill="none" />
+  </g>
+
+  <text x="300" y="515" font-family="system-ui, sans-serif" font-weight="900" font-size="34" fill="#ffffff" text-anchor="middle" letter-spacing="5">ICARUS</text>
+  <text x="300" y="555" font-family="system-ui, sans-serif" font-weight="600" font-size="16" fill="#f59e0b" text-anchor="middle" letter-spacing="2">TONY ANN • VIRTUOSO NEOCLASSICAL</text>
+</svg>

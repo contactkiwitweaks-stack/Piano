@@ -10,7 +10,6 @@ import {
   Search,
   Sparkles,
   ChevronRight,
-  Flame,
   Upload,
   X,
   Music,
@@ -21,6 +20,8 @@ import {
   SlidersHorizontal,
   Trophy,
   Trash2,
+  Film,
+  Award,
 } from 'lucide-react'
 
 interface FlowkeyHomeViewProps {
@@ -50,6 +51,7 @@ export const FlowkeyHomeView: React.FC<FlowkeyHomeViewProps> = ({
   const searchInputRef = useRef<HTMLInputElement>(null)
   const [savedCustomPieces, setSavedCustomPieces] = useState(() => SongStorageManager.getSavedPieces())
   const [competitionScores, setCompetitionScores] = useState(() => SongStorageManager.getAllCompetitionScores())
+  const [spotlightIndex, setSpotlightIndex] = useState(0)
 
   useEffect(() => {
     if (viewTab === 'mySongs') {
@@ -85,70 +87,72 @@ export const FlowkeyHomeView: React.FC<FlowkeyHomeViewProps> = ({
       ja: 'すべての名曲',
       zh: '全部曲目',
     },
-    holiday: {
-      en: 'Holiday & Winter',
-      de: 'Weihnachten & Winter',
-      fr: 'Fêtes & Hiver',
-      ja: 'クリスマス・冬',
-      zh: '节日与冬季',
+    anime_film: {
+      en: 'Anime & Ghibli',
+      de: 'Anime & Studio Ghibli',
+      fr: 'Anime & Ghibli',
+      ja: 'アニメ・ジブリ',
+      zh: '动漫与吉卜力',
     },
     contemporary: {
-      en: 'Pop & Contemporary',
+      en: 'Pop & Modern',
       de: 'Pop & Modern',
-      fr: 'Pop & Contemporain',
+      fr: 'Pop & Moderne',
       ja: 'ポップス・現代曲',
       zh: '流行与现代',
     },
     classical: {
-      en: 'Classical & Baroque',
+      en: 'Classical Masters',
       de: 'Klassik & Barock',
       fr: 'Classique & Baroque',
-      ja: '古典派・バロック',
-      zh: '古典与巴洛克',
+      ja: 'クラシック名曲',
+      zh: '古典大师杰作',
     },
-    romantic: {
-      en: 'Romantic & Impressionist',
-      de: 'Romantik & Impressionismus',
-      fr: 'Romantique & Impressionniste',
-      ja: 'ロマン派・印象派',
-      zh: '浪漫派与印象派',
+    holiday: {
+      en: 'Winter & Holiday',
+      de: 'Weihnachten & Winter',
+      fr: 'Fêtes & Hiver',
+      ja: '冬・クリスマス',
+      zh: '冬季与节日',
     },
     technique: {
-      en: 'Scales & Hanon Drills',
+      en: 'Scales & Hanon',
       de: 'Tonleitern & Hanon',
       fr: 'Gammes & Hanon',
       ja: '音階・ハノン練習',
       zh: '音阶与哈农练习',
     },
     beginner: {
-      en: 'Beginner Pieces',
-      de: 'Für Anfänger',
-      fr: 'Pour débutants',
-      ja: '初級向け',
-      zh: '新手入门精选',
+      en: 'Beginner (Lvl 1–3)',
+      de: 'Für Anfänger (Lvl 1–3)',
+      fr: 'Débutant (Lvl 1–3)',
+      ja: '初級 (Lvl 1–3)',
+      zh: '入门级 (Lvl 1–3)',
     },
     advanced: {
-      en: 'Advanced & Virtuoso',
-      de: 'Fortgeschritten & Virtuos',
-      fr: 'Avancé & Virtuose',
-      ja: '上級・演奏会用',
-      zh: '演奏级大师杰作',
+      en: 'Virtuoso (Lvl 4+)',
+      de: 'Virtuos (Lvl 4+)',
+      fr: 'Virtuose (Lvl 4+)',
+      ja: '演奏会用 (Lvl 4+)',
+      zh: '演奏大师级 (Lvl 4+)',
     },
   }
 
   const quickSearchTags = [
+    { label: '🌸 Flower Dance', query: 'flower dance' },
+    { label: '🌊 River Flows in You', query: 'river flows' },
+    { label: '🔔 La Campanella', query: 'campanella' },
+    { label: '🩸 Chainsaw Man', query: 'chainsaw' },
+    { label: '🎻 Hikaru Nara', query: 'hikaru' },
+    { label: '🌙 Chopin Nocturne', query: 'nocturne' },
+    { label: '☁️ Spirited Away', query: 'summer' },
+    { label: '🏰 Howl Castle', query: 'merry' },
     { label: '🔔 Carol of the Bells', query: 'carol' },
     { label: '⛄ Sia - Snowman', query: 'snowman' },
-    { label: 'Passacaglia', query: 'passacaglia' },
-    { label: 'ABBA', query: 'abba' },
-    { label: 'The Winner Takes It All', query: 'winner' },
-    { label: 'Tony Ann', query: 'tony ann' },
-    { label: 'ICARUS', query: 'icarus' },
-    { label: 'Für Elise', query: 'fur elise' },
-    { label: 'Chopin', query: 'chopin' },
-    { label: 'Ballade 1', query: 'ballade' },
-    { label: 'Tonleitern & Scales', query: 'scale' },
-    { label: 'Hanon', query: 'hanon' },
+    { label: '🪽 ICARUS', query: 'icarus' },
+    { label: '🎹 Für Elise', query: 'fur elise' },
+    { label: '🎼 Moonlight Sonata', query: 'moonlight' },
+    { label: '🏛️ Passacaglia', query: 'passacaglia' },
   ]
 
   const difficultyBadge = (diff: number) => {
@@ -167,7 +171,7 @@ export const FlowkeyHomeView: React.FC<FlowkeyHomeViewProps> = ({
         color: 'bg-emerald-500/20 text-emerald-300 border-emerald-500/40',
       }
     }
-    if (diff <= 5) {
+    if (diff <= 4) {
       return {
         label:
           language === 'de'
@@ -182,7 +186,7 @@ export const FlowkeyHomeView: React.FC<FlowkeyHomeViewProps> = ({
         color: 'bg-amber-500/20 text-amber-300 border-amber-500/40',
       }
     }
-    if (diff <= 8) {
+    if (diff <= 6) {
       return {
         label:
           language === 'de'
@@ -219,7 +223,24 @@ export const FlowkeyHomeView: React.FC<FlowkeyHomeViewProps> = ({
     return `${m}:${s.toString().padStart(2, '0')}`
   }
 
-  // Filtered pieces based on genre, difficulty, and diacritic-insensitive search query
+  // Curated spotlight pieces for top carousel
+  const spotlightPieces = useMemo(() => {
+    return catalog.filter((p) =>
+      [
+        'liszt-la-campanella',
+        'river-flows-in-you',
+        'hikaru-nara',
+        'joe-hisaishi-one-summers-day',
+        'dj-okawari-flower-dance',
+        'carol-of-the-bells',
+        'chopin-nocturne-c-sharp-minor',
+      ].includes(p.id)
+    )
+  }, [catalog])
+
+  const activeSpotlight = spotlightPieces[spotlightIndex % spotlightPieces.length] || catalog[0]
+
+  // Filtered pieces based on genre, difficulty, and search query
   const filteredPieces = useMemo(() => {
     return catalog.filter((p) => {
       const q = normalize(searchQuery.trim())
@@ -230,31 +251,54 @@ export const FlowkeyHomeView: React.FC<FlowkeyHomeViewProps> = ({
         const matchesKey = normalize(p.key).includes(q)
         const matchesPeriod = normalize(p.period).includes(q)
         const matchesId = normalize(p.id).includes(q)
+        const matchesBadge = p.badge ? normalize(p.badge).includes(q) : false
 
-        if (!matchesTitle && !matchesComposer && !matchesOpus && !matchesKey && !matchesPeriod && !matchesId) {
+        if (!matchesTitle && !matchesComposer && !matchesOpus && !matchesKey && !matchesPeriod && !matchesId && !matchesBadge) {
           return false
         }
       }
 
       if (selectedGenre === 'all') return true
-      if (selectedGenre === 'holiday') {
-        return p.id === 'carol-of-the-bells' || p.id === 'sia-snowman' || p.period?.toLowerCase().includes('holiday')
+      if (selectedGenre === 'anime_film') {
+        return (
+          p.id === 'hikaru-nara' ||
+          p.id === 'joe-hisaishi-one-summers-day' ||
+          p.id === 'joe-hisaishi-merry-go-round' ||
+          p.id === 'kensuke-ushio-in-the-sea' ||
+          p.title.includes('Chainsaw') ||
+          p.title.includes('April') ||
+          p.title.includes('Spirited') ||
+          p.title.includes('Castle')
+        )
       }
       if (selectedGenre === 'contemporary') {
         return (
-          p.period === 'Contemporary' ||
-          p.period === 'Neoclassical' ||
-          p.id === 'carol-of-the-bells' ||
+          p.id === 'river-flows-in-you' ||
+          p.id === 'dj-okawari-flower-dance' ||
           p.id === 'sia-snowman' ||
+          p.id === 'carol-of-the-bells' ||
           p.id === 'tony-ann-icarus' ||
-          p.id === 'abba-the-winner-takes-it-all'
+          p.id === 'abba-the-winner-takes-it-all' ||
+          p.period === 'Contemporary' ||
+          p.period === 'Neoclassical'
         )
       }
       if (selectedGenre === 'classical') {
-        return p.period === 'Classical' || p.period === 'Baroque'
+        return (
+          p.id === 'liszt-la-campanella' ||
+          p.id === 'chopin-nocturne-c-sharp-minor' ||
+          p.id === 'chopin-ballade-1' ||
+          p.id === 'beethoven-moonlight-1' ||
+          p.id === 'beethoven-fur-elise' ||
+          p.id === 'handel-halvorsen-passacaglia' ||
+          p.id === 'bach-prelude-c' ||
+          p.period === 'Classical' ||
+          p.period === 'Romantic' ||
+          p.period === 'Baroque'
+        )
       }
-      if (selectedGenre === 'romantic') {
-        return p.period === 'Romantic' || p.period === 'Impressionist'
+      if (selectedGenre === 'holiday') {
+        return p.id === 'carol-of-the-bells' || p.id === 'sia-snowman'
       }
       if (selectedGenre === 'technique') {
         return p.period === 'Technique' || p.id.startsWith('scale-') || p.id.startsWith('hanon-')
@@ -263,33 +307,34 @@ export const FlowkeyHomeView: React.FC<FlowkeyHomeViewProps> = ({
         return p.difficulty <= 3
       }
       if (selectedGenre === 'advanced') {
-        return p.difficulty >= 6
+        return p.difficulty >= 4
       }
       return true
     })
   }, [catalog, searchQuery, selectedGenre])
 
-  const featuredNewPieces = useMemo(() => {
+  // Shelves
+  const animeShelf = useMemo(() => {
     return catalog.filter((p) =>
-      ['carol-of-the-bells', 'sia-snowman'].includes(p.id)
+      ['hikaru-nara', 'joe-hisaishi-one-summers-day', 'joe-hisaishi-merry-go-round', 'kensuke-ushio-in-the-sea'].includes(p.id)
     )
   }, [catalog])
 
-  const recommendedPieces = useMemo(() => {
+  const contemporaryShelf = useMemo(() => {
     return catalog.filter((p) =>
-      ['carol-of-the-bells', 'sia-snowman', 'handel-halvorsen-passacaglia', 'abba-the-winner-takes-it-all', 'tony-ann-icarus', 'beethoven-fur-elise', 'chopin-ballade-1'].includes(p.id)
+      ['river-flows-in-you', 'dj-okawari-flower-dance', 'sia-snowman', 'carol-of-the-bells', 'tony-ann-icarus', 'abba-the-winner-takes-it-all'].includes(p.id)
     )
   }, [catalog])
 
-  const popularPieces = useMemo(() => {
+  const classicalShelf = useMemo(() => {
     return catalog.filter((p) =>
-      ['carol-of-the-bells', 'sia-snowman', 'tony-ann-icarus', 'abba-the-winner-takes-it-all', 'handel-halvorsen-passacaglia', 'beethoven-fur-elise', 'chopin-ballade-1'].includes(p.id)
+      ['liszt-la-campanella', 'chopin-nocturne-c-sharp-minor', 'chopin-ballade-1', 'beethoven-moonlight-1', 'beethoven-fur-elise', 'handel-halvorsen-passacaglia', 'bach-prelude-c'].includes(p.id)
     )
   }, [catalog])
 
-  const techniquePieces = useMemo(() => {
+  const techniqueShelf = useMemo(() => {
     return catalog.filter((p) =>
-      p.period === 'Technique' || p.id.startsWith('scale-') || p.id.startsWith('hanon-') || p.id.includes('arpeggio')
+      p.period === 'Technique' || p.id.startsWith('scale-') || p.id.startsWith('hanon-')
     )
   }, [catalog])
 
@@ -298,46 +343,85 @@ export const FlowkeyHomeView: React.FC<FlowkeyHomeViewProps> = ({
     onOpenPlayer()
   }
 
+  // Gorgeous Album Art Card
   const renderPieceCard = (pieceItem: LibraryPieceSummary, compact = false) => {
     const diff = difficultyBadge(pieceItem.difficulty)
+    const coverSrc = pieceItem.coverImage || '/images/covers/carol-of-the-bells.svg'
+
     return (
       <div
         key={pieceItem.id}
         onClick={() => handleLaunchPiece(pieceItem)}
-        className="p-3.5 sm:p-4 rounded-3xl bg-zinc-900/60 hover:bg-zinc-900 border border-white/5 hover:border-orange-500/50 cursor-pointer flex flex-col justify-between gap-3 transition-all duration-200 shadow-md hover:shadow-orange-500/10 group active:scale-[0.98]"
+        className="group relative rounded-3xl bg-zinc-900/80 hover:bg-zinc-800/90 border border-white/10 hover:border-orange-500/60 cursor-pointer flex flex-col justify-between p-3 sm:p-4 gap-3 transition-all duration-300 shadow-xl hover:shadow-[0_10px_30px_rgba(249,115,22,0.18)] active:scale-[0.98] overflow-hidden"
       >
+        {/* Cover Picture Container */}
         <div
           className={`${
-            compact ? 'h-28' : 'h-36'
-          } rounded-2xl bg-gradient-to-tr ${pieceItem.coverColor} flex flex-col justify-between p-3.5 relative overflow-hidden shadow-inner`}
+            compact ? 'h-36 sm:h-40' : 'h-48 sm:h-52'
+          } w-full rounded-2xl relative overflow-hidden bg-zinc-950 shadow-inner flex flex-col justify-between p-3.5`}
         >
-          <div className="flex items-center justify-between z-10">
-            <span className={`px-2.5 py-0.5 rounded-full text-[10px] font-bold border backdrop-blur-md ${diff.color}`}>
-              {diff.label}
-            </span>
-            <span className="text-[10px] font-mono font-semibold text-white/90 bg-black/40 backdrop-blur-md px-2 py-0.5 rounded-full flex items-center gap-1">
-              <Clock className="w-2.5 h-2.5" />
+          {/* Background Real Artwork Image */}
+          <img
+            src={coverSrc}
+            alt={pieceItem.title}
+            className="absolute inset-0 w-full h-full object-cover group-hover:scale-105 transition-transform duration-700 ease-out"
+            loading="lazy"
+          />
+
+          {/* Vignette Gradients for Legibility */}
+          <div className="absolute inset-0 bg-gradient-to-t from-black/90 via-black/35 to-black/40 pointer-events-none" />
+
+          {/* Top Row Badges */}
+          <div className="relative z-10 flex items-center justify-between gap-1.5 w-full">
+            {pieceItem.badge ? (
+              <span className="px-2.5 py-0.5 rounded-full text-[10px] font-extrabold bg-black/60 backdrop-blur-md border border-white/20 text-amber-300 shadow-md truncate max-w-[65%]">
+                {pieceItem.badge}
+              </span>
+            ) : (
+              <span className={`px-2.5 py-0.5 rounded-full text-[10px] font-bold border backdrop-blur-md ${diff.color}`}>
+                {diff.label}
+              </span>
+            )}
+
+            <span className="text-[10px] font-mono font-semibold text-white/90 bg-black/60 backdrop-blur-md px-2 py-0.5 rounded-full flex items-center gap-1 border border-white/10 shadow-sm">
+              <Clock className="w-2.5 h-2.5 text-zinc-400" />
               {formatDuration(pieceItem.durationSeconds)}
             </span>
           </div>
 
-          <div className="flex items-center justify-between z-10">
-            <span className="text-[11px] font-mono text-white/90 font-bold bg-black/30 backdrop-blur-sm px-2 py-0.5 rounded-lg">
-              {pieceItem.key}
-            </span>
-            <div className="w-10 h-10 rounded-full bg-orange-500 text-white flex items-center justify-center shadow-lg group-hover:scale-110 group-hover:bg-orange-400 transition-all">
-              <Play className="w-5 h-5 fill-current ml-0.5" />
+          {/* Bottom Row inside Cover Picture */}
+          <div className="relative z-10 flex items-end justify-between w-full">
+            <div className="flex items-center gap-1.5">
+              <span className="text-[10px] font-mono font-bold text-white/95 bg-black/60 backdrop-blur-md px-2 py-0.5 rounded-lg border border-white/10">
+                {pieceItem.key}
+              </span>
+              <span className="text-[10px] font-bold text-amber-400 bg-black/60 backdrop-blur-md px-2 py-0.5 rounded-lg border border-white/10">
+                Lvl {pieceItem.difficulty}
+              </span>
+            </div>
+
+            {/* Floating Glowing Play Button */}
+            <div className="w-10 h-10 rounded-full bg-gradient-to-tr from-orange-500 to-amber-400 text-zinc-950 flex items-center justify-center shadow-[0_0_15px_rgba(249,115,22,0.6)] group-hover:scale-110 group-hover:brightness-110 transition-all duration-300">
+              <Play className="w-4 h-4 fill-current ml-0.5" />
             </div>
           </div>
         </div>
 
-        <div className="space-y-0.5">
-          <h3 className="font-bold text-sm sm:text-base text-zinc-100 group-hover:text-amber-400 transition-colors truncate">
+        {/* Text Metadata */}
+        <div className="space-y-1 px-1">
+          <h3 className="font-bold text-sm sm:text-base text-zinc-100 group-hover:text-amber-300 transition-colors truncate">
             {pieceItem.title}
           </h3>
-          <p className="text-xs text-zinc-400 truncate">
-            {pieceItem.composer}
+          <p className="text-xs text-zinc-400 truncate flex items-center gap-1.5">
+            <span>{pieceItem.composer}</span>
+            <span className="text-zinc-600">•</span>
+            <span className="text-zinc-500 font-mono text-[11px]">{pieceItem.opus}</span>
           </p>
+          {pieceItem.quote && !compact && (
+            <p className="text-[11px] text-zinc-500 italic line-clamp-1 pt-0.5">
+              "{pieceItem.quote}"
+            </p>
+          )}
         </div>
       </div>
     )
@@ -492,21 +576,6 @@ export const FlowkeyHomeView: React.FC<FlowkeyHomeViewProps> = ({
             </div>
           )}
         </section>
-
-        {/* Section 3: Recommended Favorites */}
-        <section className="space-y-4">
-          <h2 className="text-base sm:text-lg font-bold text-zinc-200 flex items-center gap-2">
-            <Sparkles className="w-5 h-5 text-orange-400" />
-            <span>
-              {language === 'de'
-                ? 'Empfohlene Meisterwerke'
-                : 'Recommended Repertoire'}
-            </span>
-          </h2>
-          <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4">
-            {catalog.slice(0, 4).map((p) => renderPieceCard(p, true))}
-          </div>
-        </section>
       </div>
     )
   }
@@ -526,14 +595,14 @@ export const FlowkeyHomeView: React.FC<FlowkeyHomeViewProps> = ({
             onChange={(e) => setSearchQuery(e.target.value)}
             placeholder={
               language === 'de'
-                ? 'Meisterwerke, Komponisten oder Tonleitern suchen (z.B. Chopin, Beethoven, Mozart, Für Elise)...'
+                ? 'Meisterwerke, Anime, Ghibli oder Pop suchen (z.B. Liszt, Chopin, Flower Dance, Snowman)...'
                 : language === 'fr'
-                ? 'Rechercher une pièce ou un compositeur (Chopin, Debussy, Mozart)...'
+                ? 'Rechercher une pièce ou un compositeur (Liszt, Chopin, Ghibli, Yiruma)...'
                 : language === 'ja'
-                ? '曲名や作曲者を検索 (ショパン、モーツァルト、ベートーヴェン)...'
+                ? '曲名や作曲者を検索 (リスト、ショパン、ジブリ、花舞)...'
                 : language === 'zh'
-                ? '搜索乐曲或作曲家 (肖邦、德彪西、莫扎特、贝多芬)...'
-                : 'Search pieces, composers, or drills (Chopin, Beethoven, Mozart, Für Elise)...'
+                ? '搜索乐曲或作曲家 (李斯特、肖邦、吉卜力、花舞、四月是你的谎言)...'
+                : 'Search pieces, composers, anime, or drills (Liszt, Chopin, Flower Dance, Snowman)...'
             }
             className={`w-full bg-zinc-900 border text-white pl-12 pr-10 py-3.5 rounded-2xl text-sm focus:outline-none placeholder-zinc-500 transition-all shadow-inner ${
               viewTab === 'search' || searchQuery.length > 0
@@ -552,33 +621,31 @@ export const FlowkeyHomeView: React.FC<FlowkeyHomeViewProps> = ({
           )}
         </div>
 
-        {/* Quick Search Tags (Visible on Search Tab or when typing) */}
-        {(viewTab === 'search' || searchQuery.length > 0) && (
-          <div className="flex items-center gap-1.5 overflow-x-auto pb-1 scrollbar-none text-xs">
-            <span className="text-zinc-500 font-semibold mr-1 flex items-center gap-1 flex-shrink-0">
-              <SlidersHorizontal className="w-3 h-3" />
-              {language === 'de' ? 'Schnellsuche:' : 'Quick:'}
-            </span>
-            {quickSearchTags.map((tag) => (
-              <button
-                key={tag.label}
-                onClick={() => setSearchQuery(tag.query)}
-                className={`px-2.5 py-1 rounded-lg border text-xs whitespace-nowrap transition-colors ${
-                  normalize(searchQuery) === tag.query
-                    ? 'bg-orange-500/20 border-orange-500/60 text-orange-300'
-                    : 'bg-zinc-900/80 border-white/5 text-zinc-400 hover:text-white hover:bg-zinc-800'
-                }`}
-              >
-                {tag.label}
-              </button>
-            ))}
-          </div>
-        )}
+        {/* Quick Search Chips */}
+        <div className="flex items-center gap-1.5 overflow-x-auto pb-1 scrollbar-none text-xs">
+          <span className="text-zinc-500 font-semibold mr-1 flex items-center gap-1 flex-shrink-0">
+            <SlidersHorizontal className="w-3 h-3" />
+            {language === 'de' ? 'Entdecken:' : 'Explore:'}
+          </span>
+          {quickSearchTags.map((tag) => (
+            <button
+              key={tag.label}
+              onClick={() => setSearchQuery(tag.query)}
+              className={`px-3 py-1.5 rounded-xl border text-xs whitespace-nowrap transition-colors flex items-center gap-1 ${
+                normalize(searchQuery) === tag.query
+                  ? 'bg-orange-500/25 border-orange-500/70 text-orange-300 shadow-sm'
+                  : 'bg-zinc-900/90 border-white/5 text-zinc-400 hover:text-white hover:bg-zinc-800'
+              }`}
+            >
+              {tag.label}
+            </button>
+          ))}
+        </div>
       </div>
 
       {/* Genre Filter Pills */}
       <div className="flex items-center gap-2 overflow-x-auto pb-1 scrollbar-none">
-        {['all', 'holiday', 'contemporary', 'classical', 'romantic', 'technique', 'beginner', 'advanced'].map((genre) => {
+        {['all', 'anime_film', 'contemporary', 'classical', 'holiday', 'technique', 'beginner', 'advanced'].map((genre) => {
           const isActive = selectedGenre === genre
           const label = genreLabels[genre]?.[language] || genre
 
@@ -588,7 +655,7 @@ export const FlowkeyHomeView: React.FC<FlowkeyHomeViewProps> = ({
               onClick={() => setSelectedGenre(genre)}
               className={`px-4 py-2 rounded-xl text-xs font-bold whitespace-nowrap transition-all shadow-sm ${
                 isActive
-                  ? 'bg-orange-500 text-white shadow-[0_0_12px_rgba(249,115,22,0.5)]'
+                  ? 'bg-gradient-to-r from-orange-500 to-amber-500 text-zinc-950 font-extrabold shadow-[0_0_12px_rgba(249,115,22,0.5)]'
                   : 'bg-zinc-900 hover:bg-zinc-800 text-zinc-400 hover:text-zinc-200 border border-white/5'
               }`}
             >
@@ -598,7 +665,7 @@ export const FlowkeyHomeView: React.FC<FlowkeyHomeViewProps> = ({
         })}
       </div>
 
-      {/* If Search is active OR a specific Genre is filtered: Render Grid */}
+      {/* If Search is active OR a specific Genre is filtered: Render Search Grid */}
       {!isBrowsingAll ? (
         <section className="space-y-4">
           <div className="flex items-center justify-between">
@@ -630,126 +697,171 @@ export const FlowkeyHomeView: React.FC<FlowkeyHomeViewProps> = ({
               </p>
             </div>
           ) : (
-            <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4">
+            <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4 sm:gap-5">
               {filteredPieces.map((p) => renderPieceCard(p, true))}
             </div>
           )}
         </section>
       ) : (
         <>
-          {/* FLOWKEY HERO: NEW ARRIVALS & SEASONAL CLASSICS */}
-          {featuredNewPieces.length > 0 && (
+          {/* TOP SPOTLIGHT FEATURED HERO BANNER */}
+          {activeSpotlight && (
+            <div className="relative rounded-3xl overflow-hidden border border-white/10 shadow-2xl bg-zinc-950 group">
+              {/* Wide Blurred Backdrop */}
+              <div className="absolute inset-0 overflow-hidden">
+                <img
+                  src={activeSpotlight.coverImage || '/images/covers/carol-of-the-bells.svg'}
+                  alt=""
+                  className="w-full h-full object-cover blur-2xl opacity-40 scale-110"
+                />
+                <div className="absolute inset-0 bg-gradient-to-t md:bg-gradient-to-r from-black/95 via-black/75 to-transparent" />
+              </div>
+
+              <div className="relative z-10 p-6 sm:p-8 flex flex-col md:flex-row items-center justify-between gap-6">
+                <div className="space-y-3 max-w-xl text-center md:text-left">
+                  <div className="flex items-center justify-center md:justify-start gap-2">
+                    <span className="px-3 py-1 rounded-full bg-amber-500/20 border border-amber-500/40 text-amber-300 text-xs font-bold flex items-center gap-1.5 shadow-sm">
+                      <Sparkles className="w-3.5 h-3.5" />
+                      Featured Masterpiece
+                    </span>
+                    {activeSpotlight.badge && (
+                      <span className="px-2.5 py-0.5 rounded-full bg-white/10 text-zinc-300 text-xs font-medium border border-white/10">
+                        {activeSpotlight.badge}
+                      </span>
+                    )}
+                  </div>
+
+                  <h1 className="text-2xl sm:text-4xl font-extrabold text-white tracking-tight leading-tight">
+                    {activeSpotlight.title}
+                  </h1>
+
+                  <p className="text-sm sm:text-base font-semibold text-orange-400">
+                    {activeSpotlight.composer} • {activeSpotlight.opus}
+                  </p>
+
+                  {activeSpotlight.quote && (
+                    <p className="text-xs sm:text-sm text-zinc-300 italic max-w-lg leading-relaxed">
+                      "{activeSpotlight.quote}"
+                    </p>
+                  )}
+
+                  <div className="flex items-center justify-center md:justify-start gap-3 pt-2">
+                    <button
+                      onClick={() => handleLaunchPiece(activeSpotlight)}
+                      className="px-6 py-3 rounded-2xl bg-gradient-to-r from-orange-500 to-amber-400 hover:brightness-110 text-zinc-950 font-bold text-sm shadow-[0_0_20px_rgba(249,115,22,0.5)] flex items-center gap-2.5 active:scale-95 transition-all"
+                    >
+                      <Play className="w-4 h-4 fill-current" />
+                      <span>Start Playing</span>
+                    </button>
+
+                    <button
+                      onClick={() => setSpotlightIndex((prev) => prev + 1)}
+                      className="px-4 py-3 rounded-2xl bg-zinc-900/80 hover:bg-zinc-800 text-zinc-300 hover:text-white border border-white/10 text-xs font-bold transition-colors"
+                      title="Next spotlight song"
+                    >
+                      Next Spotlight ➔
+                    </button>
+                  </div>
+                </div>
+
+                {/* Right Album Artwork Frame */}
+                <div
+                  onClick={() => handleLaunchPiece(activeSpotlight)}
+                  className="w-48 h-48 sm:w-60 sm:h-60 rounded-3xl overflow-hidden border-2 border-white/20 shadow-2xl relative flex-shrink-0 cursor-pointer hover:scale-105 transition-transform duration-300"
+                >
+                  <img
+                    src={activeSpotlight.coverImage || '/images/covers/carol-of-the-bells.svg'}
+                    alt={activeSpotlight.title}
+                    className="w-full h-full object-cover"
+                  />
+                  <div className="absolute inset-0 bg-black/20 hover:bg-transparent transition-colors" />
+                </div>
+              </div>
+            </div>
+          )}
+
+          {/* SHELF 1: ANIME & STUDIO GHIBLI MAGIC */}
+          {animeShelf.length > 0 && (
             <section className="space-y-4">
               <div className="flex items-center justify-between">
                 <h2 className="text-lg sm:text-xl font-extrabold text-white tracking-tight flex items-center gap-2">
-                  <Sparkles className="w-5 h-5 text-emerald-400" />
-                  <span>
-                    {language === 'de'
-                      ? 'Neu hinzugefügt & Winter-Klassiker'
-                      : 'New Arrivals & Seasonal Classics'}
-                  </span>
-                  <span className="text-[10px] px-2 py-0.5 rounded-full bg-emerald-500/20 text-emerald-300 border border-emerald-500/40 font-bold uppercase tracking-wider">
-                    NEW
+                  <Film className="w-5 h-5 text-pink-400" />
+                  <span>Anime &amp; Studio Ghibli Magic</span>
+                  <span className="text-[10px] px-2 py-0.5 rounded-full bg-pink-500/20 text-pink-300 border border-pink-500/40 font-bold">
+                    OST
                   </span>
                 </h2>
               </div>
-
-              <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-2 gap-5">
-                {featuredNewPieces.map((pieceItem) => renderPieceCard(pieceItem))}
+              <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 sm:gap-5">
+                {animeShelf.map((p) => renderPieceCard(p))}
               </div>
             </section>
           )}
 
-          {/* FLOWKEY HERO: RECOMMENDED FOR YOU */}
-          <section className="space-y-4">
-            <div className="flex items-center justify-between">
-              <h2 className="text-lg sm:text-xl font-extrabold text-white tracking-tight flex items-center gap-2">
-                <Sparkles className="w-5 h-5 text-amber-400" />
-                <span>
-                  {language === 'de'
-                    ? 'Für dich empfohlen'
-                    : language === 'fr'
-                    ? 'Recommandé pour vous'
-                    : language === 'ja'
-                    ? 'あなたへのおすすめ'
-                    : language === 'zh'
-                    ? '为你推荐'
-                    : 'Recommended for You'}
-                </span>
-              </h2>
-            </div>
+          {/* SHELF 2: PIANO BALLADS & POP HITS */}
+          {contemporaryShelf.length > 0 && (
+            <section className="space-y-4">
+              <div className="flex items-center justify-between">
+                <h2 className="text-lg sm:text-xl font-extrabold text-white tracking-tight flex items-center gap-2">
+                  <Sparkles className="w-5 h-5 text-amber-400" />
+                  <span>Piano Ballads &amp; Contemporary Hits</span>
+                  <span className="text-[10px] px-2 py-0.5 rounded-full bg-amber-500/20 text-amber-300 border border-amber-500/40 font-bold">
+                    POPULAR
+                  </span>
+                </h2>
+              </div>
+              <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4 sm:gap-5">
+                {contemporaryShelf.map((p) => renderPieceCard(p))}
+              </div>
+            </section>
+          )}
 
-            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-5">
-              {recommendedPieces.map((pieceItem) => renderPieceCard(pieceItem))}
-            </div>
-          </section>
+          {/* SHELF 3: GRAND CLASSICAL & ROMANTIC MASTERS */}
+          {classicalShelf.length > 0 && (
+            <section className="space-y-4">
+              <div className="flex items-center justify-between">
+                <h2 className="text-lg sm:text-xl font-extrabold text-white tracking-tight flex items-center gap-2">
+                  <Award className="w-5 h-5 text-orange-400" />
+                  <span>Grand Classical &amp; Romantic Masters</span>
+                  <span className="text-[10px] px-2 py-0.5 rounded-full bg-orange-500/20 text-orange-300 border border-orange-500/40 font-bold">
+                    CANONICAL
+                  </span>
+                </h2>
+              </div>
+              <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 sm:gap-5">
+                {classicalShelf.map((p) => renderPieceCard(p))}
+              </div>
+            </section>
+          )}
 
-          {/* FLOWKEY ROW 2: MONTHLY FAVORITES */}
-          <section className="space-y-4">
-            <div className="flex items-center justify-between">
-              <h2 className="text-lg font-bold text-white tracking-tight flex items-center gap-2">
-                <Flame className="w-5 h-5 text-orange-500" />
-                <span>
-                  {language === 'de'
-                    ? 'Beliebte Meisterwerke'
-                    : language === 'fr'
-                    ? 'Chefs-d’œuvre populaires'
-                    : language === 'ja'
-                    ? '今月の人気名曲'
-                    : language === 'zh'
-                    ? '经典大师作品'
-                    : 'Popular Masterpieces'}
-                </span>
-              </h2>
-            </div>
-
-            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-5">
-              {popularPieces.map((pieceItem) => renderPieceCard(pieceItem))}
-            </div>
-          </section>
-
-          {/* FLOWKEY ROW 3: HANON & TECHNIQUE DRILLS */}
-          <section className="space-y-4">
-            <div className="flex items-center justify-between">
-              <h2 className="text-lg font-bold text-white tracking-tight flex items-center gap-2">
-                <BookOpen className="w-5 h-5 text-emerald-400" />
-                <span>
-                  {language === 'de'
-                    ? 'Hanon-Übungen & Geläufigkeit'
-                    : language === 'fr'
-                    ? 'Exercices Hanon & Vélocité'
-                    : language === 'ja'
-                    ? 'ハノン練習曲と指の敏捷性'
-                    : language === 'zh'
-                    ? '哈农练习曲与运指强化'
-                    : 'Hanon Drills & Velocity'}
-                </span>
-              </h2>
-            </div>
-
-            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-5">
-              {techniquePieces.map((pieceItem) => renderPieceCard(pieceItem, true))}
-            </div>
-          </section>
+          {/* SHELF 4: TECHNIQUE, SCALES & HANON */}
+          {techniqueShelf.length > 0 && (
+            <section className="space-y-4">
+              <div className="flex items-center justify-between">
+                <h2 className="text-lg font-bold text-white tracking-tight flex items-center gap-2">
+                  <BookOpen className="w-5 h-5 text-emerald-400" />
+                  <span>Hanon Exercises &amp; Scale Agility</span>
+                </h2>
+              </div>
+              <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
+                {techniqueShelf.slice(0, 4).map((p) => renderPieceCard(p, true))}
+              </div>
+            </section>
+          )}
 
           {/* ALL REPERTOIRE CATALOG */}
           <section className="space-y-4 pt-2">
             <div className="flex items-center justify-between">
               <h2 className="text-lg font-bold text-white tracking-tight flex items-center gap-2">
                 <Music className="w-5 h-5 text-amber-400" />
-                <span>
-                  {language === 'de'
-                    ? 'Gesamtes Repertoire & Songbibliothek'
-                    : 'Complete Repertoire Catalog'}
-                </span>
+                <span>All Pieces Repertoire</span>
                 <span className="text-xs font-normal text-zinc-500">
                   ({catalog.length} {language === 'de' ? 'Stücke' : 'pieces'})
                 </span>
               </h2>
             </div>
-
-            <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4">
-              {catalog.map((pieceItem) => renderPieceCard(pieceItem, true))}
+            <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4 sm:gap-5">
+              {catalog.map((p) => renderPieceCard(p, true))}
             </div>
           </section>
 

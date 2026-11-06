@@ -1,0 +1,40 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 600 600" width="100%" height="100%">
+  <defs>
+    <linearGradient id="howlSunset" x1="0%" y1="0%" x2="0%" y2="100%">
+      <stop offset="0%" stop-color="#7c2d12" />
+      <stop offset="35%" stop-color="#ea580c" />
+      <stop offset="70%" stop-color="#f59e0b" />
+      <stop offset="100%" stop-color="#14532d" />
+    </linearGradient>
+    <radialGradient id="sunWheel" cx="50%" cy="50%" r="50%">
+      <stop offset="0%" stop-color="#fef08a" stop-opacity="0.8" />
+      <stop offset="100%" stop-color="#f59e0b" stop-opacity="0" />
+    </radialGradient>
+  </defs>
+  <rect width="600" height="600" fill="url(#howlSunset)" />
+
+  <!-- Golden Setting Sun -->
+  <circle cx="300" cy="220" r="140" fill="url(#sunWheel)" />
+  <circle cx="300" cy="220" r="70" fill="#fef08a" />
+
+  <!-- Howl's Walking Castle Mechanical Silhouette -->
+  <g transform="translate(200, 160)" fill="#1c1917">
+    <!-- Castle towers, turrets and chimney steam pipes -->
+    <rect x="40" y="40" width="110" height="90" rx="8" />
+    <polygon points="30,40 60,0 80,40" />
+    <polygon points="90,40 120,5 140,40" />
+    <rect x="130" y="20" width="16" height="50" rx="2" />
+    <rect x="25" y="70" width="40" height="40" rx="4" />
+    <circle cx="100" cy="90" r="15" fill="#f59e0b" />
+    <!-- Mechanical iron bird legs -->
+    <line x1="50" y1="130" x2="30" y2="200" stroke="#1c1917" stroke-width="8" stroke-linecap="round" />
+    <line x1="130" y1="130" x2="160" y2="200" stroke="#1c1917" stroke-width="8" stroke-linecap="round" />
+  </g>
+
+  <!-- Rolling Alpine Flower Meadows -->
+  <ellipse cx="180" cy="510" rx="260" ry="110" fill="#14532d" />
+  <ellipse cx="460" cy="530" rx="290" ry="120" fill="#052e16" />
+
+  <text x="300" y="515" font-family="system-ui, sans-serif" font-weight="900" font-size="28" fill="#ffffff" text-anchor="middle" letter-spacing="3">MERRY-GO-ROUND OF LIFE</text>
+  <text x="300" y="555" font-family="system-ui, sans-serif" font-weight="600" font-size="16" fill="#fef08a" text-anchor="middle" letter-spacing="2">JOE HISAISHI • HOWL'S MOVING CASTLE</text>
+</svg>

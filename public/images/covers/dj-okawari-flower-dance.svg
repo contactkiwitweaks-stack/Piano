@@ -1,0 +1,46 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 600 600" width="100%" height="100%">
+  <defs>
+    <radialGradient id="bgFlower" cx="50%" cy="40%" r="80%">
+      <stop offset="0%" stop-color="#701a75" />
+      <stop offset="50%" stop-color="#3b0764" />
+      <stop offset="100%" stop-color="#0f051d" />
+    </radialGradient>
+    <linearGradient id="sakuraPetal" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="#fbcfe8" />
+      <stop offset="50%" stop-color="#f472b6" />
+      <stop offset="100%" stop-color="#db2777" />
+    </linearGradient>
+    <radialGradient id="flowerHalo" cx="50%" cy="50%" r="50%">
+      <stop offset="0%" stop-color="#ec4899" stop-opacity="0.5" />
+      <stop offset="100%" stop-color="#ec4899" stop-opacity="0" />
+    </radialGradient>
+  </defs>
+  <rect width="600" height="600" fill="url(#bgFlower)" />
+  <circle cx="300" cy="230" r="180" fill="url(#flowerHalo)" />
+
+  <!-- Swirling Sakura Blossom Kaleidoscope Petals -->
+  <g transform="translate(300, 230)" fill="url(#sakuraPetal)">
+    <!-- 8 Blooming Petals -->
+    <path d="M0,0 C-30,-80 0,-150 0,-150 C0,-150 30,-80 0,0 Z" />
+    <path d="M0,0 C-30,-80 0,-150 0,-150 C0,-150 30,-80 0,0 Z" transform="rotate(45)" />
+    <path d="M0,0 C-30,-80 0,-150 0,-150 C0,-150 30,-80 0,0 Z" transform="rotate(90)" />
+    <path d="M0,0 C-30,-80 0,-150 0,-150 C0,-150 30,-80 0,0 Z" transform="rotate(135)" />
+    <path d="M0,0 C-30,-80 0,-150 0,-150 C0,-150 30,-80 0,0 Z" transform="rotate(180)" />
+    <path d="M0,0 C-30,-80 0,-150 0,-150 C0,-150 30,-80 0,0 Z" transform="rotate(225)" />
+    <path d="M0,0 C-30,-80 0,-150 0,-150 C0,-150 30,-80 0,0 Z" transform="rotate(270)" />
+    <path d="M0,0 C-30,-80 0,-150 0,-150 C0,-150 30,-80 0,0 Z" transform="rotate(315)" />
+    <!-- Flower Pistil -->
+    <circle cx="0" cy="0" r="24" fill="#fef08a" />
+  </g>
+
+  <!-- Flying Wind Whirl Petals -->
+  <g fill="#f472b6" opacity="0.85">
+    <ellipse cx="140" cy="140" rx="16" ry="7" transform="rotate(25 140 140)" />
+    <ellipse cx="460" cy="120" rx="18" ry="8" transform="rotate(-35 460 120)" />
+    <ellipse cx="110" cy="340" rx="20" ry="9" transform="rotate(45 110 340)" />
+    <ellipse cx="480" cy="360" rx="16" ry="8" transform="rotate(-15 480 360)" />
+  </g>
+
+  <text x="300" y="515" font-family="system-ui, sans-serif" font-weight="900" font-size="32" fill="#ffffff" text-anchor="middle" letter-spacing="4">FLOWER DANCE</text>
+  <text x="300" y="555" font-family="system-ui, sans-serif" font-weight="600" font-size="16" fill="#f472b6" text-anchor="middle" letter-spacing="2">DJ OKAWARI • MELODIC JAZZ PIANO</text>
+</svg>

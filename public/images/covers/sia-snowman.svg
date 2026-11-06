@@ -1,0 +1,62 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 600 600" width="100%" height="100%">
+  <defs>
+    <radialGradient id="bgSnow" cx="50%" cy="40%" r="80%">
+      <stop offset="0%" stop-color="#1e293b" />
+      <stop offset="60%" stop-color="#0f172a" />
+      <stop offset="100%" stop-color="#020617" />
+    </radialGradient>
+    <linearGradient id="warmLight" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="#fde047" />
+      <stop offset="100%" stop-color="#ea580c" />
+    </linearGradient>
+    <radialGradient id="moonGlow" cx="50%" cy="50%" r="50%">
+      <stop offset="0%" stop-color="#38bdf8" stop-opacity="0.35" />
+      <stop offset="100%" stop-color="#38bdf8" stop-opacity="0" />
+    </radialGradient>
+  </defs>
+  <rect width="600" height="600" fill="url(#bgSnow)" />
+  
+  <!-- Big Frost Moon -->
+  <circle cx="300" cy="220" r="140" fill="url(#moonGlow)" />
+  <circle cx="300" cy="220" r="85" fill="#f8fafc" opacity="0.95" />
+  
+  <!-- Snow Hills -->
+  <ellipse cx="150" cy="520" rx="260" ry="120" fill="#334155" opacity="0.6" />
+  <ellipse cx="450" cy="540" rx="280" ry="130" fill="#1e293b" />
+  
+  <!-- Whimsical Snowman -->
+  <!-- Bottom body -->
+  <circle cx="300" cy="380" r="75" fill="#f1f5f9" />
+  <!-- Middle body -->
+  <circle cx="300" cy="285" r="55" fill="#f8fafc" />
+  <!-- Head -->
+  <circle cx="300" cy="205" r="40" fill="#ffffff" />
+  
+  <!-- Coal eyes & smile -->
+  <circle cx="288" cy="198" r="4" fill="#0f172a" />
+  <circle cx="312" cy="198" r="4" fill="#0f172a" />
+  <!-- Carrot nose -->
+  <polygon points="300,206 335,212 300,214" fill="#f97316" />
+  
+  <!-- Cozy Scarf -->
+  <path d="M270,235 C285,250 315,250 330,235 C335,245 325,255 310,255 L310,310 L290,310 L290,255 C275,255 265,245 270,235 Z" fill="#e11d48" />
+  <!-- Top Hat -->
+  <rect x="270" y="165" width="60" height="10" rx="3" fill="#020617" />
+  <rect x="280" y="125" width="40" height="40" rx="4" fill="#0f172a" />
+  <rect x="280" y="155" width="40" height="6" fill="#e11d48" />
+
+  <!-- Falling Snow flakes -->
+  <g fill="#ffffff" opacity="0.8">
+    <circle cx="100" cy="120" r="3" />
+    <circle cx="180" cy="80" r="2" />
+    <circle cx="450" cy="110" r="3.5" />
+    <circle cx="500" cy="180" r="2" />
+    <circle cx="120" cy="340" r="2.5" />
+    <circle cx="490" cy="320" r="3" />
+    <circle cx="230" cy="390" r="2" />
+    <circle cx="390" cy="400" r="2.5" />
+  </g>
+
+  <text x="300" y="520" font-family="system-ui, sans-serif" font-weight="900" font-size="30" fill="#ffffff" text-anchor="middle" letter-spacing="3">SNOWMAN</text>
+  <text x="300" y="555" font-family="system-ui, sans-serif" font-weight="600" font-size="16" fill="#f43f5e" text-anchor="middle" letter-spacing="2">SIA • DIRECT TAKT 20 EDITION</text>
+</svg>

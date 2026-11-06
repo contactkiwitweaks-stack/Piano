@@ -28,6 +28,9 @@ export class LibraryRepository {
       period: 'Contemporary',
       durationSeconds: 141,
       coverColor: 'from-emerald-600 via-teal-900 to-zinc-950',
+      coverImage: '/images/covers/carol-of-the-bells.svg',
+      badge: 'Holiday Concert',
+      quote: 'Authentic 1,568-note Ukrainian bell motif and rolling arpeggios under winter midnight.',
       availableEditions: [
         {
           id: 'urtext',
@@ -47,6 +50,9 @@ export class LibraryRepository {
       period: 'Contemporary',
       durationSeconds: 131,
       coverColor: 'from-cyan-500 via-blue-900 to-zinc-950',
+      coverImage: '/images/covers/sia-snowman.svg',
+      badge: 'Winter Pop Ballad',
+      quote: 'Iconic Takt 20 theme: warm syncopated chord voicings and lyrical vocal climax.',
       availableEditions: [
         {
           id: 'urtext',
@@ -66,6 +72,9 @@ export class LibraryRepository {
       period: 'Contemporary',
       durationSeconds: 168,
       coverColor: 'from-sky-500 via-indigo-900 to-zinc-950',
+      coverImage: '/images/covers/river-flows-in-you.svg',
+      badge: 'Modern Classic',
+      quote: 'Liquid arpeggios that flow like gentle river currents through the soul.',
       availableEditions: [
         {
           id: 'urtext',
@@ -85,6 +94,9 @@ export class LibraryRepository {
       period: 'Romantic',
       durationSeconds: 245,
       coverColor: 'from-amber-500 via-orange-950 to-zinc-950',
+      coverImage: '/images/covers/liszt-la-campanella.svg',
+      badge: 'Virtuoso Bravura',
+      quote: 'Lightning right-hand bell leaps across two octaves with crystalline trills.',
       availableEditions: [
         {
           id: 'urtext',
@@ -104,6 +116,9 @@ export class LibraryRepository {
       period: 'Contemporary',
       durationSeconds: 52,
       coverColor: 'from-blue-600 via-slate-900 to-zinc-950',
+      coverImage: '/images/covers/kensuke-ushio-in-the-sea.svg',
+      badge: 'Chainsaw Man OST',
+      quote: 'Deep ocean minimalist solitude, breath pauses, and emotive stillness.',
       availableEditions: [
         {
           id: 'urtext',
@@ -123,6 +138,9 @@ export class LibraryRepository {
       period: 'Contemporary',
       durationSeconds: 94,
       coverColor: 'from-pink-500 via-rose-950 to-zinc-950',
+      coverImage: '/images/your-lie-in-april-3840x2160-21020.jpg',
+      badge: 'Anime Masterpiece',
+      quote: 'Your Lie in April: radiant cherry blossoms, driving pulse, and heartfelt duet.',
       availableEditions: [
         {
           id: 'urtext',
@@ -142,6 +160,9 @@ export class LibraryRepository {
       period: 'Romantic',
       durationSeconds: 235,
       coverColor: 'from-violet-600 via-purple-950 to-zinc-950',
+      coverImage: '/images/covers/chopin-nocturne-c-sharp-minor.svg',
+      badge: 'Romantic Masterwork',
+      quote: 'Poignant Parisian night reverie crowned by the famous 35-note downward arabesque.',
       availableEditions: [
         {
           id: 'urtext',
@@ -161,6 +182,9 @@ export class LibraryRepository {
       period: 'Contemporary',
       durationSeconds: 192,
       coverColor: 'from-emerald-500 via-teal-950 to-zinc-950',
+      coverImage: '/images/covers/joe-hisaishi-one-summers-day.svg',
+      badge: 'Studio Ghibli',
+      quote: 'Nostalgic Spirited Away summer sky and sea railway across memory.',
       availableEditions: [
         {
           id: 'urtext',
@@ -180,6 +204,9 @@ export class LibraryRepository {
       period: 'Contemporary',
       durationSeconds: 353,
       coverColor: 'from-amber-600 via-yellow-950 to-zinc-950',
+      coverImage: '/images/covers/joe-hisaishi-merry-go-round.svg',
+      badge: "Howl's Moving Castle",
+      quote: 'Swirling Viennese waltz dancing over alpine meadows and flying castles.',
       availableEditions: [
         {
           id: 'urtext',
@@ -199,6 +226,9 @@ export class LibraryRepository {
       period: 'Contemporary',
       durationSeconds: 259,
       coverColor: 'from-fuchsia-500 via-pink-950 to-zinc-950',
+      coverImage: '/images/covers/dj-okawari-flower-dance.svg',
+      badge: 'Jazz-Hop Piano',
+      quote: 'Relentless running 16th-note arpeggios dancing like sakura petals in the wind.',
       availableEditions: [
         {
           id: 'urtext',
@@ -218,6 +248,9 @@ export class LibraryRepository {
       period: 'Neoclassical',
       durationSeconds: 189,
       coverColor: 'from-amber-500 via-orange-600 to-amber-950',
+      coverImage: '/images/covers/tony-ann-icarus.svg',
+      badge: 'Neoclassical Bravura',
+      quote: 'Liquid 16th-note wave arpeggios and fortissimo double-octave climax.',
       availableEditions: [
         {
           id: 'urtext',
@@ -237,6 +270,9 @@ export class LibraryRepository {
       period: 'Contemporary',
       durationSeconds: 292,
       coverColor: 'from-sky-500 via-indigo-600 to-purple-950',
+      coverImage: '/images/covers/abba-the-winner-takes-it-all.svg',
+      badge: 'Pop Ballad Legend',
+      quote: 'Iconic Benny Andersson piano intro, dramatic bridge, and heartfelt double chorus.',
       availableEditions: [
         {
           id: 'urtext',
@@ -256,6 +292,9 @@ export class LibraryRepository {
       period: 'Baroque',
       durationSeconds: 137,
       coverColor: 'from-amber-600 via-red-900 to-zinc-950',
+      coverImage: '/images/covers/handel-halvorsen-passacaglia.svg',
+      badge: 'Baroque Fire',
+      quote: 'Noble Baroque ground bass, cascading arpeggios, and thunderous octave climax.',
       availableEditions: [
         {
           id: 'urtext',
@@ -275,6 +314,9 @@ export class LibraryRepository {
       period: 'Classical',
       durationSeconds: 165,
       coverColor: 'from-amber-500 to-amber-800',
+      coverImage: '/images/covers/beethoven-fur-elise.svg',
+      badge: 'Classical Essential',
+      quote: 'The world\'s most beloved piano melody, complete with stormy middle episodes.',
       availableEditions: [
         {
           id: 'urtext',
@@ -294,6 +336,9 @@ export class LibraryRepository {
       period: 'Classical',
       durationSeconds: 362,
       coverColor: 'from-indigo-600 via-blue-900 to-zinc-950',
+      coverImage: '/images/covers/beethoven-moonlight-1.svg',
+      badge: 'Immortal Adagio',
+      quote: 'Delicate undulating triplets and singing soprano melody beneath a silver moon.',
       availableEditions: [
         {
           id: 'urtext',
@@ -313,6 +358,9 @@ export class LibraryRepository {
       period: 'Baroque',
       durationSeconds: 131,
       coverColor: 'from-emerald-500 via-teal-800 to-zinc-950',
+      coverImage: '/images/covers/bach-prelude-c.svg',
+      badge: 'Keyboard Foundation',
+      quote: 'Crystalline harmonic purity: the universal foundation of keyboard literature.',
       availableEditions: [
         {
           id: 'urtext',
@@ -332,6 +380,9 @@ export class LibraryRepository {
       period: 'Romantic',
       durationSeconds: 474,
       coverColor: 'from-amber-600 to-red-950',
+      coverImage: '/images/covers/chopin-ballade-1.svg',
+      badge: 'Concert Masterpiece',
+      quote: 'Complete 264-measure unabridged masterpiece from Largo to Presto con fuoco.',
       availableEditions: [
         {
           id: 'urtext',
@@ -369,6 +420,9 @@ export class LibraryRepository {
       period: 'Technique',
       durationSeconds: 8,
       coverColor: 'from-emerald-600 to-teal-950',
+      coverImage: '/images/covers/scales-technique.svg',
+      badge: 'Scale Foundation',
+      quote: 'Essential finger coordination, thumb-under agility, and key signature mastery.',
       availableEditions: [
         {
           id: 'urtext',
@@ -388,6 +442,9 @@ export class LibraryRepository {
       period: 'Technique',
       durationSeconds: 8,
       coverColor: 'from-emerald-600 to-cyan-950',
+      coverImage: '/images/covers/scales-technique.svg',
+      badge: 'Scale Foundation',
+      quote: 'Essential finger coordination, thumb-under agility, and key signature mastery.',
       availableEditions: [
         {
           id: 'urtext',
@@ -407,6 +464,9 @@ export class LibraryRepository {
       period: 'Technique',
       durationSeconds: 8,
       coverColor: 'from-teal-600 to-blue-950',
+      coverImage: '/images/covers/scales-technique.svg',
+      badge: 'Scale Foundation',
+      quote: 'Essential finger coordination, thumb-under agility, and key signature mastery.',
       availableEditions: [
         {
           id: 'urtext',
@@ -426,6 +486,9 @@ export class LibraryRepository {
       period: 'Technique',
       durationSeconds: 8,
       coverColor: 'from-purple-600 to-indigo-950',
+      coverImage: '/images/covers/scales-technique.svg',
+      badge: 'Scale Foundation',
+      quote: 'Essential finger coordination, thumb-under agility, and key signature mastery.',
       availableEditions: [
         {
           id: 'urtext',
@@ -445,6 +508,9 @@ export class LibraryRepository {
       period: 'Technique',
       durationSeconds: 8,
       coverColor: 'from-indigo-600 to-purple-950',
+      coverImage: '/images/covers/scales-technique.svg',
+      badge: 'Scale Foundation',
+      quote: 'Essential finger coordination, thumb-under agility, and key signature mastery.',
       availableEditions: [
         {
           id: 'urtext',
@@ -464,6 +530,9 @@ export class LibraryRepository {
       period: 'Technique',
       durationSeconds: 6,
       coverColor: 'from-rose-600 to-slate-950',
+      coverImage: '/images/covers/scales-technique.svg',
+      badge: 'Scale Foundation',
+      quote: 'Essential finger coordination, thumb-under agility, and key signature mastery.',
       availableEditions: [
         {
           id: 'urtext',
@@ -483,6 +552,9 @@ export class LibraryRepository {
       period: 'Technique',
       durationSeconds: 12,
       coverColor: 'from-amber-600 to-orange-950',
+      coverImage: '/images/covers/scales-technique.svg',
+      badge: 'Scale Foundation',
+      quote: 'Essential finger coordination, thumb-under agility, and key signature mastery.',
       availableEditions: [
         {
           id: 'urtext',
@@ -502,6 +574,9 @@ export class LibraryRepository {
       period: 'Baroque',
       durationSeconds: 38,
       coverColor: 'from-amber-600 to-yellow-950',
+      coverImage: '/images/covers/scales-technique.svg',
+      badge: 'Scale Foundation',
+      quote: 'Essential finger coordination, thumb-under agility, and key signature mastery.',
       availableEditions: [
         {
           id: 'urtext',
@@ -521,6 +596,9 @@ export class LibraryRepository {
       period: 'Technique',
       durationSeconds: 12,
       coverColor: 'from-emerald-500 to-teal-950',
+      coverImage: '/images/covers/scales-technique.svg',
+      badge: 'Scale Foundation',
+      quote: 'Essential finger coordination, thumb-under agility, and key signature mastery.',
       availableEditions: [
         {
           id: 'urtext',
@@ -540,6 +618,9 @@ export class LibraryRepository {
       period: 'Technique',
       durationSeconds: 15,
       coverColor: 'from-teal-500 to-cyan-950',
+      coverImage: '/images/covers/scales-technique.svg',
+      badge: 'Scale Foundation',
+      quote: 'Essential finger coordination, thumb-under agility, and key signature mastery.',
       availableEditions: [
         {
           id: 'urtext',
@@ -559,6 +640,9 @@ export class LibraryRepository {
       period: 'Technique',
       durationSeconds: 18,
       coverColor: 'from-amber-600 to-orange-950',
+      coverImage: '/images/covers/hanon-exercise-1.svg',
+      badge: 'Technique Drill',
+      quote: 'Finger independence, high lift, and stretch agility between fingers 4 and 5.',
       availableEditions: [
         {
           id: 'urtext',

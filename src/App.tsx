@@ -1,6 +1,6 @@
 import { useState, useEffect, useRef, useMemo, useCallback } from 'react'
 import type { Piece, PracticeVariant, MidiInputState, NoteEvent } from './types/music'
-import type { MasterEditionId } from './types/edition'
+import type { MasterEditionId, LibraryPieceSummary } from './types/edition'
 import { LibraryRepository } from './library/LibraryRepository'
 import { PracticeVariantEngine } from './engine/PracticeVariantEngine'
 import { PianoAudioEngine } from './audio/PianoAudioEngine'
@@ -17,6 +17,7 @@ import { WarmupsModal } from './components/WarmupsModal'
 import { AudioSettingsModal } from './components/AudioSettingsModal'
 import { TutorialsView } from './components/TutorialsView'
 import { CompetitionReportModal, type CompetitionResults, type CompetitionMistake } from './components/CompetitionReportModal'
+import { ConcertLoadingScreen } from './components/ConcertLoadingScreen'
 import { SongStorageManager } from './library/SongStorageManager'
 import { ScoreEngine } from './engine/ScoreEngine'
 import { AcousticNoteRecognizer } from './engine/AcousticNoteRecognizer'
@@ -44,6 +45,7 @@ export function App() {
 
   // Dynamic piece data loaded from LibraryRepository / ScoreEngine
   const [piece, setPiece] = useState<Piece | null>(null)
+  const [loadingPieceSummary, setLoadingPieceSummary] = useState<LibraryPieceSummary | null>(null)
 
   // Practice, Competition & Playback states
   const [practiceVariant, setPracticeVariant] = useState<PracticeVariant>('original')
@@ -716,6 +718,11 @@ export function App() {
     variant?: PracticeVariant,
     loopRangeCustom?: [number, number]
   ) => {
+    const summary = LibraryRepository.getCatalog().find((p) => p.id === pieceId)
+    if (summary) {
+      setLoadingPieceSummary(summary)
+    }
+
     LibraryRepository.loadPiece(pieceId, editionId).then((loadedPiece) => {
       setPiece(loadedPiece)
       setCurrentPieceId(pieceId)
@@ -1083,6 +1090,13 @@ export function App() {
           results={competitionResults}
           activePiece={activePiece}
           language={language}
+        />
+      )}
+      {/* Concert Masterclass Preloading & Stage Preparation Screen */}
+      {loadingPieceSummary && (
+        <ConcertLoadingScreen
+          pieceSummary={loadingPieceSummary}
+          onReady={() => setLoadingPieceSummary(null)}
         />
       )}
     </div>

@@ -10,7 +10,6 @@ import {
   X,
   Star,
   Check,
-  Music,
   UserCheck,
 } from 'lucide-react'
 
@@ -118,14 +117,21 @@ export const LibraryModal: React.FC<LibraryModalProps> = ({
                       : 'bg-zinc-950/60 border-zinc-800/80 hover:bg-zinc-800 text-zinc-300'
                   }`}
                 >
-                  <div className="flex items-center gap-3">
-                    <div className="w-9 h-9 rounded-xl bg-zinc-800 flex items-center justify-center text-amber-400">
-                      <Music className="w-4 h-4" />
+                  <div className="flex items-center gap-3 min-w-0">
+                    <div className="w-11 h-11 rounded-xl overflow-hidden bg-zinc-950 flex-shrink-0 border border-white/10 relative shadow-sm">
+                      <img
+                        src={piece.coverImage || '/images/covers/carol-of-the-bells.svg'}
+                        alt={piece.title}
+                        className="w-full h-full object-cover"
+                      />
                     </div>
-                    <div>
-                      <h4 className="text-xs font-bold text-zinc-100">{piece.title}</h4>
-                      <p className="text-[10px] text-zinc-400">
-                        {piece.composer}
+                    <div className="min-w-0">
+                      <h4 className="text-xs font-bold text-zinc-100 truncate">{piece.title}</h4>
+                      <p className="text-[10px] text-zinc-400 truncate flex items-center gap-1">
+                        <span>{piece.composer}</span>
+                        {piece.badge && (
+                          <span className="text-amber-400 font-semibold">• {piece.badge}</span>
+                        )}
                       </p>
                     </div>
                   </div>
@@ -141,6 +147,24 @@ export const LibraryModal: React.FC<LibraryModalProps> = ({
 
           {/* Right Column: Edition Selector & Detailed Notes */}
           <div className="w-full md:w-1/2 p-4 overflow-y-auto space-y-4 bg-zinc-950/40">
+            {/* Visual Cover Header */}
+            <div className="relative h-28 w-full rounded-2xl overflow-hidden border border-white/10 shadow-lg bg-zinc-950">
+              <img
+                src={activePieceSummary.coverImage || '/images/covers/carol-of-the-bells.svg'}
+                alt={activePieceSummary.title}
+                className="w-full h-full object-cover"
+              />
+              <div className="absolute inset-0 bg-gradient-to-t from-black/90 via-black/40 to-transparent" />
+              <div className="absolute bottom-2 left-3 right-3 flex items-center justify-between">
+                <span className="text-[10px] font-mono text-amber-300 font-bold bg-black/60 px-2 py-0.5 rounded-lg border border-white/10 shadow-sm">
+                  {activePieceSummary.badge || activePieceSummary.period}
+                </span>
+                <span className="text-[10px] font-mono text-white/90 bg-black/60 px-2 py-0.5 rounded-lg border border-white/10 shadow-sm">
+                  {activePieceSummary.key} • {Math.floor(activePieceSummary.durationSeconds / 60)}:{(activePieceSummary.durationSeconds % 60).toString().padStart(2, '0')}
+                </span>
+              </div>
+            </div>
+
             <div>
               <span className="text-[10px] uppercase font-bold tracking-wider text-amber-400">
                 {t.editions.title}
@@ -149,8 +173,13 @@ export const LibraryModal: React.FC<LibraryModalProps> = ({
                 {activePieceSummary.title}
               </h4>
               <p className="text-[11px] text-zinc-400">
-                {activePieceSummary.composer} • Key: {activePieceSummary.key}
+                {activePieceSummary.composer} • {activePieceSummary.opus}
               </p>
+              {activePieceSummary.quote && (
+                <p className="text-[11px] text-zinc-400 italic mt-1.5 p-2 rounded-xl bg-white/[0.04] border border-white/5">
+                  "{activePieceSummary.quote}"
+                </p>
+              )}
             </div>
 
             {/* Editions List */}

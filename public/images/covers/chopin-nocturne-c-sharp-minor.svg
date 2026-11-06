@@ -1,0 +1,40 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 600 600" width="100%" height="100%">
+  <defs>
+    <radialGradient id="bgNocturne" cx="50%" cy="30%" r="85%">
+      <stop offset="0%" stop-color="#3b0764" />
+      <stop offset="50%" stop-color="#1e1b4b" />
+      <stop offset="100%" stop-color="#090514" />
+    </radialGradient>
+    <radialGradient id="nocturneMoon" cx="50%" cy="50%" r="50%">
+      <stop offset="0%" stop-color="#c084fc" stop-opacity="0.4" />
+      <stop offset="100%" stop-color="#c084fc" stop-opacity="0" />
+    </radialGradient>
+    <linearGradient id="violetRibbon" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="#f472b6" />
+      <stop offset="50%" stop-color="#a855f7" />
+      <stop offset="100%" stop-color="#6366f1" />
+    </linearGradient>
+  </defs>
+  <rect width="600" height="600" fill="url(#bgNocturne)" />
+
+  <!-- Moon over Paris Salon Window -->
+  <circle cx="300" cy="200" r="160" fill="url(#nocturneMoon)" />
+  <circle cx="300" cy="200" r="60" fill="#faf5ff" opacity="0.9" />
+
+  <!-- Gothic Arch Window Outline -->
+  <path d="M160,400 L160,260 C160,180 300,120 300,120 C300,120 440,180 440,260 L440,400 Z" fill="none" stroke="#a855f7" stroke-width="2" opacity="0.4" />
+  <line x1="300" y1="120" x2="300" y2="400" stroke="#a855f7" stroke-width="1.5" opacity="0.3" />
+  <line x1="160" y1="260" x2="440" y2="260" stroke="#a855f7" stroke-width="1.5" opacity="0.3" />
+
+  <!-- Famous 35-note downward arabesque flourish curve -->
+  <path d="M420,180 C360,210 320,240 280,300 C240,360 210,400 180,440" fill="none" stroke="url(#violetRibbon)" stroke-width="4" stroke-linecap="round" />
+  
+  <!-- Candle with delicate flame -->
+  <g transform="translate(380, 310)">
+    <rect x="0" y="20" width="16" height="60" fill="#f1f5f9" rx="2" />
+    <path d="M8,18 C4,10 8,0 8,0 C8,0 12,10 8,18 Z" fill="#f59e0b" filter="drop-shadow(0 0 10px #f59e0b)" />
+  </g>
+
+  <text x="300" y="515" font-family="system-ui, sans-serif" font-weight="900" font-size="28" fill="#ffffff" text-anchor="middle" letter-spacing="3">NOCTURNE IN C# MINOR</text>
+  <text x="300" y="555" font-family="system-ui, sans-serif" font-weight="600" font-size="16" fill="#c084fc" text-anchor="middle" letter-spacing="2">FRÉDÉRIC CHOPIN • OP. POSTH., B. 49</text>
+</svg>

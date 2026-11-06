@@ -1,0 +1,40 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 600 600" width="100%" height="100%">
+  <defs>
+    <radialGradient id="bgElise" cx="50%" cy="30%" r="80%">
+      <stop offset="0%" stop-color="#451a03" />
+      <stop offset="50%" stop-color="#291206" />
+      <stop offset="100%" stop-color="#0a0502" />
+    </radialGradient>
+    <linearGradient id="roseParchment" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="#fecdd3" />
+      <stop offset="50%" stop-color="#fb7185" />
+      <stop offset="100%" stop-color="#e11d48" />
+    </linearGradient>
+  </defs>
+  <rect width="600" height="600" fill="url(#bgElise)" />
+
+  <!-- Classical Viennese Medallion -->
+  <circle cx="300" cy="220" r="140" fill="none" stroke="#f59e0b" stroke-width="2" stroke-dasharray="6 6" />
+  <circle cx="300" cy="220" r="120" fill="#1c0d02" />
+
+  <!-- Romantic Rose Silhouette -->
+  <g transform="translate(300, 220) scale(1.2)" fill="url(#roseParchment)">
+    <circle cx="0" cy="0" r="28" />
+    <path d="M-15,-15 C-25,-30 0,-40 0,-40 C0,-40 25,-30 15,-15 Z" />
+    <path d="M-20,5 C-40,0 -40,25 -20,20 Z" />
+    <path d="M20,5 C40,0 40,25 20,20 Z" />
+  </g>
+
+  <!-- Beethoven's E-D#-E-D#-E semitone opening motif stave line -->
+  <path d="M160,380 L440,380" stroke="#f59e0b" stroke-width="2" />
+  <g fill="#f59e0b">
+    <ellipse cx="220" cy="375" rx="8" ry="6" />
+    <ellipse cx="260" cy="385" rx="8" ry="6" />
+    <ellipse cx="300" cy="375" rx="8" ry="6" />
+    <ellipse cx="340" cy="385" rx="8" ry="6" />
+    <ellipse cx="380" cy="375" rx="8" ry="6" />
+  </g>
+
+  <text x="300" y="515" font-family="system-ui, sans-serif" font-weight="900" font-size="32" fill="#ffffff" text-anchor="middle" letter-spacing="4">FÜR ELISE</text>
+  <text x="300" y="555" font-family="system-ui, sans-serif" font-weight="600" font-size="16" fill="#fb7185" text-anchor="middle" letter-spacing="2">L. V. BEETHOVEN • WOO 59 COMPLETE</text>
+</svg>
