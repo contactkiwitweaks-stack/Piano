@@ -19,6 +19,7 @@ import { TutorialsView } from './components/TutorialsView'
 import { CompetitionReportModal, type CompetitionResults, type CompetitionMistake } from './components/CompetitionReportModal'
 import { SongStorageManager } from './library/SongStorageManager'
 import { ScoreEngine } from './engine/ScoreEngine'
+import { AcousticNoteRecognizer } from './engine/AcousticNoteRecognizer'
 import { translations, type LanguageCode } from './i18n/translations'
 import {
   Volume2,
@@ -151,6 +152,7 @@ export function App() {
     PianoAudioEngine.getInstance().stopAllVoices()
     hitWaitNotesRef.current.clear()
     expectedWaitMidisRef.current = []
+    AcousticNoteRecognizer.getInstance().clearTargetNotes()
     performanceBufferRef.current = []
     lastMetronomeBeatRef.current = -1
     processedNoteIdsRef.current.clear()
@@ -482,6 +484,7 @@ export function App() {
             if (targetChordNotes.length > 0) {
               const expectedMidis = targetChordNotes.map((n) => n.midi)
               expectedWaitMidisRef.current = expectedMidis
+              AcousticNoteRecognizer.getInstance().setTargetNotes(expectedMidis)
 
               // Check if all expected midis in this chord have been hit
               const allHit = expectedMidis.every(
@@ -512,6 +515,7 @@ export function App() {
               }
               hitWaitNotesRef.current.clear()
               expectedWaitMidisRef.current = []
+              AcousticNoteRecognizer.getInstance().clearTargetNotes()
 
               // Elastic forward leap: sync cursor with player's performance
               nextTime = Math.max(nextTime, upcomingLeader.startTime + 0.005)

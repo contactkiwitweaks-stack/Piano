@@ -1,6 +1,7 @@
 import React, { useState, useEffect, useRef, useCallback, useMemo } from 'react'
 import { PianoAudioEngine } from '../audio/PianoAudioEngine'
 import { MidiManager } from '../midi/MidiManager'
+import { AcousticNoteRecognizer } from '../engine/AcousticNoteRecognizer'
 import { translations, type LanguageCode } from '../i18n/translations'
 import {
   Zap,
@@ -14,6 +15,7 @@ import {
   X,
   Target,
   Trophy,
+  Mic,
 } from 'lucide-react'
 
 interface NoteReadingTrainerProps {
@@ -134,6 +136,26 @@ export const NoteReadingTrainer: React.FC<NoteReadingTrainerProps> = ({
   const [correctAttempts, setCorrectAttempts] = useState(0)
   const [feedbackState, setFeedbackState] = useState<'idle' | 'correct' | 'wrong'>('idle')
   const [showMnemonicModal, setShowMnemonicModal] = useState(false)
+  const [isMicActive, setIsMicActive] = useState<boolean>(() => AcousticNoteRecognizer.getInstance().isListening)
+
+  // Target-Informed Bayesian Prior: feeds current note target into recognition engine
+  useEffect(() => {
+    AcousticNoteRecognizer.getInstance().setTargetNotes([currentTarget.midi])
+    return () => {
+      AcousticNoteRecognizer.getInstance().clearTargetNotes()
+    }
+  }, [currentTarget])
+
+  const toggleMic = async () => {
+    const rec = AcousticNoteRecognizer.getInstance()
+    if (rec.isListening) {
+      rec.stopListening()
+      setIsMicActive(false)
+    } else {
+      const ok = await rec.startListening()
+      setIsMicActive(ok)
+    }
+  }
 
   const t = translations[language].sightReading
   const cardStartTimeRef = useRef<number>(performance.now())
@@ -355,6 +377,20 @@ export const NoteReadingTrainer: React.FC<NoteReadingTrainerProps> = ({
               </button>
             ))}
           </div>
+
+          {/* Acoustic Piano Microphone Toggle */}
+          <button
+            onClick={toggleMic}
+            className={`px-2.5 py-1 rounded-xl text-[10px] font-bold border flex items-center gap-1.5 transition-all active:scale-95 ${
+              isMicActive
+                ? 'bg-emerald-500/20 border-emerald-400 text-emerald-300 shadow-[0_0_12px_rgba(16,185,129,0.3)] animate-pulse'
+                : 'bg-zinc-900 border-zinc-800 text-zinc-400 hover:text-white'
+            }`}
+            title="Acoustic Piano Microphone Recognition (No cables/Bluetooth needed)"
+          >
+            <Mic className="w-3 h-3 text-emerald-400" />
+            <span>{isMicActive ? 'MIC ON' : 'MIC'}</span>
+          </button>
 
           {/* Help Mnemonic Guide */}
           <button
