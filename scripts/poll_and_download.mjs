@@ -1,73 +1,101 @@
 import fs from 'fs';
 import { execSync } from 'child_process';
+import { pipeline } from 'stream/promises';
 
-const token = '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';
 const repo = 'contactkiwitweaks-stack/Piano';
 
-async function waitAndDownload() {
-  console.log('Finding newest workflow run on contactkiwitweaks-stack/Piano...');
-
-  let runId = null;
-  for (let attempt = 0; attempt < 30; attempt++) {
-    const listRes = await fetch(`https://api.github.com/repos/${repo}/actions/runs?per_page=3`, {
-      headers: { Authorization: `Bearer ${token}`, 'User-Agent': 'Node' }
+function getGithubToken() {
+  try {
+    const gcmOutput = execSync('git credential fill', {
+      input: 'protocol=https\nhost=github.com\n\n',
+      encoding: 'utf8'
     });
-    const listData = await listRes.json();
-    const newest = listData.workflow_runs?.[0];
-    if (newest) {
-      runId = newest.id;
-      console.log(`Detected workflow run #${runId}: "${newest.head_commit?.message?.substring(0, 50)}" (${newest.status})`);
-      break;
+    for (const line of gcmOutput.split('\n')) {
+      if (line.startsWith('password=')) {
+        return line.substring('password='.length).trim();
+      }
     }
-    await new Promise(r => setTimeout(r, 4000));
+  } catch (err) {
+    console.warn('Could not read token from git credential:', err.message);
   }
+  return null;
+}
 
-  if (!runId) {
-    console.error('Could not find active workflow run');
+async function waitAndDownload() {
+  const token = getGithubToken();
+  const headers = { 'User-Agent': 'Node-Virtuoso-Builder' };
+  if (token) headers['Authorization'] = `Bearer ${token}`;
+
+  console.log('Fetching newest workflow runs...');
+  const listRes = await fetch(`https://api.github.com/repos/${repo}/actions/runs?per_page=3`, { headers });
+  const listData = await listRes.json();
+  const latestRun = listData.workflow_runs?.[0];
+
+  if (!latestRun) {
+    console.error('No workflow runs found.');
     process.exit(1);
   }
 
-  console.log(`Polling workflow run ${runId}...`);
-  while (true) {
-    const res = await fetch(`https://api.github.com/repos/${repo}/actions/runs/${runId}`, {
-      headers: { Authorization: `Bearer ${token}`, 'User-Agent': 'Node' }
-    });
-    const run = await res.json();
-    console.log(`[${new Date().toLocaleTimeString()}] Status: ${run.status}, Conclusion: ${run.conclusion}`);
+  console.log(`Tracking Run #${latestRun.run_number} (ID: ${latestRun.id})`);
+  console.log(`Commit: "${latestRun.head_commit?.message?.trim()}"`);
+  console.log(`Initial Status: ${latestRun.status}, Conclusion: ${latestRun.conclusion}`);
 
-    if (run.status === 'completed') {
-      if (run.conclusion === 'success') {
-        console.log('Build succeeded! Fetching artifacts...');
-        const artRes = await fetch(run.artifacts_url, {
-          headers: { Authorization: `Bearer ${token}`, 'User-Agent': 'Node' }
-        });
-        const artData = await artRes.json();
-        const ipaArtifact = artData.artifacts?.find(a => a.name.includes('IPA') || a.name.includes('ipa'));
-        if (ipaArtifact) {
-          console.log(`Downloading ${ipaArtifact.name} (${(ipaArtifact.size_in_bytes / (1024 * 1024)).toFixed(2)} MB)...`);
-          const dlRes = await fetch(ipaArtifact.archive_download_url, {
-            headers: { Authorization: `Bearer ${token}`, 'User-Agent': 'Node' }
-          });
-          const buf = Buffer.from(await dlRes.arrayBuffer());
-          const zipPath = 'C:\\Users\\Kxwie\\Downloads\\Virtuoso-Piano-iOS-IPA.zip';
-          fs.writeFileSync(zipPath, buf);
-          console.log('Unpacking to C:\\Users\\Kxwie\\Downloads...');
-          execSync(`powershell -Command "Expand-Archive -Force -Path '${zipPath}' -DestinationPath 'C:\\Users\\Kxwie\\Downloads'"`);
-          
-          const finalStat = fs.statSync('C:\\Users\\Kxwie\\Downloads\\Virtuoso-Piano.ipa');
-          console.log(`SUCCESS! Virtuoso-Piano.ipa updated at ${finalStat.mtime.toISOString()} (${(finalStat.size / (1024 * 1024)).toFixed(2)} MB)`);
-          process.exit(0);
-        } else {
-          console.error('No IPA artifact found in successful run!');
-          process.exit(1);
-        }
-      } else {
-        console.error(`Build completed with failure conclusion: ${run.conclusion}`);
-        process.exit(1);
-      }
+  const runId = latestRun.id;
+  let status = latestRun.status;
+  let conclusion = latestRun.conclusion;
+
+  while (status !== 'completed') {
+    await new Promise(r => setTimeout(r, 10000));
+    try {
+      const res = await fetch(`https://api.github.com/repos/${repo}/actions/runs/${runId}`, { headers });
+      const data = await res.json();
+      status = data.status;
+      conclusion = data.conclusion;
+      console.log(`[${new Date().toLocaleTimeString()}] Status: ${status}, Conclusion: ${conclusion || 'building...'}`);
+    } catch (e) {
+      console.warn('Network error while polling:', e.message);
     }
+  }
 
-    await new Promise(r => setTimeout(r, 12000));
+  if (conclusion !== 'success') {
+    console.error(`Workflow completed with failure: ${conclusion}`);
+    process.exit(1);
+  }
+
+  console.log('Workflow succeeded! Locating IPA artifact...');
+  const artRes = await fetch(`https://api.github.com/repos/${repo}/actions/runs/${runId}/artifacts`, { headers });
+  const artData = await artRes.json();
+  const artifact = artData.artifacts?.find(a => a.name.includes('IPA') || a.name.includes('ipa'));
+
+  if (!artifact) {
+    console.error('No IPA artifact found in successful run!');
+    process.exit(1);
+  }
+
+  console.log(`Downloading artifact "${artifact.name}" (${(artifact.size_in_bytes / (1024 * 1024)).toFixed(2)} MB)...`);
+  const dlRes = await fetch(artifact.archive_download_url, { headers });
+  if (!dlRes.ok) {
+    console.error(`Download failed with HTTP ${dlRes.status}`);
+    process.exit(1);
+  }
+
+  const zipPath = 'C:\\Users\\Kxwie\\Downloads\\Virtuoso-Piano-iOS-IPA-latest.zip';
+  const fileStream = fs.createWriteStream(zipPath);
+  await pipeline(dlRes.body, fileStream);
+  console.log(`Saved archive to ${zipPath}`);
+
+  console.log('Extracting to C:\\Users\\Kxwie\\Downloads...');
+  execSync(`powershell -Command "Expand-Archive -Force -Path '${zipPath}' -DestinationPath 'C:\\Users\\Kxwie\\Downloads'"`);
+
+  const ipaPath = 'C:\\Users\\Kxwie\\Downloads\\Virtuoso-Piano.ipa';
+  if (fs.existsSync(ipaPath)) {
+    const stats = fs.statSync(ipaPath);
+    console.log(`=======================================================`);
+    console.log(`SUCCESS! NEW IPA READY FOR IPHONE SIDELOAD:`);
+    console.log(`File: ${ipaPath}`);
+    console.log(`Size: ${(stats.size / (1024 * 1024)).toFixed(2)} MB`);
+    console.log(`Timestamp: ${stats.mtime.toLocaleString()}`);
+    console.log(`=======================================================`);
   }
 }
 

@@ -157,7 +157,7 @@ export class LibraryRepository {
       composer: 'Goose house',
       opus: '2014 (Shigatsu wa Kimi no Uso)',
       difficulty: 4,
-      key: 'Eb Major',
+      key: 'E Major',
       period: 'Contemporary',
       durationSeconds: 94,
       coverColor: 'from-pink-500 via-rose-950 to-zinc-950',

@@ -19,7 +19,6 @@ import {
   Sparkles,
   X,
   Gauge,
-  Columns,
   FileText,
   Box,
   Timer,
@@ -135,10 +134,12 @@ export const FlowkeyPlayerView: React.FC<FlowkeyPlayerViewProps> = ({
   const [editionMenuOpen, setEditionMenuOpen] = useState(false)
   const [themeMenuOpen, setThemeMenuOpen] = useState(false)
   const [isMasterclassOpen, setIsMasterclassOpen] = useState(false)
-  const [viewLayout, setViewLayoutState] = useState<'split' | 'keyboard' | 'sheet'>(() => {
-    return (localStorage.getItem('virtuoso_view_layout') as 'split' | 'keyboard' | 'sheet') || 'split'
+  const [viewLayout, setViewLayoutState] = useState<'keyboard' | 'sheet'>(() => {
+    const saved = localStorage.getItem('virtuoso_view_layout')
+    if (saved === 'keyboard') return 'keyboard'
+    return 'sheet'
   })
-  const setViewLayout = useCallback((layout: 'split' | 'keyboard' | 'sheet') => {
+  const setViewLayout = useCallback((layout: 'keyboard' | 'sheet') => {
     setViewLayoutState(layout)
     localStorage.setItem('virtuoso_view_layout', layout)
   }, [])
@@ -282,40 +283,28 @@ export const FlowkeyPlayerView: React.FC<FlowkeyPlayerViewProps> = ({
           </div>
         </div>
 
-        {/* Center: View Layout Switcher (Keys vs Split vs Sheet on Mobile & Desktop) */}
+        {/* Center: View Layout Switcher (Keys vs Sheet on Mobile & Desktop - No Split) */}
         <div className="flex items-center bg-zinc-900/90 border border-white/10 rounded-xl p-0.5 shadow-inner flex-shrink-0">
           <button
             onClick={() => setViewLayout('keyboard')}
-            className={`flex items-center gap-1 sm:gap-1.5 px-2 sm:px-3 py-1 rounded-lg text-[11px] sm:text-xs font-bold transition-all ${
+            className={`flex items-center gap-1 sm:gap-1.5 px-2.5 sm:px-3 py-1 rounded-lg text-[11px] sm:text-xs font-bold transition-all ${
               viewLayout === 'keyboard'
                 ? 'bg-amber-500 text-zinc-950 shadow-sm'
                 : 'text-zinc-400 hover:text-zinc-200'
             }`}
-            title="Keyboard View"
+            title="Falling Keys Highway"
           >
             <Layers className="w-3 h-3 sm:w-3.5 sm:h-3.5" />
             <span>Keys</span>
           </button>
           <button
-            onClick={() => setViewLayout('split')}
-            className={`flex items-center gap-1 sm:gap-1.5 px-1.5 sm:px-3 py-1 rounded-lg text-[11px] sm:text-xs font-bold transition-all ${
-              viewLayout === 'split'
-                ? 'bg-amber-500 text-zinc-950 shadow-sm'
-                : 'text-zinc-400 hover:text-zinc-200'
-            }`}
-            title="Split Piano + Sheet Music"
-          >
-            <Columns className="w-3 h-3 sm:w-3.5 sm:h-3.5" />
-            <span className="hidden xs:inline">Split</span>
-          </button>
-          <button
             onClick={() => setViewLayout('sheet')}
-            className={`flex items-center gap-1 sm:gap-1.5 px-2 sm:px-3 py-1 rounded-lg text-[11px] sm:text-xs font-bold transition-all ${
+            className={`flex items-center gap-1 sm:gap-1.5 px-2.5 sm:px-3 py-1 rounded-lg text-[11px] sm:text-xs font-bold transition-all ${
               viewLayout === 'sheet'
                 ? 'bg-amber-500 text-zinc-950 shadow-sm'
                 : 'text-zinc-400 hover:text-zinc-200'
             }`}
-            title="Sheet Music Notation"
+            title="Full Sheet Music Notation"
           >
             <FileText className="w-3 h-3 sm:w-3.5 sm:h-3.5" />
             <span>Sheet</span>
@@ -687,11 +676,11 @@ export const FlowkeyPlayerView: React.FC<FlowkeyPlayerViewProps> = ({
                     <span className="font-mono text-amber-400">{viewPerspective.toUpperCase()}</span>
                   </button>
                   <button
-                    onClick={() => setViewLayout(viewLayout === 'keyboard' ? 'split' : viewLayout === 'split' ? 'sheet' : 'keyboard')}
+                    onClick={() => setViewLayout(viewLayout === 'keyboard' ? 'sheet' : 'keyboard')}
                     className="p-2.5 rounded-xl bg-zinc-800/60 border border-white/10 flex items-center justify-between text-xs font-bold capitalize"
                   >
                     <span>View Layout</span>
-                    <span className="font-mono text-amber-400">{viewLayout}</span>
+                    <span className="font-mono text-amber-400">{viewLayout === 'sheet' ? 'Sheet' : 'Keys'}</span>
                   </button>
                 </div>
               </div>
@@ -868,11 +857,9 @@ export const FlowkeyPlayerView: React.FC<FlowkeyPlayerViewProps> = ({
       )}
 
       {/* 2. UPPER: 2D OVERHEAD KEYBOARD & FALLING NOTES HIGHWAY */}
-      {viewLayout !== 'sheet' && (
+      {viewLayout === 'keyboard' && (
         <div
-          className={`relative overflow-hidden w-full ${
-            viewLayout === 'keyboard' ? 'flex-1 min-h-0' : 'flex-1 min-h-0 basis-3/5'
-          } ${theme === 'light' ? 'bg-[#f8fafc]' : 'bg-[#080c1e]'} p-0`}
+          className={`relative overflow-hidden w-full flex-1 min-h-0 ${theme === 'light' ? 'bg-[#f8fafc]' : 'bg-[#080c1e]'} p-0`}
         >
           {/* Live Competition HUD Overlay */}
           {playMode === 'competition' && (
@@ -1204,12 +1191,10 @@ export const FlowkeyPlayerView: React.FC<FlowkeyPlayerViewProps> = ({
         </div>
       </div>
 
-      {/* 4. LOWER: AUTHENTIC FLOWKEY PARCHMENT SHEET MUSIC */}
-      {viewLayout !== 'keyboard' && (
+      {/* 4. LOWER: AUTHENTIC FULL SHEET MUSIC PAGE */}
+      {viewLayout === 'sheet' && (
         <div
-          className={`relative overflow-hidden ${
-            viewLayout === 'sheet' ? 'flex-1 min-h-0' : 'flex-1 min-h-0 basis-1/2'
-          } bg-[#fdfbf7]`}
+          className="relative overflow-hidden flex-1 min-h-0 bg-[#fdfbf7]"
         >
           <SheetMusicView
             piece={piece}
