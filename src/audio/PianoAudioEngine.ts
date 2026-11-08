@@ -100,34 +100,41 @@ export class PianoAudioEngine {
     this.ctx = new AudioCtx({ latencyHint: 'interactive' })
 
     // Bösendorfer Imperial 290 Acoustic Tone & Soundboard Shaping Chain:
-    // 1. Deep Sub-Bass Low Shelf (+3.0 dB at 110 Hz, rich 97-key imperial acoustic authority)
+    // 1. Deep Sub-Bass Low Shelf (+5.0 dB at 130 Hz, rich 97-key Imperial acoustic resonance)
     const lowShelf = this.ctx.createBiquadFilter()
     lowShelf.type = 'lowshelf'
-    lowShelf.frequency.setValueAtTime(110, this.ctx.currentTime)
-    lowShelf.gain.setValueAtTime(3.0, this.ctx.currentTime)
+    lowShelf.frequency.setValueAtTime(130, this.ctx.currentTime)
+    lowShelf.gain.setValueAtTime(5.0, this.ctx.currentTime)
 
-    // 2. Solid Spruce Soundboard Body Resonance (+2.0 dB at 280 Hz, warm wooden projection)
+    // 2. Solid Austrian Spruce Soundboard Body Resonance (+3.5 dB at 260 Hz, warm wooden projection)
     const spruceResonance = this.ctx.createBiquadFilter()
     spruceResonance.type = 'peaking'
-    spruceResonance.frequency.setValueAtTime(280, this.ctx.currentTime)
-    spruceResonance.gain.setValueAtTime(2.0, this.ctx.currentTime)
-    spruceResonance.Q.setValueAtTime(1.0, this.ctx.currentTime)
+    spruceResonance.frequency.setValueAtTime(260, this.ctx.currentTime)
+    spruceResonance.gain.setValueAtTime(3.5, this.ctx.currentTime)
+    spruceResonance.Q.setValueAtTime(1.1, this.ctx.currentTime)
 
-    // 3. Acoustic Air Lowpass: Silky concert grand presence, eliminating metallic/digital harshness
+    // 3. Anti-Nasal Scoop (-3.5 dB at 3200 Hz): Eliminates harsh "E-Piano / synth" metallic ringing
+    const antiNasal = this.ctx.createBiquadFilter()
+    antiNasal.type = 'peaking'
+    antiNasal.frequency.setValueAtTime(3200, this.ctx.currentTime)
+    antiNasal.gain.setValueAtTime(-3.5, this.ctx.currentTime)
+    antiNasal.Q.setValueAtTime(1.3, this.ctx.currentTime)
+
+    // 4. Acoustic Felt Lowpass: Warm, mellow concert grand hammer roll-off (eliminating piercing treble)
     this.soundboardFilter = this.ctx.createBiquadFilter()
     this.soundboardFilter.type = 'lowpass'
-    this.soundboardFilter.frequency.setValueAtTime(14500, this.ctx.currentTime)
-    this.soundboardFilter.Q.setValueAtTime(0.7, this.ctx.currentTime)
+    this.soundboardFilter.frequency.setValueAtTime(5600, this.ctx.currentTime)
+    this.soundboardFilter.Q.setValueAtTime(0.65, this.ctx.currentTime)
 
-    // 4. Una Corda (Soft Pedal CC67) acoustic filter & intimate attenuation
+    // 5. Una Corda (Soft Pedal CC67) acoustic filter & intimate attenuation
     this.unaCordaFilter = this.ctx.createBiquadFilter()
     this.unaCordaFilter.type = 'lowpass'
-    this.unaCordaFilter.frequency.setValueAtTime(14500, this.ctx.currentTime)
+    this.unaCordaFilter.frequency.setValueAtTime(5600, this.ctx.currentTime)
 
     this.unaCordaGain = this.ctx.createGain()
     this.unaCordaGain.gain.setValueAtTime(1.0, this.ctx.currentTime)
 
-    // 5. Master, Dry, and Wet Reverb Gains
+    // 6. Master, Dry, and Wet Reverb Gains
     this.masterGain = this.ctx.createGain()
     this.masterGain.gain.setValueAtTime(0.95, this.ctx.currentTime)
 
@@ -145,12 +152,13 @@ export class PianoAudioEngine {
       }
     } catch {}
 
-    // Routing: soundboardFilter -> lowShelf -> spruceResonance -> unaCordaFilter -> unaCordaGain
+    // Routing: soundboardFilter -> lowShelf -> spruceResonance -> antiNasal -> unaCordaFilter -> unaCordaGain
     //          unaCordaGain -> dryGain -> masterGain -> destination
     //          unaCordaGain -> convolver -> wetGain -> masterGain
     this.soundboardFilter.connect(lowShelf)
     lowShelf.connect(spruceResonance)
-    spruceResonance.connect(this.unaCordaFilter)
+    spruceResonance.connect(antiNasal)
+    antiNasal.connect(this.unaCordaFilter)
     this.unaCordaFilter.connect(this.unaCordaGain)
 
     this.unaCordaGain.connect(this.dryGain)
@@ -371,12 +379,16 @@ export class PianoAudioEngine {
     this.isLoadingSamples = true
 
     const origin = typeof window !== 'undefined' && window.location ? window.location.origin : ''
+    const baseHref = typeof window !== 'undefined' && window.location ? window.location.href : ''
     const tryFetchAudio = async (name: string): Promise<ArrayBuffer | null> => {
       const paths = [
         `./samples/piano/${name}.mp3`,
         `/samples/piano/${name}.mp3`,
         `samples/piano/${name}.mp3`,
         origin ? `${origin}/samples/piano/${name}.mp3` : '',
+        baseHref ? new URL(`samples/piano/${name}.mp3`, baseHref).href : '',
+        `capacitor://localhost/samples/piano/${name}.mp3`,
+        `http://localhost/samples/piano/${name}.mp3`,
       ].filter(Boolean) as string[]
 
       for (const p of paths) {
@@ -392,10 +404,18 @@ export class PianoAudioEngine {
     }
 
     try {
-      // Load in batches of 4 to prevent network socket starvation on iOS
-      const batchSize = 4
-      for (let i = 0; i < SAMPLE_FILES.length; i += batchSize) {
-        const batch = SAMPLE_FILES.slice(i, i + batchSize)
+      // Prioritize primary playing octaves first (C3 through C6) for instant acoustic warmth
+      const priorityOrder = [
+        60, 69, 63, 66, 57, 72, 54, 75, 48, 78, 51, 81, 45, 84, 42, 87, 39, 90, 36, 93, 33, 96, 30, 99, 27, 102, 24, 105, 21, 108,
+      ]
+      const sortedFiles = [...SAMPLE_FILES].sort(
+        (a, b) => priorityOrder.indexOf(a.midi) - priorityOrder.indexOf(b.midi)
+      )
+
+      // Load in parallel batches of 6 for lightning-fast decoding
+      const batchSize = 6
+      for (let i = 0; i < sortedFiles.length; i += batchSize) {
+        const batch = sortedFiles.slice(i, i + batchSize)
         await Promise.all(
           batch.map(async ({ midi, name }) => {
             try {
@@ -412,7 +432,7 @@ export class PianoAudioEngine {
       }
       this.samplesLoaded = this.samples.size > 0
     } catch {
-      // Gracefully fall back to physical modeling synth
+      // Gracefully fall back to Bösendorfer physical modeling synth
     } finally {
       this.isLoadingSamples = false
     }
@@ -671,32 +691,29 @@ export class PianoAudioEngine {
         pedaled: this.isPedalDown,
       })
     } else {
-      // High-Definition Concert Grand Physical Modeling Synthesis:
-      // 1. Felt hammer attack transient
-      // 2. Triple string unisons with micro-detuning
-      // 3. Stiff wire inharmonic overtones
-      // 4. Dynamic velocity warmth tracking
+      // Bösendorfer Imperial 290 Acoustic String & Soundboard Physical Model:
+      // Dominant fundamental energy (85%+), warm Austrian spruce resonance, soft felt hammer strike.
       const f0 = this.masterTuningHz * Math.pow(2, (midi - 69) / 12)
       const oscillators: OscillatorNode[] = []
 
-      // Hammer felt strike acoustic impact thud
+      // Deep felt hammer strike acoustic impact thud (low-frequency impulse at 120-280 Hz)
       if (this.mechanicalNoiseEnabled) {
-        const hBufSize = Math.floor(this.ctx.sampleRate * 0.022)
+        const hBufSize = Math.floor(this.ctx.sampleRate * 0.024)
         const hBuf = this.ctx.createBuffer(1, hBufSize, this.ctx.sampleRate)
         const hData = hBuf.getChannelData(0)
         for (let i = 0; i < hBufSize; i++) {
-          hData[i] = (Math.random() * 2 - 1) * Math.exp(-i / (this.ctx.sampleRate * 0.005))
+          hData[i] = (Math.random() * 2 - 1) * Math.exp(-i / (this.ctx.sampleRate * 0.008))
         }
         const hSrc = this.ctx.createBufferSource()
         hSrc.buffer = hBuf
         const hFilter = this.ctx.createBiquadFilter()
         hFilter.type = 'bandpass'
-        hFilter.frequency.setValueAtTime(Math.min(3000, Math.max(250, f0 * 1.8)), now)
-        hFilter.Q.setValueAtTime(1.8, now)
+        hFilter.frequency.setValueAtTime(Math.min(320, Math.max(120, f0 * 0.85)), now)
+        hFilter.Q.setValueAtTime(1.2, now)
 
         const hGain = this.ctx.createGain()
-        hGain.gain.setValueAtTime(normVel * 0.16, now)
-        hGain.gain.exponentialRampToValueAtTime(0.0001, now + 0.022)
+        hGain.gain.setValueAtTime(normVel * 0.18, now)
+        hGain.gain.exponentialRampToValueAtTime(0.0001, now + 0.024)
 
         hSrc.connect(hFilter)
         hFilter.connect(hGain)
@@ -704,36 +721,36 @@ export class PianoAudioEngine {
         hSrc.start(now)
       }
 
-      // Dynamic velocity brightness filter
+      // Dynamic velocity warmth filter (Mellow Bösendorfer Imperial concert tone)
       const voiceFilter = this.ctx.createBiquadFilter()
       voiceFilter.type = 'lowpass'
-      const cutoff = Math.min(12000, 900 + normVel * 6800)
+      const cutoff = Math.min(4800, 600 + normVel * 2600)
       voiceFilter.frequency.setValueAtTime(cutoff, now)
-      voiceFilter.Q.setValueAtTime(0.85, now)
+      voiceFilter.Q.setValueAtTime(0.7, now)
       voiceFilter.connect(voiceGain)
 
-      // Triple string unisons (authentic acoustic grand chorusing)
+      // Dual string unisons with organic acoustic micro-beating
       const unisons = [
         { detune: 0, amp: 1.0 },
-        { detune: 0.8, amp: 0.65 },
-        { detune: -0.7, amp: 0.65 },
+        { detune: 0.35, amp: 0.45 },
+        { detune: -0.35, amp: 0.45 },
       ]
 
-      // Stiff steel wire partials with inharmonicity
-      const inharmonicityB = 0.00032
+      // Bösendorfer Imperial string partials: fundamental dominance prevents "octave-high / e-piano" perception
+      const inharmonicityB = 0.00015
+      const baseDecay = Math.max(2.8, Math.min(8.5, 9.0 - (midi - 21) * 0.075))
       const partials = [
-        { n: 1, amp: 1.0, decaySec: 5.2 },
-        { n: 2, amp: 0.62, decaySec: 3.8 },
-        { n: 3, amp: 0.35, decaySec: 2.8 },
-        { n: 4, amp: 0.18, decaySec: 1.8 },
-        { n: 5, amp: 0.10, decaySec: 1.2 },
+        { n: 1, amp: 1.0, decaySec: baseDecay },
+        { n: 2, amp: 0.16, decaySec: baseDecay * 0.42 }, // Soft 2nd harmonic
+        { n: 3, amp: 0.06, decaySec: baseDecay * 0.28 }, // Warm subtle 3rd harmonic
+        { n: 4, amp: 0.02, decaySec: baseDecay * 0.15 }, // Brief hammer "chime"
       ]
 
       unisons.forEach((u) => {
         partials.forEach((p) => {
           if (!this.ctx) return
           const partialFreq = p.n * f0 * Math.sqrt(1 + inharmonicityB * p.n * p.n)
-          if (partialFreq > 16000) return
+          if (partialFreq > 14000) return
 
           const osc = this.ctx.createOscillator()
           osc.type = 'sine'
@@ -741,7 +758,7 @@ export class PianoAudioEngine {
           osc.detune.setValueAtTime(u.detune, now)
 
           const pGain = this.ctx.createGain()
-          const pAmp = p.amp * u.amp * 0.22
+          const pAmp = p.amp * u.amp * 0.32
           pGain.gain.setValueAtTime(0.0001, now)
           pGain.gain.linearRampToValueAtTime(pAmp, now + 0.003)
           pGain.gain.exponentialRampToValueAtTime(0.0001, now + p.decaySec)
