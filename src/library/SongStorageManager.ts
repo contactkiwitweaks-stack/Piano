@@ -59,6 +59,18 @@ export class SongStorageManager {
       midiUrl: 'https://raw.githubusercontent.com/contactkiwitweaks-stack/Piano/main/public/songs/sia-snowman.mid',
     },
     {
+      id: 'cloud-liszt-liebestraum-3',
+      title: 'Liebestraum No. 3',
+      composer: 'Franz Liszt',
+      difficulty: 5,
+      key: 'Ab Major',
+      period: 'Romantic',
+      durationSeconds: 247,
+      coverColor: 'from-rose-600 via-pink-950 to-zinc-950',
+      description: 'Immortal romantic nocturne: cantabile tenor melody, sparkling cadenzas, and glowing Ab major climax.',
+      midiUrl: 'https://raw.githubusercontent.com/contactkiwitweaks-stack/Piano/main/public/songs/liszt-liebestraum-3.mid',
+    },
+    {
       id: 'cloud-chopin-nocturne-op9-2',
       title: 'Nocturne in Eb Major',
       composer: 'Frédéric Chopin',

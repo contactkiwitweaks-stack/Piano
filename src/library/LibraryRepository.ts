@@ -9,6 +9,7 @@ import carolOfTheBellsScore from '../data/scores/carol-of-the-bells.json'
 import siaSnowmanScore from '../data/scores/sia-snowman.json'
 import riverFlowsInYouScore from '../data/scores/river-flows-in-you.json'
 import lisztLaCampanellaScore from '../data/scores/liszt-la-campanella.json'
+import lisztLiebestraum3Score from '../data/scores/liszt-liebestraum-3.json'
 import kensukeInTheSeaScore from '../data/scores/kensuke-ushio-in-the-sea.json'
 import hikaruNaraScore from '../data/scores/hikaru-nara.json'
 import chopinNocturneScore from '../data/scores/chopin-nocturne-c-sharp-minor.json'
@@ -103,6 +104,28 @@ export class LibraryRepository {
           name: 'Grandes études de Paganini',
           year: '1851 Urtext Edition',
           description: 'Legendary virtuoso bravura showpiece with lightning-fast right-hand bell leaps (up to two octaves) and sparkling trills.',
+        },
+      ],
+    },
+    {
+      id: 'liszt-liebestraum-3',
+      title: 'Liebestraum No. 3',
+      composer: 'Franz Liszt',
+      opus: 'S. 541 / Op. 62 No. 3 (1850)',
+      difficulty: 5,
+      key: 'Ab Major',
+      period: 'Romantic',
+      durationSeconds: 247,
+      coverColor: 'from-rose-600 via-pink-950 to-zinc-950',
+      coverImage: '/images/covers/liszt-liebestraum-3.svg',
+      badge: 'Romantic Masterpiece',
+      quote: 'Immortal cantabile tenor melody accompanied by celestial arpeggios and triumphant passion.',
+      availableEditions: [
+        {
+          id: 'urtext',
+          name: 'Notturno III in As-Dur (Urtext)',
+          year: '1850 Breitkopf & Härtel',
+          description: 'Authentic 1,887-note concert edition with full pedal markings, cantabile tenor line, both virtuosic cadenzas, and radiant A-flat major coda.',
         },
       ],
     },
@@ -678,6 +701,9 @@ export class LibraryRepository {
     }
     if (pieceId === 'liszt-la-campanella') {
       return lisztLaCampanellaScore as unknown as Piece
+    }
+    if (pieceId === 'liszt-liebestraum-3') {
+      return lisztLiebestraum3Score as unknown as Piece
     }
     if (pieceId === 'kensuke-ushio-in-the-sea') {
       return kensukeInTheSeaScore as unknown as Piece
