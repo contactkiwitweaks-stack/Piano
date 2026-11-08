@@ -142,18 +142,26 @@ export class PianoAudioEngine {
     this.dryGain.gain.setValueAtTime(1.0, this.ctx.currentTime)
 
     this.wetGain = this.ctx.createGain()
-    this.wetGain.gain.setValueAtTime(0.25, this.ctx.currentTime) // default 25% concert hall acoustic bloom
+    this.wetGain.gain.setValueAtTime(0.36, this.ctx.currentTime) // Rich 36% Musikverein concert hall acoustic bloom
 
     this.convolver = this.ctx.createConvolver()
     try {
-      const impulseBuf = this.generateImpulseResponse(2.2, 2.4)
+      const impulseBuf = this.generateImpulseResponse(2.6, 1.9)
       if (impulseBuf) {
         this.convolver.buffer = impulseBuf
       }
     } catch {}
 
+    // 7. Master Acoustic Dynamics Compressor (Eliminates digital chord clipping & provides natural soundboard headroom)
+    const masterCompressor = this.ctx.createDynamicsCompressor()
+    masterCompressor.threshold.setValueAtTime(-5.0, this.ctx.currentTime)
+    masterCompressor.knee.setValueAtTime(12.0, this.ctx.currentTime) // Smooth soft-knee curve
+    masterCompressor.ratio.setValueAtTime(4.0, this.ctx.currentTime)
+    masterCompressor.attack.setValueAtTime(0.003, this.ctx.currentTime) // 3ms fast transient catch
+    masterCompressor.release.setValueAtTime(0.18, this.ctx.currentTime) // 180ms soundboard dissipation
+
     // Routing: soundboardFilter -> lowShelf -> spruceResonance -> antiNasal -> unaCordaFilter -> unaCordaGain
-    //          unaCordaGain -> dryGain -> masterGain -> destination
+    //          unaCordaGain -> dryGain -> masterGain -> masterCompressor -> destination
     //          unaCordaGain -> convolver -> wetGain -> masterGain
     this.soundboardFilter.connect(lowShelf)
     lowShelf.connect(spruceResonance)
@@ -167,7 +175,8 @@ export class PianoAudioEngine {
 
     this.dryGain.connect(this.masterGain)
     this.wetGain.connect(this.masterGain)
-    this.masterGain.connect(this.ctx.destination)
+    this.masterGain.connect(masterCompressor)
+    masterCompressor.connect(this.ctx.destination)
 
     // Eagerly unlock audio graph on first iOS touch or pointer interaction
     const unlockHandler = () => {
@@ -190,7 +199,7 @@ export class PianoAudioEngine {
    * Engineered with filtered velvet diffusion, frequency-dependent spruce wood absorption,
    * pre-delay, and discrete early wall reflections (eliminates all metallic comb-filtering/tin-can ringing).
    */
-  private generateImpulseResponse(durationSec: number = 2.4, decayRate: number = 2.2): AudioBuffer | null {
+  private generateImpulseResponse(durationSec: number = 2.6, decayRate: number = 1.9): AudioBuffer | null {
     if (!this.ctx) return null
     const sampleRate = this.ctx.sampleRate
     const length = Math.floor(sampleRate * durationSec)
@@ -198,8 +207,8 @@ export class PianoAudioEngine {
     const left = impulse.getChannelData(0)
     const right = impulse.getChannelData(1)
 
-    // Pre-delay: 18ms acoustic stage boundary reflection delay
-    const predelaySamples = Math.floor(sampleRate * 0.018)
+    // Pre-delay: 24ms acoustic stage boundary reflection delay (preserves piano hammer attack clarity)
+    const predelaySamples = Math.floor(sampleRate * 0.024)
 
     let filterL = 0
     let filterR = 0
@@ -214,8 +223,8 @@ export class PianoAudioEngine {
       const t = (i - predelaySamples) / sampleRate
       const decay = Math.exp(-decayRate * t)
 
-      // Warm frequency damping: high frequencies decay 3x faster than warm body
-      const dampingCoeff = Math.max(0.04, 0.38 * Math.exp(-t * 2.8))
+      // Warm frequency damping: high frequencies decay faster while warm spruce hall body blooms
+      const dampingCoeff = Math.max(0.035, 0.32 * Math.exp(-t * 2.5))
 
       const rawL = Math.random() * 2 - 1
       const rawR = Math.random() * 2 - 1
@@ -224,17 +233,18 @@ export class PianoAudioEngine {
       filterL += dampingCoeff * (rawL - filterL)
       filterR += dampingCoeff * (rawR - filterR)
 
-      // Discrete acoustic reflections (hall side walls, ceiling, rear terrace)
-      let reflectionFactor = 1.0
-      if (t < 0.085) {
-        if (Math.abs(t - 0.015) < 0.001) reflectionFactor = 2.2
-        else if (Math.abs(t - 0.032) < 0.001) reflectionFactor = 1.8
-        else if (Math.abs(t - 0.054) < 0.001) reflectionFactor = 1.5
-        else if (Math.abs(t - 0.078) < 0.001) reflectionFactor = 1.3
+      // Stereo decorrelated early reflections (hall side walls, ceiling, rear terrace)
+      let reflectionFactorL = 1.0
+      let reflectionFactorR = 1.0
+      if (t < 0.09) {
+        if (Math.abs(t - 0.016) < 0.001) { reflectionFactorL = 2.2; reflectionFactorR = 1.4 }
+        else if (Math.abs(t - 0.034) < 0.001) { reflectionFactorL = 1.5; reflectionFactorR = 2.1 }
+        else if (Math.abs(t - 0.058) < 0.001) { reflectionFactorL = 1.8; reflectionFactorR = 1.7 }
+        else if (Math.abs(t - 0.082) < 0.001) { reflectionFactorL = 1.4; reflectionFactorR = 1.5 }
       }
 
-      left[i] = filterL * decay * reflectionFactor
-      right[i] = filterR * decay * reflectionFactor
+      left[i] = filterL * decay * reflectionFactorL
+      right[i] = filterR * decay * reflectionFactorR
     }
     return impulse
   }
@@ -249,16 +259,16 @@ export class PianoAudioEngine {
         this.wetGain.gain.setValueAtTime(0.0, now)
         break
       case 'studio':
-        this.convolver.buffer = this.generateImpulseResponse(0.9, 4.5)
-        this.wetGain.gain.setValueAtTime(0.12, now)
+        this.convolver.buffer = this.generateImpulseResponse(1.2, 3.8)
+        this.wetGain.gain.setValueAtTime(0.18, now)
         break
       case 'hall':
-        this.convolver.buffer = this.generateImpulseResponse(2.2, 2.4)
-        this.wetGain.gain.setValueAtTime(0.24, now)
+        this.convolver.buffer = this.generateImpulseResponse(2.6, 1.9)
+        this.wetGain.gain.setValueAtTime(0.36, now)
         break
       case 'cathedral':
-        this.convolver.buffer = this.generateImpulseResponse(3.8, 1.6)
-        this.wetGain.gain.setValueAtTime(0.38, now)
+        this.convolver.buffer = this.generateImpulseResponse(4.2, 1.4)
+        this.wetGain.gain.setValueAtTime(0.48, now)
         break
     }
   }
@@ -575,6 +585,12 @@ export class PianoAudioEngine {
     // Trigger acoustic damper lift whoosh when pedal is depressed
     if (!wasPedalDown && this.isPedalDown) {
       this.playDamperLiftNoise(depth)
+    }
+
+    // Sympathetic string bloom: when damper pedal is down, enhance concert hall acoustic bloom
+    if (this.wetGain && this.ctx && this.reverbMode === 'hall') {
+      const targetWet = this.isPedalDown ? 0.44 : 0.36
+      this.wetGain.gain.setTargetAtTime(targetWet, this.ctx.currentTime, 0.06)
     }
 
     // When pedal is released (felt dampers drop onto released strings)
