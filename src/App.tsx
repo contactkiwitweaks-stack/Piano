@@ -99,6 +99,13 @@ export function App() {
   const consumedNoteStrikeTimeRef = useRef<Map<number, number>>(new Map())
   const expectedWaitMidisRef = useRef<number[]>([])
 
+  // Count-in / Pre-roll (1-measure countdown before playback starts)
+  const [countInBeat, setCountInBeat] = useState<number | null>(null)
+  const [isCountInEnabled, setIsCountInEnabled] = useState<boolean>(() => {
+    return localStorage.getItem('virtuoso_count_in') !== 'false'
+  })
+  const countInTimerRef = useRef<ReturnType<typeof setInterval> | null>(null)
+
   // Modals
   const [isRolandModalOpen, setIsRolandModalOpen] = useState<boolean>(false)
   const [isImportModalOpen, setIsImportModalOpen] = useState<boolean>(false)
@@ -150,8 +157,17 @@ export function App() {
   const hitWaitNotesRef = useRef<Set<number>>(new Set())
   const manualPedalDepthRef = useRef<number>(0)
 
+  const cancelCountIn = useCallback(() => {
+    if (countInTimerRef.current) {
+      clearInterval(countInTimerRef.current)
+      countInTimerRef.current = null
+    }
+    setCountInBeat(null)
+  }, [])
+
   // Stop all ringing voices and jump playback cursor to target time & index
   const resetPlaybackToIndex = useCallback((targetTime: number, notes: typeof activePiece extends null ? [] : NonNullable<typeof activePiece>['notes']) => {
+    cancelCountIn()
     currentTimeRef.current = targetTime
     PianoAudioEngine.getInstance().stopAllVoices()
     hitWaitNotesRef.current.clear()
@@ -473,16 +489,16 @@ export function App() {
           let keepCheckingChords = true
           while (keepCheckingChords && nextNoteIndexRef.current < activePiece.notes.length) {
             const upcomingLeader = activePiece.notes[nextNoteIndexRef.current]
-            if (upcomingLeader && upcomingLeader.startTime > nextTime + 0.05 && nextNoteIndexRef.current !== 0) {
+            if (upcomingLeader && upcomingLeader.startTime > nextTime + 0.085 && nextNoteIndexRef.current !== 0) {
               break
             }
 
-            // Collect all simultaneous notes in this chord cluster (within 0.05s)
+            // Collect all simultaneous notes in this chord cluster (within 85ms for expressive rolled arpeggios)
             const chordNotes: NoteEvent[] = []
             let cIdx = nextNoteIndexRef.current
             while (
               cIdx < activePiece.notes.length &&
-              Math.abs(activePiece.notes[cIdx].startTime - upcomingLeader.startTime) < 0.05
+              Math.abs(activePiece.notes[cIdx].startTime - upcomingLeader.startTime) < 0.085
             ) {
               chordNotes.push(activePiece.notes[cIdx])
               cIdx++
@@ -707,18 +723,60 @@ export function App() {
   const handleTogglePlay = async () => {
     await PianoAudioEngine.getInstance().unlockAudio()
     if (!activePiece) return
-    if (!isPlaying && currentTimeRef.current >= activePiece.duration - 0.5) {
+
+    // If currently running count-in, cancel it and stay paused
+    if (countInBeat !== null) {
+      cancelCountIn()
+      return
+    }
+
+    if (isPlaying) {
+      PianoAudioEngine.getInstance().stopAllVoices()
+      setIsPlaying(false)
+      return
+    }
+
+    if (currentTimeRef.current >= activePiece.duration - 0.5) {
       const startTime = isLooping ? loopTimeBounds[0] : 0
       resetPlaybackToIndex(startTime, activePiece.notes)
       setCurrentTime(startTime)
     }
-    if (isPlaying) {
-      PianoAudioEngine.getInstance().stopAllVoices()
+
+    // Trigger count-in pre-roll if enabled
+    if (isCountInEnabled) {
+      const beatsInMeasure = activePiece.timeSignature ? activePiece.timeSignature[0] : 4
+      const bpm = activePiece.tempoBpm || 100
+      const beatIntervalMs = Math.round((60 / bpm) * 1000)
+
+      let remaining = beatsInMeasure
+      setCountInBeat(remaining)
+      PianoAudioEngine.getInstance().playMetronomeClick(true)
+
+      countInTimerRef.current = setInterval(() => {
+        remaining--
+        if (remaining > 0) {
+          setCountInBeat(remaining)
+          PianoAudioEngine.getInstance().playMetronomeClick(false)
+        } else {
+          cancelCountIn()
+          setIsPlaying(true)
+        }
+      }, beatIntervalMs)
+    } else {
+      setIsPlaying(true)
     }
-    setIsPlaying(!isPlaying)
   }
 
+  const handleToggleCountIn = useCallback(() => {
+    setIsCountInEnabled((prev) => {
+      const next = !prev
+      localStorage.setItem('virtuoso_count_in', next ? 'true' : 'false')
+      return next
+    })
+  }, [])
+
   const handleRewind = () => {
+    cancelCountIn()
     if (!activePiece) return
     const target = isLooping ? loopTimeBounds[0] : 0
     resetPlaybackToIndex(target, activePiece.notes)
@@ -726,6 +784,7 @@ export function App() {
   }
 
   const handleSeek = (time: number) => {
+    cancelCountIn()
     if (!activePiece) return
     resetPlaybackToIndex(time, activePiece.notes)
     setCurrentTime(time)
@@ -946,6 +1005,9 @@ export function App() {
             onScreenKeyPress={handleScreenKeyPress}
             onScreenKeyRelease={handleScreenKeyRelease}
             onTogglePedal={handleTogglePedal}
+            countInBeat={countInBeat}
+            isCountInEnabled={isCountInEnabled}
+            onToggleCountIn={handleToggleCountIn}
           />
         ) : activeTab === 'courses' ? (
           /* FLOWKEY COURSES VIEW (Screenshot 5: Beginner Courses, Scales & Exercises, Chords) */

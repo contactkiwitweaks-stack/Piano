@@ -418,6 +418,11 @@ export class PianoAudioEngine {
     }
   }
 
+  public getAudioContext(): AudioContext | null {
+    if (!this.ctx) this.init()
+    return this.ctx
+  }
+
   public getLoadedSampleCount(): number {
     return this.samples.size
   }

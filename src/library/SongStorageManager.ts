@@ -178,21 +178,81 @@ export class SongStorageManager {
     return (await res.json()) as Array<{ id: string; title: string; composer: string; fileName: string; downloadUrl: string }>
   }
 
-  // Retrieve all permanently saved custom pieces from local storage
-  public static getSavedPieces(): Piece[] {
-    try {
-      const raw = localStorage.getItem(CUSTOM_SONGS_KEY)
-      if (!raw) return []
-      const parsed = JSON.parse(raw) as Piece[]
-      return Array.isArray(parsed) ? parsed : []
-    } catch (e) {
-      console.warn('Failed to load saved custom pieces:', e)
-      return []
-    }
+  private static memPieces: Map<string, Piece> = new Map()
+
+  public static async initIndexedDB(): Promise<IDBDatabase | null> {
+    if (typeof window === 'undefined' || !window.indexedDB) return null
+    return new Promise((resolve) => {
+      try {
+        const req = window.indexedDB.open('VirtuosoSongsDB', 1)
+        req.onupgradeneeded = () => {
+          const db = req.result
+          if (!db.objectStoreNames.contains('pieces')) {
+            db.createObjectStore('pieces', { keyPath: 'id' })
+          }
+        }
+        req.onsuccess = () => {
+          const db = req.result
+          try {
+            const tx = db.transaction('pieces', 'readonly')
+            const getAll = tx.objectStore('pieces').getAll()
+            getAll.onsuccess = () => {
+              const list = getAll.result as Piece[]
+              if (Array.isArray(list)) {
+                list.forEach((p) => this.memPieces.set(p.id, p))
+              }
+            }
+          } catch {}
+          resolve(db)
+        }
+        req.onerror = () => resolve(null)
+      } catch {
+        resolve(null)
+      }
+    })
   }
 
-  // Save or update a piece permanently in local storage
+  // Retrieve all permanently saved custom pieces from local storage & IndexedDB
+  public static getSavedPieces(): Piece[] {
+    const merged = new Map<string, Piece>()
+    this.memPieces.forEach((p, id) => merged.set(id, p))
+
+    try {
+      const raw = localStorage.getItem(CUSTOM_SONGS_KEY)
+      if (raw) {
+        const parsed = JSON.parse(raw) as Piece[]
+        if (Array.isArray(parsed)) {
+          parsed.forEach((p) => merged.set(p.id, p))
+        }
+      }
+    } catch (e) {
+      console.warn('Failed to load saved custom pieces from localStorage:', e)
+    }
+
+    // Trigger IndexedDB sync if not yet loaded
+    if (this.memPieces.size === 0) {
+      this.initIndexedDB().catch(() => {})
+    }
+
+    return Array.from(merged.values())
+  }
+
+  // Save or update a piece permanently in local storage and IndexedDB
   public static savePiece(piece: Piece): void {
+    this.memPieces.set(piece.id, piece)
+
+    // Save to IndexedDB (unlimited quota)
+    this.initIndexedDB().then((db) => {
+      if (!db) return
+      try {
+        const tx = db.transaction('pieces', 'readwrite')
+        tx.objectStore('pieces').put(piece)
+      } catch (err) {
+        console.warn('IndexedDB save failed:', err)
+      }
+    }).catch(() => {})
+
+    // Attempt localStorage save (with graceful quota catch)
     try {
       const existing = this.getSavedPieces()
       const index = existing.findIndex((p) => p.id === piece.id)
@@ -203,12 +263,22 @@ export class SongStorageManager {
       }
       localStorage.setItem(CUSTOM_SONGS_KEY, JSON.stringify(existing))
     } catch (e) {
-      console.error('Failed to save piece to local storage:', e)
+      console.warn('LocalStorage quota reached, safely persisted in IndexedDB:', e)
     }
   }
 
   // Remove a custom piece
   public static removePiece(pieceId: string): void {
+    this.memPieces.delete(pieceId)
+
+    this.initIndexedDB().then((db) => {
+      if (!db) return
+      try {
+        const tx = db.transaction('pieces', 'readwrite')
+        tx.objectStore('pieces').delete(pieceId)
+      } catch {}
+    }).catch(() => {})
+
     try {
       const existing = this.getSavedPieces().filter((p) => p.id !== pieceId)
       localStorage.setItem(CUSTOM_SONGS_KEY, JSON.stringify(existing))

@@ -163,7 +163,8 @@ export const FallingKeysCanvas = React.memo<FallingKeysCanvasProps>(({
     if (!canvas || !container) return
 
     const handleResize = () => {
-      const dpr = window.devicePixelRatio || 1
+      // Clamp DPR to max 2.0 on 120Hz ProMotion screens to eliminate GPU thermal throttling while retaining Retina sharpness
+      const dpr = Math.min(2, Math.max(1, window.devicePixelRatio || 1))
       const width = container.clientWidth
       const height = container.clientHeight
       if (width > 0 && height > 0) {
@@ -255,7 +256,7 @@ export const FallingKeysCanvas = React.memo<FallingKeysCanvasProps>(({
     const render = () => {
       try {
         const container = containerRef.current
-        const dpr = Math.max(1, window.devicePixelRatio || 1)
+        const dpr = Math.min(2, Math.max(1, window.devicePixelRatio || 1))
         const pending = pendingDimRef.current
         const containerW = container ? container.clientWidth : 0
         const containerH = container ? container.clientHeight : 0
@@ -923,7 +924,7 @@ export const FallingKeysCanvas = React.memo<FallingKeysCanvasProps>(({
     const rect = canvas.getBoundingClientRect()
     if (!rect.width || !rect.height) return null
 
-    const dpr = window.devicePixelRatio || 1
+    const dpr = Math.min(2, Math.max(1, window.devicePixelRatio || 1))
     const width = canvas.width / dpr
     const height = canvas.height / dpr
 

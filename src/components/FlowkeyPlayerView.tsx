@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react'
+import React, { useState, useEffect, useCallback } from 'react'
 import type { Piece } from '../types/music'
 import type { MasterEditionId } from '../types/edition'
 import type { LanguageCode } from '../i18n/translations'
@@ -77,6 +77,9 @@ interface FlowkeyPlayerViewProps {
   onScreenKeyPress?: (midi: number) => void
   onScreenKeyRelease?: (midi: number) => void
   onTogglePedal?: () => void
+  countInBeat?: number | null
+  isCountInEnabled?: boolean
+  onToggleCountIn?: () => void
 }
 
 export const FlowkeyPlayerView: React.FC<FlowkeyPlayerViewProps> = ({
@@ -123,13 +126,22 @@ export const FlowkeyPlayerView: React.FC<FlowkeyPlayerViewProps> = ({
   onScreenKeyPress,
   onScreenKeyRelease,
   onTogglePedal,
+  countInBeat = null,
+  isCountInEnabled = true,
+  onToggleCountIn,
 }) => {
   const [speedMenuOpen, setSpeedMenuOpen] = useState(false)
   const [sectionsMenuOpen, setSectionsMenuOpen] = useState(false)
   const [editionMenuOpen, setEditionMenuOpen] = useState(false)
   const [themeMenuOpen, setThemeMenuOpen] = useState(false)
   const [isMasterclassOpen, setIsMasterclassOpen] = useState(false)
-  const [viewLayout, setViewLayout] = useState<'split' | 'keyboard' | 'sheet'>('keyboard')
+  const [viewLayout, setViewLayoutState] = useState<'split' | 'keyboard' | 'sheet'>(() => {
+    return (localStorage.getItem('virtuoso_view_layout') as 'split' | 'keyboard' | 'sheet') || 'split'
+  })
+  const setViewLayout = useCallback((layout: 'split' | 'keyboard' | 'sheet') => {
+    setViewLayoutState(layout)
+    localStorage.setItem('virtuoso_view_layout', layout)
+  }, [])
   const [viewPerspective, setViewPerspective] = useState<'2d' | '3d'>('2d')
   const [theme, setTheme] = useState<VisualTheme>(() => {
     return (localStorage.getItem('virtuoso_theme') as VisualTheme) || 'ylia'
@@ -180,6 +192,19 @@ export const FlowkeyPlayerView: React.FC<FlowkeyPlayerViewProps> = ({
 
   return (
     <div className="w-full h-full flex flex-col bg-[#07070b] text-zinc-100 select-none overflow-hidden relative font-sans">
+      {/* IMMERSIVE COUNT-IN / PRE-ROLL OVERLAY */}
+      {countInBeat !== null && (
+        <div className="absolute inset-0 z-50 flex items-center justify-center bg-black/50 backdrop-blur-[2px] pointer-events-none select-none animate-in fade-in duration-100">
+          <div className="flex flex-col items-center justify-center">
+            <div className="text-8xl sm:text-9xl font-black font-mono tracking-tighter text-transparent bg-clip-text bg-gradient-to-tr from-amber-400 via-orange-500 to-amber-200 drop-shadow-[0_0_40px_rgba(245,158,11,0.9)] animate-pulse">
+              {countInBeat}
+            </div>
+            <div className="text-xs sm:text-sm uppercase font-black tracking-widest text-amber-200 mt-2 bg-amber-950/80 px-4 py-1.5 rounded-full border border-amber-500/50 shadow-lg">
+              {language === 'de' ? 'Bereit machen...' : 'Get Ready...'}
+            </div>
+          </div>
+        </div>
+      )}
       {/* 1. TOP PREMIUM PLAYER HEADER BAR */}
       <header className="h-[calc(3rem+var(--sat))] landscape:h-11 pt-[var(--sat)] landscape:pt-0 bg-zinc-950/90 backdrop-blur-xl border-b border-white/[0.08] px-3 sm:px-6 pl-[max(0.75rem,env(safe-area-inset-left),env(safe-area-inset-right))] pr-[max(0.75rem,env(safe-area-inset-left),env(safe-area-inset-right))] flex items-center justify-between z-30 flex-shrink-0 shadow-md">
         {/* Left: Back Button & Piece Info */}
@@ -979,6 +1004,19 @@ export const FlowkeyPlayerView: React.FC<FlowkeyPlayerViewProps> = ({
                 <span>Metro</span>
               </button>
             )}
+            {onToggleCountIn && (
+              <button
+                onClick={onToggleCountIn}
+                className={`px-2 py-1 rounded-lg border text-[10px] font-bold flex items-center gap-1 transition-all ${
+                  isCountInEnabled
+                    ? 'bg-amber-500/20 border-amber-500/60 text-amber-300'
+                    : 'bg-zinc-900 border-white/10 text-zinc-400'
+                }`}
+                title="Count-In"
+              >
+                <span className="font-mono text-[10px] font-bold">1-4</span>
+              </button>
+            )}
           </div>
         </div>
 
@@ -1146,6 +1184,21 @@ export const FlowkeyPlayerView: React.FC<FlowkeyPlayerViewProps> = ({
             >
               <Timer className="w-3.5 h-3.5" />
               <span>Metro</span>
+            </button>
+          )}
+
+          {/* Count-In Pre-Roll Toggle */}
+          {onToggleCountIn && (
+            <button
+              onClick={onToggleCountIn}
+              className={`flex items-center gap-1 px-2.5 py-1.5 rounded-xl border text-xs font-bold transition-all shadow-sm active:scale-95 ${
+                isCountInEnabled
+                  ? 'bg-amber-500/20 border-amber-500/60 text-amber-300 shadow-[0_0_12px_rgba(245,158,11,0.3)]'
+                  : 'bg-zinc-900 hover:bg-zinc-800 border-white/10 text-zinc-500 hover:text-zinc-300'
+              }`}
+              title="1-Measure Count-in Countdown"
+            >
+              <span className="font-mono text-[11px] font-black tracking-tighter">1 2 3 4</span>
             </button>
           )}
         </div>

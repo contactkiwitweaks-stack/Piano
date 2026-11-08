@@ -1,7 +1,7 @@
 import React, { useRef, useEffect, useMemo, useState, useCallback } from 'react'
 import type { NoteEvent, Piece, PedalEvent } from '../types/music'
 import type { LanguageCode } from '../i18n/translations'
-import { X, ChevronLeft, ChevronRight, BookOpen, StretchHorizontal, Sparkles } from 'lucide-react'
+import { X, ChevronLeft, ChevronRight, BookOpen, StretchHorizontal, Sparkles, Moon, Sun } from 'lucide-react'
 
 interface SheetMusicViewProps {
   piece: Piece
@@ -83,6 +83,25 @@ export const SheetMusicView: React.FC<SheetMusicViewProps> = ({
   // Default is 'page' as requested by the user
   const [layoutMode, setLayoutMode] = useState<'page' | 'strip'>('page')
   const [containerWidth, setContainerWidth] = useState<number>(800)
+
+  // Score theme: 'ivory' (Henle Urtext) vs 'dark' (OLED Night Score)
+  const [scoreTheme, setScoreTheme] = useState<'ivory' | 'dark'>(() => {
+    return (localStorage.getItem('virtuoso_score_theme') as 'ivory' | 'dark') || 'ivory'
+  })
+
+  const toggleScoreTheme = useCallback(() => {
+    setScoreTheme((prev) => {
+      const next = prev === 'ivory' ? 'dark' : 'ivory'
+      localStorage.setItem('virtuoso_score_theme', next)
+      return next
+    })
+  }, [])
+
+  const isDark = scoreTheme === 'dark'
+  const inkColor = isDark ? '#f4f4f5' : '#1a1a1a'
+  const staveLineColor = isDark ? '#4b4b58' : '#2a2a2a'
+  const barlineColor = isDark ? '#52525b' : '#1a1a1a'
+  const pedalColor = isDark ? '#a1a1aa' : '#57534e'
 
   // Track container width to dynamically optimize measures per system
   useEffect(() => {
@@ -316,10 +335,10 @@ export const SheetMusicView: React.FC<SheetMusicViewProps> = ({
           <path
             d={`M 14 ${trebleTopY} C 4 ${trebleTopY + 16}, 4 ${middleCY - 10}, 0 ${middleCY} C 4 ${middleCY + 10}, 4 ${bassBottomY - 16}, 14 ${bassBottomY}`}
             fill="none"
-            stroke="#1a1a1a"
+            stroke={inkColor}
             strokeWidth="2.4"
           />
-          <line x1="16" y1={trebleTopY} x2="16" y2={bassBottomY} stroke="#1a1a1a" strokeWidth="1.5" />
+          <line x1="16" y1={trebleTopY} x2="16" y2={bassBottomY} stroke={inkColor} strokeWidth="1.5" />
 
           {/* Treble Stave Lines (5 lines) */}
           {[0, 1, 2, 3, 4].map((i) => (
@@ -329,7 +348,7 @@ export const SheetMusicView: React.FC<SheetMusicViewProps> = ({
               y1={trebleTopY + i * lineSpacing}
               x2={width}
               y2={trebleTopY + i * lineSpacing}
-              stroke="#2a2a2a"
+              stroke={staveLineColor}
               strokeWidth="1.2"
             />
           ))}
@@ -342,7 +361,7 @@ export const SheetMusicView: React.FC<SheetMusicViewProps> = ({
               y1={bassTopY + i * lineSpacing}
               x2={width}
               y2={bassTopY + i * lineSpacing}
-              stroke="#2a2a2a"
+              stroke={staveLineColor}
               strokeWidth="1.2"
             />
           ))}
@@ -352,7 +371,7 @@ export const SheetMusicView: React.FC<SheetMusicViewProps> = ({
             x="20"
             y={trebleBottomY - lineSpacing * 0.3}
             fontSize="36"
-            fill="#1a1a1a"
+            fill={inkColor}
             fontFamily="serif"
             textAnchor="start"
           >
@@ -364,7 +383,7 @@ export const SheetMusicView: React.FC<SheetMusicViewProps> = ({
             x="22"
             y={bassTopY + lineSpacing * 2.8}
             fontSize="30"
-            fill="#1a1a1a"
+            fill={inkColor}
             fontFamily="serif"
             textAnchor="start"
           >
@@ -376,20 +395,20 @@ export const SheetMusicView: React.FC<SheetMusicViewProps> = ({
             <g>
               {keyFlatsCount >= 1 && (
                 <>
-                  <text x="46" y={trebleTopY + lineSpacing * 2 + 4.5} fontSize="13" fill="#1a1a1a" fontFamily="serif">♭</text>
-                  <text x="46" y={bassTopY + lineSpacing * 3 + 4.5} fontSize="13" fill="#1a1a1a" fontFamily="serif">♭</text>
+                  <text x="46" y={trebleTopY + lineSpacing * 2 + 4.5} fontSize="13" fill={inkColor} fontFamily="serif">♭</text>
+                  <text x="46" y={bassTopY + lineSpacing * 3 + 4.5} fontSize="13" fill={inkColor} fontFamily="serif">♭</text>
                 </>
               )}
               {keyFlatsCount >= 2 && (
                 <>
-                  <text x="53" y={trebleTopY + lineSpacing * 0.5 + 4.5} fontSize="13" fill="#1a1a1a" fontFamily="serif">♭</text>
-                  <text x="53" y={bassTopY + lineSpacing * 1.5 + 4.5} fontSize="13" fill="#1a1a1a" fontFamily="serif">♭</text>
+                  <text x="53" y={trebleTopY + lineSpacing * 0.5 + 4.5} fontSize="13" fill={inkColor} fontFamily="serif">♭</text>
+                  <text x="53" y={bassTopY + lineSpacing * 1.5 + 4.5} fontSize="13" fill={inkColor} fontFamily="serif">♭</text>
                 </>
               )}
               {keyFlatsCount >= 3 && (
                 <>
-                  <text x="60" y={trebleTopY + lineSpacing * 2.5 + 4.5} fontSize="13" fill="#1a1a1a" fontFamily="serif">♭</text>
-                  <text x="60" y={bassTopY + lineSpacing * 3.5 + 4.5} fontSize="13" fill="#1a1a1a" fontFamily="serif">♭</text>
+                  <text x="60" y={trebleTopY + lineSpacing * 2.5 + 4.5} fontSize="13" fill={inkColor} fontFamily="serif">♭</text>
+                  <text x="60" y={bassTopY + lineSpacing * 3.5 + 4.5} fontSize="13" fill={inkColor} fontFamily="serif">♭</text>
                 </>
               )}
             </g>
@@ -400,14 +419,14 @@ export const SheetMusicView: React.FC<SheetMusicViewProps> = ({
             <g>
               {keySharpsCount >= 1 && (
                 <>
-                  <text x="46" y={trebleTopY + 4} fontSize="12" fill="#1a1a1a" fontFamily="serif">♯</text>
-                  <text x="46" y={bassTopY + lineSpacing * 1 + 4} fontSize="12" fill="#1a1a1a" fontFamily="serif">♯</text>
+                  <text x="46" y={trebleTopY + 4} fontSize="12" fill={inkColor} fontFamily="serif">♯</text>
+                  <text x="46" y={bassTopY + lineSpacing * 1 + 4} fontSize="12" fill={inkColor} fontFamily="serif">♯</text>
                 </>
               )}
               {keySharpsCount >= 2 && (
                 <>
-                  <text x="53" y={trebleTopY + lineSpacing * 1.5 + 4} fontSize="12" fill="#1a1a1a" fontFamily="serif">♯</text>
-                  <text x="53" y={bassTopY + lineSpacing * 2.5 + 4} fontSize="12" fill="#1a1a1a" fontFamily="serif">♯</text>
+                  <text x="53" y={trebleTopY + lineSpacing * 1.5 + 4} fontSize="12" fill={inkColor} fontFamily="serif">♯</text>
+                  <text x="53" y={bassTopY + lineSpacing * 2.5 + 4} fontSize="12" fill={inkColor} fontFamily="serif">♯</text>
                 </>
               )}
             </g>
@@ -421,7 +440,7 @@ export const SheetMusicView: React.FC<SheetMusicViewProps> = ({
                 y={trebleTopY + lineSpacing * 1.7}
                 fontSize="15"
                 fontWeight="bold"
-                fill="#1a1a1a"
+                fill={inkColor}
                 fontFamily="serif"
                 textAnchor="middle"
               >
@@ -432,7 +451,7 @@ export const SheetMusicView: React.FC<SheetMusicViewProps> = ({
                 y={trebleTopY + lineSpacing * 3.7}
                 fontSize="15"
                 fontWeight="bold"
-                fill="#1a1a1a"
+                fill={inkColor}
                 fontFamily="serif"
                 textAnchor="middle"
               >
@@ -443,7 +462,7 @@ export const SheetMusicView: React.FC<SheetMusicViewProps> = ({
                 y={bassTopY + lineSpacing * 1.7}
                 fontSize="15"
                 fontWeight="bold"
-                fill="#1a1a1a"
+                fill={inkColor}
                 fontFamily="serif"
                 textAnchor="middle"
               >
@@ -454,7 +473,7 @@ export const SheetMusicView: React.FC<SheetMusicViewProps> = ({
                 y={bassTopY + lineSpacing * 3.7}
                 fontSize="15"
                 fontWeight="bold"
-                fill="#1a1a1a"
+                fill={inkColor}
                 fontFamily="serif"
                 textAnchor="middle"
               >
@@ -494,10 +513,18 @@ export const SheetMusicView: React.FC<SheetMusicViewProps> = ({
         className={`relative cursor-pointer transition-colors duration-150 ${
           isCurrent
             ? isWaitMode
-              ? 'bg-amber-100/60 ring-2 ring-amber-400/70 shadow-sm'
+              ? isDark
+                ? 'bg-amber-500/25 ring-2 ring-amber-400/80 shadow-md'
+                : 'bg-amber-100/60 ring-2 ring-amber-400/70 shadow-sm'
+              : isDark
+              ? 'bg-amber-500/15 ring-1 ring-amber-400/50'
               : 'bg-amber-50/70 ring-1 ring-amber-400/50'
             : isInLoop
-            ? 'bg-blue-50/60 ring-1 ring-blue-300/60'
+            ? isDark
+              ? 'bg-blue-500/20 ring-1 ring-blue-400/60'
+              : 'bg-blue-50/60 ring-1 ring-blue-300/60'
+            : isDark
+            ? 'hover:bg-zinc-800/40'
             : 'hover:bg-stone-100/50'
         } ${isFixedPx ? 'flex-shrink-0' : 'flex-1 min-w-0'}`}
         style={{
@@ -597,11 +624,11 @@ export const SheetMusicView: React.FC<SheetMusicViewProps> = ({
           {isLastMeasure ? (
             /* Urtext Final Double Bar Line (thin + thick) */
             <g>
-              <line x1="96%" y1={trebleTopY} x2="96%" y2={bassBottomY} stroke="#1a1a1a" strokeWidth="1.2" />
-              <line x1="99%" y1={trebleTopY} x2="99%" y2={bassBottomY} stroke="#1a1a1a" strokeWidth="3.2" />
+              <line x1="96%" y1={trebleTopY} x2="96%" y2={bassBottomY} stroke={barlineColor} strokeWidth="1.2" />
+              <line x1="99%" y1={trebleTopY} x2="99%" y2={bassBottomY} stroke={barlineColor} strokeWidth="3.2" />
             </g>
           ) : (
-            <line x1="100%" y1={trebleTopY} x2="100%" y2={bassBottomY} stroke="#1a1a1a" strokeWidth="1.3" />
+            <line x1="100%" y1={trebleTopY} x2="100%" y2={bassBottomY} stroke={barlineColor} strokeWidth="1.3" />
           )}
 
           {/* Treble Stave Lines (5 lines) */}
@@ -612,7 +639,7 @@ export const SheetMusicView: React.FC<SheetMusicViewProps> = ({
               y1={trebleTopY + i * lineSpacing}
               x2="100%"
               y2={trebleTopY + i * lineSpacing}
-              stroke="#2a2a2a"
+              stroke={staveLineColor}
               strokeWidth="1.2"
             />
           ))}
@@ -625,7 +652,7 @@ export const SheetMusicView: React.FC<SheetMusicViewProps> = ({
               y1={bassTopY + i * lineSpacing}
               x2="100%"
               y2={bassTopY + i * lineSpacing}
-              stroke="#2a2a2a"
+              stroke={staveLineColor}
               strokeWidth="1.2"
             />
           ))}
@@ -647,7 +674,7 @@ export const SheetMusicView: React.FC<SheetMusicViewProps> = ({
                 fontFamily="serif"
                 fontStyle="italic"
                 fontWeight="bold"
-                fill="#854d0e"
+                fill={isDark ? '#fbbf24' : '#854d0e'}
                 textAnchor="start"
                 className="select-none pointer-events-none"
               >
@@ -693,8 +720,8 @@ export const SheetMusicView: React.FC<SheetMusicViewProps> = ({
             // Note Coloration:
             // Awaited note in Wait Mode: Radiant Amber (#ea580c)
             // Actively sounding note: Emerald Green (#16a34a)
-            // Regular Urtext score note: Classical Black (#1a1a1a)
-            const noteColor = isExpectedInWait ? '#ea580c' : isSounding ? '#16a34a' : '#1a1a1a'
+            // Regular Urtext score note: inkColor
+            const noteColor = isExpectedInWait ? '#ea580c' : isSounding ? '#16a34a' : inkColor
 
             const hasSharp = note.noteName.includes('#')
             const hasFlat = note.noteName.includes('b')
@@ -712,7 +739,7 @@ export const SheetMusicView: React.FC<SheetMusicViewProps> = ({
                     y1={ly}
                     x2={`${xPercent + 3}%`}
                     y2={ly}
-                    stroke="#1a1a1a"
+                    stroke={inkColor}
                     strokeWidth="1.4"
                   />
                 ))}
@@ -807,12 +834,12 @@ export const SheetMusicView: React.FC<SheetMusicViewProps> = ({
                 fontFamily="serif"
                 fontStyle="italic"
                 fontWeight="bold"
-                fill="#57534e"
+                fill={pedalColor}
               >
                 Ped.
               </text>
-              <line x1="28%" y1={pedalLineY} x2="92%" y2={pedalLineY} stroke="#57534e" strokeWidth="1.3" />
-              <line x1="92%" y1={pedalLineY} x2="92%" y2={pedalLineY - 5} stroke="#57534e" strokeWidth="1.3" />
+              <line x1="28%" y1={pedalLineY} x2="92%" y2={pedalLineY} stroke={pedalColor} strokeWidth="1.3" />
+              <line x1="92%" y1={pedalLineY} x2="92%" y2={pedalLineY - 5} stroke={pedalColor} strokeWidth="1.3" />
             </g>
           ))}
         </svg>
@@ -821,53 +848,69 @@ export const SheetMusicView: React.FC<SheetMusicViewProps> = ({
   }
 
   return (
-    <div className="w-full h-full bg-[#fcfaf6] flex flex-col select-none overflow-hidden relative border-t border-stone-200">
+    <div className={`w-full h-full ${isDark ? 'bg-[#0e0e12]' : 'bg-[#fcfaf6]'} flex flex-col select-none overflow-hidden relative border-t ${isDark ? 'border-zinc-800' : 'border-stone-200'}`}>
       {/* SCORE MASTHEAD HEADER */}
-      <div className="px-4 py-2 border-b border-stone-200/80 bg-[#f9f6f0] flex items-center justify-between flex-shrink-0 z-10 shadow-xs">
+      <div className={`px-4 py-2 border-b ${isDark ? 'bg-[#141419] border-zinc-800' : 'bg-[#f9f6f0] border-stone-200/80'} flex items-center justify-between flex-shrink-0 z-10 shadow-xs`}>
         <div className="flex items-center gap-3">
           <div className="flex flex-col">
-            <h2 className="text-stone-900 font-serif font-bold text-sm sm:text-base leading-tight tracking-wide flex items-center gap-2">
+            <h2 className={`${isDark ? 'text-zinc-100' : 'text-stone-900'} font-serif font-bold text-sm sm:text-base leading-tight tracking-wide flex items-center gap-2`}>
               <span>{piece.title}</span>
               {isWaitMode && (
-                <span className="inline-flex items-center gap-1 text-[10px] font-sans font-bold bg-amber-500/15 text-amber-800 px-2 py-0.5 rounded-full border border-amber-300">
-                  <Sparkles className="w-2.5 h-2.5 text-amber-600" />
+                <span className={`inline-flex items-center gap-1 text-[10px] font-sans font-bold px-2 py-0.5 rounded-full border ${isDark ? 'bg-amber-500/20 text-amber-300 border-amber-500/40' : 'bg-amber-500/15 text-amber-800 border-amber-300'}`}>
+                  <Sparkles className="w-2.5 h-2.5 text-amber-500" />
                   Wartemodus
                 </span>
               )}
             </h2>
-            <p className="text-stone-600 text-xs font-serif italic">
+            <p className={`${isDark ? 'text-zinc-400' : 'text-stone-600'} text-xs font-serif italic`}>
               {piece.composer} • {piece.key || 'Original Tonart'} •{' '}
               {piece.timeSignature ? `${piece.timeSignature[0]}/${piece.timeSignature[1]}` : '4/4'}
             </p>
           </div>
         </div>
 
-        {/* VIEW MODE TOGGLE (Vollständiges Notenblatt vs Horizontaler Notenband) */}
-        <div className="flex items-center gap-1 bg-stone-200/80 p-0.5 rounded-lg border border-stone-300/60 shadow-inner">
+        {/* CONTROLS (Theme Switcher + View Mode Toggle) */}
+        <div className="flex items-center gap-2">
+          {/* OLED Dark / Ivory Urtext Toggle */}
           <button
-            onClick={() => setLayoutMode('page')}
-            className={`flex items-center gap-1.5 px-2.5 py-1 rounded-md text-xs font-semibold transition-all ${
-              layoutMode === 'page'
-                ? 'bg-white text-stone-900 shadow-sm'
-                : 'text-stone-600 hover:text-stone-900'
+            onClick={toggleScoreTheme}
+            className={`p-1.5 rounded-lg border transition-all ${
+              isDark
+                ? 'bg-zinc-800 text-amber-400 border-zinc-700 hover:bg-zinc-750'
+                : 'bg-white text-stone-700 border-stone-300 hover:bg-stone-50 shadow-sm'
             }`}
-            title="Vollständiges Notenblatt (Henle Urtext Seitenansicht)"
+            title={isDark ? 'Helles Notenblatt (Henle Urtext)' : 'Dunkles Notenblatt (OLED Nachtmodus)'}
           >
-            <BookOpen className="w-3.5 h-3.5" />
-            <span className="hidden sm:inline">Notenblatt</span>
+            {isDark ? <Sun className="w-3.5 h-3.5" /> : <Moon className="w-3.5 h-3.5" />}
           </button>
-          <button
-            onClick={() => setLayoutMode('strip')}
-            className={`flex items-center gap-1.5 px-2.5 py-1 rounded-md text-xs font-semibold transition-all ${
-              layoutMode === 'strip'
-                ? 'bg-white text-stone-900 shadow-sm'
-                : 'text-stone-600 hover:text-stone-900'
-            }`}
-            title="Horizontaler Notenfluss (Fortlaufendes Band)"
-          >
-            <StretchHorizontal className="w-3.5 h-3.5" />
-            <span className="hidden sm:inline">Notenband</span>
-          </button>
+
+          {/* VIEW MODE TOGGLE (Vollständiges Notenblatt vs Horizontaler Notenband) */}
+          <div className={`flex items-center gap-1 p-0.5 rounded-lg border shadow-inner ${isDark ? 'bg-zinc-800/90 border-zinc-700' : 'bg-stone-200/80 border-stone-300/60'}`}>
+            <button
+              onClick={() => setLayoutMode('page')}
+              className={`flex items-center gap-1.5 px-2.5 py-1 rounded-md text-xs font-semibold transition-all ${
+                layoutMode === 'page'
+                  ? isDark ? 'bg-zinc-700 text-white shadow-sm' : 'bg-white text-stone-900 shadow-sm'
+                  : isDark ? 'text-zinc-400 hover:text-zinc-200' : 'text-stone-600 hover:text-stone-900'
+              }`}
+              title="Vollständiges Notenblatt (Henle Urtext Seitenansicht)"
+            >
+              <BookOpen className="w-3.5 h-3.5" />
+              <span className="hidden sm:inline">Notenblatt</span>
+            </button>
+            <button
+              onClick={() => setLayoutMode('strip')}
+              className={`flex items-center gap-1.5 px-2.5 py-1 rounded-md text-xs font-semibold transition-all ${
+                layoutMode === 'strip'
+                  ? isDark ? 'bg-zinc-700 text-white shadow-sm' : 'bg-white text-stone-900 shadow-sm'
+                  : isDark ? 'text-zinc-400 hover:text-zinc-200' : 'text-stone-600 hover:text-stone-900'
+              }`}
+              title="Horizontaler Notenfluss (Fortlaufendes Band)"
+            >
+              <StretchHorizontal className="w-3.5 h-3.5" />
+              <span className="hidden sm:inline">Notenband</span>
+            </button>
+          </div>
         </div>
       </div>
 
@@ -875,7 +918,7 @@ export const SheetMusicView: React.FC<SheetMusicViewProps> = ({
       {layoutMode === 'page' && (
         <div
           ref={pageContainerRef}
-          className="flex-1 overflow-y-auto overflow-x-hidden p-3 sm:p-6 space-y-6 scroll-smooth bg-[#fcfaf6]"
+          className={`flex-1 overflow-y-auto overflow-x-hidden p-3 sm:p-6 space-y-6 scroll-smooth ${isDark ? 'bg-[#0e0e12]' : 'bg-[#fcfaf6]'}`}
         >
           {systems.map((sys) => {
             const isFirstSystem = sys.systemIndex === 0
@@ -887,8 +930,8 @@ export const SheetMusicView: React.FC<SheetMusicViewProps> = ({
                 data-system={sys.systemIndex}
                 className={`w-full flex items-center transition-all duration-200 rounded-xl p-1 ${
                   isSystemActive
-                    ? 'ring-2 ring-amber-400/80 bg-amber-500/[0.04] shadow-md'
-                    : 'hover:bg-stone-100/30'
+                    ? isDark ? 'ring-2 ring-amber-400/80 bg-amber-500/[0.08] shadow-lg' : 'ring-2 ring-amber-400/80 bg-amber-500/[0.04] shadow-md'
+                    : isDark ? 'hover:bg-zinc-800/20' : 'hover:bg-stone-100/30'
                 }`}
                 style={{ height: totalSvgHeight + 8 }}
               >
@@ -909,7 +952,7 @@ export const SheetMusicView: React.FC<SheetMusicViewProps> = ({
       {layoutMode === 'strip' && (
         <div
           ref={scrollContainerRef}
-          className="flex-1 flex overflow-x-auto overflow-y-hidden px-4 py-2 scroll-smooth items-center scrollbar-none bg-[#fcfaf6]"
+          className={`flex-1 flex overflow-x-auto overflow-y-hidden px-4 py-2 scroll-smooth items-center scrollbar-none ${isDark ? 'bg-[#0e0e12]' : 'bg-[#fcfaf6]'}`}
         >
           {/* Clefs, Key Signature (Fixed on Left) */}
           {renderClefBlock(true)}

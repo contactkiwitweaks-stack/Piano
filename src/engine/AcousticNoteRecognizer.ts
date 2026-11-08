@@ -4,11 +4,13 @@
 // Subharmonic overtone demixing, and Target-Informed Bayesian Prior Matching.
 
 import { MidiManager } from '../midi/MidiManager'
+import { PianoAudioEngine } from '../audio/PianoAudioEngine'
 
 export class AcousticNoteRecognizer {
   private static instance: AcousticNoteRecognizer
   private audioCtx: AudioContext | null = null
   private analyser: AnalyserNode | null = null
+  private sourceNode: MediaStreamAudioSourceNode | null = null
   private micStream: MediaStream | null = null
   private animationFrameId: number | null = null
 
@@ -74,10 +76,17 @@ export class AcousticNoteRecognizer {
     if (this._isListening) return true
 
     try {
-      const AudioCtxClass =
-        window.AudioContext ||
-        (window as unknown as { webkitAudioContext: typeof AudioContext }).webkitAudioContext
-      this.audioCtx = new AudioCtxClass({ latencyHint: 'interactive' })
+      // Prioritize reusing the singleton PianoAudioEngine AudioContext to eliminate iOS hardware context limits
+      const sharedCtx = PianoAudioEngine.getInstance().getAudioContext()
+      if (sharedCtx) {
+        this.audioCtx = sharedCtx
+      } else {
+        const AudioCtxClass =
+          window.AudioContext ||
+          (window as unknown as { webkitAudioContext: typeof AudioContext }).webkitAudioContext
+        this.audioCtx = new AudioCtxClass({ latencyHint: 'interactive' })
+      }
+
       if (this.audioCtx.state === 'suspended') {
         await this.audioCtx.resume()
       }
@@ -100,12 +109,12 @@ export class AcousticNoteRecognizer {
         this.micStream = await navigator.mediaDevices.getUserMedia({ audio: true })
       }
 
-      const source = this.audioCtx.createMediaStreamSource(this.micStream)
+      this.sourceNode = this.audioCtx.createMediaStreamSource(this.micStream)
       this.analyser = this.audioCtx.createAnalyser()
       // 4096 FFT size gives ~10.7 Hz frequency bin resolution at 44.1kHz (essential for piano bass and mid-range)
       this.analyser.fftSize = 4096
       this.analyser.smoothingTimeConstant = 0.25 // Fast responsiveness to piano hammer strikes
-      source.connect(this.analyser)
+      this.sourceNode.connect(this.analyser)
 
       this._isListening = true
       this.processLoop()
@@ -133,15 +142,27 @@ export class AcousticNoteRecognizer {
       this.animationFrameId = null
     }
 
+    if (this.sourceNode) {
+      try { this.sourceNode.disconnect() } catch {}
+      this.sourceNode = null
+    }
+
+    if (this.analyser) {
+      try { this.analyser.disconnect() } catch {}
+      this.analyser = null
+    }
+
     if (this.micStream) {
       this.micStream.getTracks().forEach((track) => track.stop())
       this.micStream = null
     }
 
-    if (this.audioCtx) {
+    // Never close the shared PianoAudioEngine context! Only close if we had to create a standalone fallback context
+    const sharedCtx = PianoAudioEngine.getInstance().getAudioContext()
+    if (this.audioCtx && this.audioCtx !== sharedCtx) {
       this.audioCtx.close().catch(() => {})
-      this.audioCtx = null
     }
+    this.audioCtx = null
 
     // Release any lingering acoustic notes
     this.activeMidis.forEach((midi) => {
