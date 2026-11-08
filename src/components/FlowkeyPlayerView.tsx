@@ -75,6 +75,7 @@ interface FlowkeyPlayerViewProps {
   onOpenBluetoothModal: () => void
   onBackToDiscovery: () => void
   onScreenKeyPress?: (midi: number) => void
+  onScreenKeyRelease?: (midi: number) => void
   onTogglePedal?: () => void
 }
 
@@ -120,6 +121,7 @@ export const FlowkeyPlayerView: React.FC<FlowkeyPlayerViewProps> = ({
   onOpenBluetoothModal,
   onBackToDiscovery,
   onScreenKeyPress,
+  onScreenKeyRelease,
   onTogglePedal,
 }) => {
   const [speedMenuOpen, setSpeedMenuOpen] = useState(false)
@@ -897,6 +899,7 @@ export const FlowkeyPlayerView: React.FC<FlowkeyPlayerViewProps> = ({
             handMode={handMode}
             expectedNotes={expectedNotes}
             onScreenKeyPress={onScreenKeyPress}
+            onScreenKeyRelease={onScreenKeyRelease}
             onTogglePedal={onTogglePedal}
             showFingers={false}
             wallpaperUrl={yliaWallpaper}
@@ -1159,6 +1162,11 @@ export const FlowkeyPlayerView: React.FC<FlowkeyPlayerViewProps> = ({
             piece={piece}
             currentTime={currentTime}
             activeNotes={activeNotes}
+            expectedNotes={expectedNotes}
+            isWaitMode={playMode === 'practice'}
+            playMode={playMode}
+            handMode={handMode}
+            isPlaying={isPlaying}
             onSeek={onSeek}
             isLooping={isLooping}
             loopRange={loopRange}

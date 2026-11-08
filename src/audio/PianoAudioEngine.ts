@@ -138,7 +138,12 @@ export class PianoAudioEngine {
     this.wetGain.gain.setValueAtTime(0.25, this.ctx.currentTime) // default 25% concert hall acoustic bloom
 
     this.convolver = this.ctx.createConvolver()
-    this.convolver.buffer = this.generateImpulseResponse(2.6, 2.1)
+    try {
+      const impulseBuf = this.generateImpulseResponse(2.2, 2.4)
+      if (impulseBuf) {
+        this.convolver.buffer = impulseBuf
+      }
+    } catch {}
 
     // Routing: soundboardFilter -> lowShelf -> spruceResonance -> unaCordaFilter -> unaCordaGain
     //          unaCordaGain -> dryGain -> masterGain -> destination
@@ -332,30 +337,34 @@ export class PianoAudioEngine {
   }
 
   /**
-   * Resilient audio decoding with OfflineAudioContext to prevent iOS suspended-context freeze
+   * Resilient, leak-free audio decoding using the single shared AudioContext
+   * (Prevents iOS WebKit QuotaExceededError by never instantiating multiple audio contexts).
    */
   private async decodeAudioBuffer(arrayBuf: ArrayBuffer): Promise<AudioBuffer | null> {
-    const OfflineCtxClass =
-      window.OfflineAudioContext ||
-      (window as unknown as { webkitOfflineAudioContext: typeof OfflineAudioContext }).webkitOfflineAudioContext
-
-    if (OfflineCtxClass) {
-      try {
-        const offlineCtx = new OfflineCtxClass(1, 44100, 44100)
-        return await new Promise<AudioBuffer>((resolve, reject) => {
-          offlineCtx.decodeAudioData(arrayBuf.slice(0), resolve, reject)
-        })
-      } catch {}
-    }
-
+    if (!this.ctx) this.init()
     if (!this.ctx) return null
-    return await new Promise<AudioBuffer>((resolve, reject) => {
-      this.ctx!.decodeAudioData(arrayBuf.slice(0), resolve, reject)
+    const slice = arrayBuf.slice(0)
+    return new Promise<AudioBuffer | null>((resolve) => {
+      try {
+        const promiseOrVoid = this.ctx!.decodeAudioData(
+          slice,
+          (buffer) => resolve(buffer),
+          () => resolve(null)
+        )
+        if (promiseOrVoid && typeof (promiseOrVoid as unknown as Promise<AudioBuffer>).then === 'function') {
+          (promiseOrVoid as unknown as Promise<AudioBuffer>)
+            .then((b) => resolve(b))
+            .catch(() => resolve(null))
+        }
+      } catch {
+        resolve(null)
+      }
     })
   }
 
   /**
-   * Load and decode all 30 concert grand piano samples with multi-path & CDN resilience
+   * Load and decode concert grand piano samples in throttled batches
+   * with multi-path resolution and instant physical modeling synth fallback.
    */
   public async loadSamples() {
     if (this.isLoadingSamples || this.samplesLoaded || !this.ctx) return
@@ -368,15 +377,14 @@ export class PianoAudioEngine {
         `/samples/piano/${name}.mp3`,
         `samples/piano/${name}.mp3`,
         origin ? `${origin}/samples/piano/${name}.mp3` : '',
-        `https://raw.githubusercontent.com/contactkiwitweaks-stack/Piano/main/public/samples/piano/${name}.mp3`,
-        `https://cdn.jsdelivr.net/gh/contactkiwitweaks-stack/Piano@main/public/samples/piano/${name}.mp3`,
       ].filter(Boolean) as string[]
 
       for (const p of paths) {
         try {
           const resp = await fetch(p)
           if (resp && resp.ok) {
-            return await resp.arrayBuffer()
+            const buf = await resp.arrayBuffer()
+            if (buf && buf.byteLength > 1000) return buf
           }
         } catch {}
       }
@@ -384,19 +392,24 @@ export class PianoAudioEngine {
     }
 
     try {
-      const loadPromises = SAMPLE_FILES.map(async ({ midi, name }) => {
-        try {
-          const arrayBuf = await tryFetchAudio(name)
-          if (arrayBuf) {
-            const audioBuf = await this.decodeAudioBuffer(arrayBuf)
-            if (audioBuf) {
-              this.samples.set(midi, audioBuf)
-            }
-          }
-        } catch {}
-      })
-
-      await Promise.all(loadPromises)
+      // Load in batches of 4 to prevent network socket starvation on iOS
+      const batchSize = 4
+      for (let i = 0; i < SAMPLE_FILES.length; i += batchSize) {
+        const batch = SAMPLE_FILES.slice(i, i + batchSize)
+        await Promise.all(
+          batch.map(async ({ midi, name }) => {
+            try {
+              const arrayBuf = await tryFetchAudio(name)
+              if (arrayBuf) {
+                const audioBuf = await this.decodeAudioBuffer(arrayBuf)
+                if (audioBuf) {
+                  this.samples.set(midi, audioBuf)
+                }
+              }
+            } catch {}
+          })
+        )
+      }
       this.samplesLoaded = this.samples.size > 0
     } catch {
       // Gracefully fall back to physical modeling synth

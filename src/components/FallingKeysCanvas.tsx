@@ -18,6 +18,7 @@ interface FallingKeysCanvasProps {
   handMode?: 'both' | 'right' | 'left'
   expectedNotes?: number[]
   onScreenKeyPress?: (midi: number) => void
+  onScreenKeyRelease?: (midi: number) => void
   onTogglePedal?: () => void
   showFingers?: boolean
   wallpaperUrl?: string
@@ -79,6 +80,7 @@ export const FallingKeysCanvas = React.memo<FallingKeysCanvasProps>(({
   handMode = 'both',
   expectedNotes = [],
   onScreenKeyPress,
+  onScreenKeyRelease,
   onTogglePedal,
   showFingers = true,
   wallpaperUrl = '/images/ylia_bg.png',
@@ -998,6 +1000,7 @@ export const FallingKeysCanvas = React.memo<FallingKeysCanvasProps>(({
       if (!stillHeld) {
         pressedKeysRef.current.delete(midi)
         PianoAudioEngine.getInstance().noteOff(midi)
+        if (onScreenKeyRelease) onScreenKeyRelease(midi)
       }
     }
   }

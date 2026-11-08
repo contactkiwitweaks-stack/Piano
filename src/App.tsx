@@ -95,6 +95,8 @@ export function App() {
 
   // Real-time input tracking for Wait Mode from all input sources (on-screen keyboard, MIDI)
   const screenActiveNotesRef = useRef<Set<number>>(new Set())
+  const lastNoteStrikeTimeRef = useRef<Map<number, number>>(new Map())
+  const consumedNoteStrikeTimeRef = useRef<Map<number, number>>(new Map())
   const expectedWaitMidisRef = useRef<number[]>([])
 
   // Modals
@@ -153,6 +155,9 @@ export function App() {
     currentTimeRef.current = targetTime
     PianoAudioEngine.getInstance().stopAllVoices()
     hitWaitNotesRef.current.clear()
+    screenActiveNotesRef.current.clear()
+    consumedNoteStrikeTimeRef.current.clear()
+    lastNoteStrikeTimeRef.current.clear()
     expectedWaitMidisRef.current = []
     AcousticNoteRecognizer.getInstance().clearTargetNotes()
     performanceBufferRef.current = []
@@ -213,6 +218,7 @@ export function App() {
     hitWaitNotesRef.current.add(midi)
 
     const now = performance.now()
+    lastNoteStrikeTimeRef.current.set(midi, now)
     performanceBufferRef.current.push({
       midi,
       timestampMs: now,
@@ -420,12 +426,18 @@ export function App() {
 
   const handleScreenKeyPress = useCallback((midi: number) => {
     screenActiveNotesRef.current.add(midi)
-    handlePerformanceNoteInput(midi, 80)
+    handlePerformanceNoteInput(midi, 85)
 
+    // Safety timeout in case pointerup is lost
     setTimeout(() => {
       screenActiveNotesRef.current.delete(midi)
-    }, 280)
+    }, 350)
   }, [handlePerformanceNoteInput])
+
+  const handleScreenKeyRelease = useCallback((midi: number) => {
+    screenActiveNotesRef.current.delete(midi)
+    PianoAudioEngine.getInstance().noteOff(midi)
+  }, [])
 
   const handleTogglePedal = useCallback(() => {
     const curDepth = manualPedalDepthRef.current
@@ -488,14 +500,30 @@ export function App() {
               expectedWaitMidisRef.current = expectedMidis
               AcousticNoteRecognizer.getInstance().setTargetNotes(expectedMidis)
 
-              // Check if all expected midis in this chord have been hit
-              const allHit = expectedMidis.every(
-                (m) =>
+              // Check if all expected midis in this chord have been freshly struck
+              // STRICT PEDAGOGICAL ENGAGEMENT:
+              // Merely holding down a key continuously from a previous chord DOES NOT count for repeated identical notes!
+              // Each repeated note/chord strictly requires a distinct fresh key strike (attack)
+              // occurring AFTER that note was previously consumed!
+              const allHit = expectedMidis.every((m) => {
+                const lastConsumed = consumedNoteStrikeTimeRef.current.get(m) || 0
+
+                // 1. Check for unconsumed fresh strike in performance buffer (MIDI, screen tap, or acoustic mic)
+                const hasFreshBufferStrike = performanceBufferRef.current.some(
+                  (b) => !b.matched && b.midi === m && b.timestampMs > lastConsumed
+                )
+                if (hasFreshBufferStrike) return true
+
+                // 2. Check for active note hold, but ONLY IF the strike occurred AFTER the last consumption!
+                // If strikeTime <= lastConsumed, this key is merely held down from a previous chord and MUST be struck again!
+                const strikeTime = lastNoteStrikeTimeRef.current.get(m) || 0
+                const isCurrentlyActive =
                   midiState.activeNotes.has(m) ||
                   screenActiveNotesRef.current.has(m) ||
-                  hitWaitNotesRef.current.has(m) ||
-                  performanceBufferRef.current.some((b) => !b.matched && b.midi === m)
-              )
+                  hitWaitNotesRef.current.has(m)
+
+                return isCurrentlyActive && strikeTime > lastConsumed
+              })
 
               if (!allHit) {
                 // Hold and wait for player's fingers!
@@ -504,10 +532,17 @@ export function App() {
                 return
               }
 
-              // Chord satisfied! Consume matching buffer notes
+              // Chord satisfied! Consume matching strikes and buffer notes
+              const satisfyTime = performance.now()
               expectedMidis.forEach((m) => {
-                const bufMatch = performanceBufferRef.current.find((b) => !b.matched && b.midi === m)
+                const lastConsumed = consumedNoteStrikeTimeRef.current.get(m) || 0
+                const bufMatch = performanceBufferRef.current.find(
+                  (b) => !b.matched && b.midi === m && b.timestampMs > lastConsumed
+                )
                 if (bufMatch) bufMatch.matched = true
+                consumedNoteStrikeTimeRef.current.set(m, satisfyTime)
+                hitWaitNotesRef.current.delete(m)
+                screenActiveNotesRef.current.delete(m)
               })
 
               notesHitCountRef.current += targetChordNotes.length
@@ -909,6 +944,7 @@ export function App() {
             onOpenBluetoothModal={() => setIsRolandModalOpen(true)}
             onBackToDiscovery={() => setActiveTab('songs')}
             onScreenKeyPress={handleScreenKeyPress}
+            onScreenKeyRelease={handleScreenKeyRelease}
             onTogglePedal={handleTogglePedal}
           />
         ) : activeTab === 'courses' ? (

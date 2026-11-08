@@ -1,12 +1,17 @@
 import React, { useRef, useEffect, useMemo, useState, useCallback } from 'react'
 import type { NoteEvent, Piece, PedalEvent } from '../types/music'
 import type { LanguageCode } from '../i18n/translations'
-import { X, ChevronLeft, ChevronRight } from 'lucide-react'
+import { X, ChevronLeft, ChevronRight, BookOpen, StretchHorizontal, Sparkles } from 'lucide-react'
 
 interface SheetMusicViewProps {
   piece: Piece
   currentTime: number
   activeNotes?: Map<number, { velocity: number; timestamp: number }>
+  expectedNotes?: number[]
+  isWaitMode?: boolean
+  playMode?: 'flow' | 'practice' | 'competition'
+  handMode?: 'both' | 'right' | 'left'
+  isPlaying?: boolean
   onSeek: (time: number) => void
   isLooping?: boolean
   loopRange?: [number, number]
@@ -27,7 +32,7 @@ const LETTER_TO_STEP: { [letter: string]: number } = {
 }
 
 /**
- * Acoustically exact diatonic staff offset mapping.
+ * Diatonic staff offset mapping:
  * C4 (Middle C) = 0 (on Middle C ledger line)
  * E4 (Line 1 of Treble) = 2
  * G4 (Line 2 of Treble) = 4
@@ -58,14 +63,49 @@ export const SheetMusicView: React.FC<SheetMusicViewProps> = ({
   piece,
   currentTime,
   activeNotes,
+  expectedNotes = [],
+  isWaitMode = false,
+  playMode: _playMode = 'practice',
+  handMode: _handMode = 'both',
+  isPlaying: _isPlaying = false,
   onSeek,
   isLooping = false,
   loopRange = [1, 4],
   onLoopRangeChange,
   onToggleLoop,
+  language: _language = 'de',
   showFingering: _showFingering = false,
 }) => {
   const scrollContainerRef = useRef<HTMLDivElement>(null)
+  const pageContainerRef = useRef<HTMLDivElement>(null)
+
+  // Layout mode: 'page' (Vollständiges Notenblatt) vs 'strip' (Horizontaler Notenwurm)
+  // Default is 'page' as requested by the user
+  const [layoutMode, setLayoutMode] = useState<'page' | 'strip'>('page')
+  const [containerWidth, setContainerWidth] = useState<number>(800)
+
+  // Track container width to dynamically optimize measures per system
+  useEffect(() => {
+    const updateWidth = () => {
+      if (pageContainerRef.current) {
+        setContainerWidth(pageContainerRef.current.clientWidth)
+      } else if (scrollContainerRef.current) {
+        setContainerWidth(scrollContainerRef.current.clientWidth)
+      } else if (typeof window !== 'undefined') {
+        setContainerWidth(window.innerWidth)
+      }
+    }
+    updateWidth()
+    window.addEventListener('resize', updateWidth)
+    return () => window.removeEventListener('resize', updateWidth)
+  }, [])
+
+  // Calculate optimal measures per system based on screen width
+  const measuresPerSystem = useMemo(() => {
+    if (containerWidth >= 1100) return 4
+    if (containerWidth >= 680) return 3
+    return 2 // Mobile portrait: 2 measures per system for maximum readability
+  }, [containerWidth])
 
   // Group notes by measure
   const measuresMap = useMemo(() => {
@@ -104,7 +144,7 @@ export const SheetMusicView: React.FC<SheetMusicViewProps> = ({
     return all
   }, [measuresMap])
 
-  // Precomputed measure data cache to eliminate 15,000+ array sorts per second during playback
+  // Precomputed measure data cache
   const measureDataMap = useMemo(() => {
     const map = new Map<
       number,
@@ -118,6 +158,7 @@ export const SheetMusicView: React.FC<SheetMusicViewProps> = ({
       }
     >()
     const defaultBeatsInMeasure = piece.timeSignature ? piece.timeSignature[0] : 4
+
     measureNumbers.forEach((mNum) => {
       const notesInMeasure = measuresMap.get(mNum) || []
       const pedalsInMeasure = pedalsMap.get(mNum) || []
@@ -152,55 +193,62 @@ export const SheetMusicView: React.FC<SheetMusicViewProps> = ({
     return measureNumbers[0] || 1
   }, [currentTime, piece.notes, measureNumbers])
 
-  // Smooth auto-scroll to keep active measure centered
+  // Systems division for Page Mode ("Vollständiges Notenblatt")
+  const systems = useMemo(() => {
+    const sysList: { systemIndex: number; measures: number[] }[] = []
+    for (let i = 0; i < measureNumbers.length; i += measuresPerSystem) {
+      sysList.push({
+        systemIndex: Math.floor(i / measuresPerSystem),
+        measures: measureNumbers.slice(i, i + measuresPerSystem),
+      })
+    }
+    return sysList
+  }, [measureNumbers, measuresPerSystem])
+
+  // Current active system
+  const currentSystemIndex = useMemo(() => {
+    return Math.max(0, Math.floor((currentMeasure - 1) / measuresPerSystem))
+  }, [currentMeasure, measuresPerSystem])
+
+  // Smooth auto-scroll in Page Mode (vertical scroll to active system)
   useEffect(() => {
-    if (!scrollContainerRef.current) return
+    if (layoutMode !== 'page' || !pageContainerRef.current) return
+    const activeSystemEl = pageContainerRef.current.querySelector<HTMLElement>(
+      `[data-system="${currentSystemIndex}"]`
+    )
+    if (activeSystemEl) {
+      const container = pageContainerRef.current
+      const targetTop = activeSystemEl.offsetTop - container.clientHeight * 0.25
+      container.scrollTo({ top: Math.max(0, targetTop), behavior: 'smooth' })
+    }
+  }, [currentSystemIndex, layoutMode])
+
+  // Smooth auto-scroll in Strip Mode (horizontal scroll to active measure)
+  useEffect(() => {
+    if (layoutMode !== 'strip' || !scrollContainerRef.current) return
     const activeEl = scrollContainerRef.current.querySelector<HTMLElement>(`[data-measure="${currentMeasure}"]`)
     if (activeEl) {
       const container = scrollContainerRef.current
       const targetLeft = activeEl.offsetLeft - container.clientWidth / 2 + activeEl.clientWidth / 2
       container.scrollTo({ left: Math.max(0, targetLeft), behavior: 'smooth' })
     }
-  }, [currentMeasure])
+  }, [currentMeasure, layoutMode])
 
-  // Precise Standard Notation Dimensions with ample headroom for high/low ledger lines
+  // Precise Standard Notation Dimensions
   const lineSpacing = 8.5
   const staffHeight = lineSpacing * 4 // 34px
-  const trebleTopY = 56 // Line 5 (F5) - provides 56px headroom for high ledger lines up to C7 without clipping
-  const trebleBottomY = trebleTopY + staffHeight // 90px: Line 1 (E4)
-  const middleCY = trebleBottomY + lineSpacing // 98.5px: Middle C4 Ledger line
-  const bassTopY = middleCY + lineSpacing // 107px: Line 5 (A3) of Bass
-  const bassBottomY = bassTopY + staffHeight // 141px: Line 1 (G2) of Bass
-  const pedalLineY = bassBottomY + 26
-  const totalSvgHeight = pedalLineY + 28 // 195px total - ensures low notes down to C1 are fully visible
+  const trebleTopY = 48 // Line 5 (F5) - ample headroom for ledger lines
+  const trebleBottomY = trebleTopY + staffHeight // 82px: Line 1 (E4)
+  const middleCY = trebleBottomY + lineSpacing // 90.5px: Middle C4 Ledger line
+  const bassTopY = middleCY + lineSpacing // 99px: Line 5 (A3) of Bass
+  const bassBottomY = bassTopY + staffHeight // 133px: Line 1 (G2) of Bass
+  const pedalLineY = bassBottomY + 24
+  const totalSvgHeight = pedalLineY + 22 // 179px per grand staff system
 
   const getYForNote = (note: NoteEvent): number => {
     const stepFromC4 = noteToDiatonicOffset(note.noteName, note.midi)
     return middleCY - stepFromC4 * (lineSpacing / 2)
   }
-
-  // Scroll range virtualization: dynamically tracks user scrolling
-  const [scrollRange, setScrollRange] = useState<{ minM: number; maxM: number }>({ minM: 1, maxM: 20 })
-
-  const handleScroll = useCallback(() => {
-    if (!scrollContainerRef.current) return
-    const el = scrollContainerRef.current
-    const scrollLeft = el.scrollLeft
-    const clientWidth = el.clientWidth
-    // Average measure width is ~260px
-    const startM = Math.max(1, Math.floor(scrollLeft / 260) - 2)
-    const endM = Math.min(measureNumbers.length, Math.ceil((scrollLeft + clientWidth) / 260) + 4)
-    setScrollRange({ minM: startM, maxM: endM })
-  }, [measureNumbers.length])
-
-  // Virtualization: render measures around current playback measure AND scroll position
-  const visibleMeasures = useMemo(() => {
-    const playMin = Math.max(1, currentMeasure - 4)
-    const playMax = Math.min(measureNumbers.length, currentMeasure + 12)
-    const minM = Math.min(playMin, scrollRange.minM)
-    const maxM = Math.max(playMax, scrollRange.maxM)
-    return { minM, maxM }
-  }, [currentMeasure, measureNumbers.length, scrollRange])
 
   // Key signature determination
   const keyFlatsCount = useMemo(() => {
@@ -223,34 +271,33 @@ export const SheetMusicView: React.FC<SheetMusicViewProps> = ({
     return 0
   }, [piece.key])
 
-  const isNoteCoveredByKeySignature = useCallback((noteName: string): boolean => {
-    const root = noteName.charAt(0).toUpperCase()
-    if (noteName.includes('#')) {
-      const sharpsInKey = ['F', 'C', 'G', 'D', 'A', 'E', 'B'].slice(0, keySharpsCount)
-      return sharpsInKey.includes(root)
-    }
-    if (noteName.includes('b')) {
-      const flatsInKey = ['B', 'E', 'A', 'D', 'G', 'C', 'F'].slice(0, keyFlatsCount)
-      return flatsInKey.includes(root)
-    }
-    return false
-  }, [keySharpsCount, keyFlatsCount])
+  const isNoteCoveredByKeySignature = useCallback(
+    (noteName: string): boolean => {
+      const root = noteName.charAt(0).toUpperCase()
+      if (noteName.includes('#')) {
+        const sharpsInKey = ['F', 'C', 'G', 'D', 'A', 'E', 'B'].slice(0, keySharpsCount)
+        return sharpsInKey.includes(root)
+      }
+      if (noteName.includes('b')) {
+        const flatsInKey = ['B', 'E', 'A', 'D', 'G', 'C', 'F'].slice(0, keyFlatsCount)
+        return flatsInKey.includes(root)
+      }
+      return false
+    },
+    [keySharpsCount, keyFlatsCount]
+  )
 
-  // Ledger line positions for any note y coordinate
   const calculateLedgerLines = (y: number): number[] => {
     const lines: number[] = []
-    // Middle C
     if (Math.abs(y - middleCY) < 3.5) {
       lines.push(middleCY)
       return lines
     }
-    // High treble (above Line 5 F5 at trebleTopY = 24)
     if (y < trebleTopY - 2) {
       for (let ly = trebleTopY - lineSpacing; ly >= y - 3; ly -= lineSpacing) {
         lines.push(ly)
       }
     }
-    // Low bass (below Line 1 G2 at bassBottomY = 109)
     if (y > bassBottomY + 2) {
       for (let ly = bassBottomY + lineSpacing; ly <= y + 3; ly += lineSpacing) {
         lines.push(ly)
@@ -259,522 +306,618 @@ export const SheetMusicView: React.FC<SheetMusicViewProps> = ({
     return lines
   }
 
-  return (
-    <div className="w-full h-full bg-[#fdfbf7] flex flex-col select-none overflow-hidden relative border-t border-stone-200">
-      {/* Scrollable Flowkey Score Canvas */}
-      <div
-        ref={scrollContainerRef}
-        onScroll={handleScroll}
-        className="flex-1 flex overflow-x-auto overflow-y-hidden px-4 py-2 scroll-smooth items-center scrollbar-none"
-      >
-        {/* Clefs, Key Signature & Grand Staff Brace (Fixed on Left) */}
-        <div className="flex-shrink-0 w-24 relative mr-1" style={{ height: totalSvgHeight }}>
-          <svg className="w-full h-full pointer-events-none">
-            {/* Grand Staff Curly Brace */}
-            <path
-              d={`M 14 ${trebleTopY} C 4 ${trebleTopY + 18}, 4 ${middleCY - 12}, 0 ${middleCY} C 4 ${middleCY + 12}, 4 ${bassBottomY - 18}, 14 ${bassBottomY}`}
-              fill="none"
-              stroke="#1a1a1a"
-              strokeWidth="2.5"
+  // Render authentic Grand Staff Accolade / Clef / Key Block (Left of each system)
+  const renderClefBlock = (isFirstSystem: boolean = false) => {
+    const width = isFirstSystem ? 86 : 74
+    return (
+      <div className="flex-shrink-0 relative select-none" style={{ width, height: totalSvgHeight }}>
+        <svg className="w-full h-full pointer-events-none">
+          {/* Grand Staff Curly Brace */}
+          <path
+            d={`M 14 ${trebleTopY} C 4 ${trebleTopY + 16}, 4 ${middleCY - 10}, 0 ${middleCY} C 4 ${middleCY + 10}, 4 ${bassBottomY - 16}, 14 ${bassBottomY}`}
+            fill="none"
+            stroke="#1a1a1a"
+            strokeWidth="2.4"
+          />
+          <line x1="16" y1={trebleTopY} x2="16" y2={bassBottomY} stroke="#1a1a1a" strokeWidth="1.5" />
+
+          {/* Treble Stave Lines (5 lines) */}
+          {[0, 1, 2, 3, 4].map((i) => (
+            <line
+              key={`cb-t-${i}`}
+              x1="16"
+              y1={trebleTopY + i * lineSpacing}
+              x2={width}
+              y2={trebleTopY + i * lineSpacing}
+              stroke="#2a2a2a"
+              strokeWidth="1.2"
             />
-            <line x1="16" y1={trebleTopY} x2="16" y2={bassBottomY} stroke="#1a1a1a" strokeWidth="1.5" />
+          ))}
 
-            {/* Treble Stave Lines (5 lines) */}
-            {[0, 1, 2, 3, 4].map((i) => (
-              <line
-                key={`t-line-${i}`}
-                x1="16"
-                y1={trebleTopY + i * lineSpacing}
-                x2="94"
-                y2={trebleTopY + i * lineSpacing}
-                stroke="#2a2a2a"
-                strokeWidth="1.2"
-              />
-            ))}
+          {/* Bass Stave Lines (5 lines) */}
+          {[0, 1, 2, 3, 4].map((i) => (
+            <line
+              key={`cb-b-${i}`}
+              x1="16"
+              y1={bassTopY + i * lineSpacing}
+              x2={width}
+              y2={bassTopY + i * lineSpacing}
+              stroke="#2a2a2a"
+              strokeWidth="1.2"
+            />
+          ))}
 
-            {/* Bass Stave Lines (5 lines) */}
-            {[0, 1, 2, 3, 4].map((i) => (
-              <line
-                key={`b-line-${i}`}
-                x1="16"
-                y1={bassTopY + i * lineSpacing}
-                x2="94"
-                y2={bassTopY + i * lineSpacing}
-                stroke="#2a2a2a"
-                strokeWidth="1.2"
-              />
-            ))}
+          {/* Treble Clef (𝄞) */}
+          <text
+            x="20"
+            y={trebleBottomY - lineSpacing * 0.3}
+            fontSize="36"
+            fill="#1a1a1a"
+            fontFamily="serif"
+            textAnchor="start"
+          >
+            𝄞
+          </text>
 
-            {/* Treble Clef (𝄞) */}
-            <text
-              x="20"
-              y={trebleBottomY - lineSpacing * 0.3}
-              fontSize="38"
-              fill="#1a1a1a"
-              fontFamily="serif"
-              textAnchor="start"
-            >
-              𝄞
-            </text>
+          {/* Bass Clef (𝄢) */}
+          <text
+            x="22"
+            y={bassTopY + lineSpacing * 2.8}
+            fontSize="30"
+            fill="#1a1a1a"
+            fontFamily="serif"
+            textAnchor="start"
+          >
+            𝄢
+          </text>
 
-            {/* Bass Clef (𝄢) */}
-            <text
-              x="22"
-              y={bassTopY + lineSpacing * 2.8}
-              fontSize="32"
-              fill="#1a1a1a"
-              fontFamily="serif"
-              textAnchor="start"
-            >
-              𝄢
-            </text>
+          {/* Key Signature (Flats) */}
+          {keyFlatsCount > 0 && (
+            <g>
+              {keyFlatsCount >= 1 && (
+                <>
+                  <text x="46" y={trebleTopY + lineSpacing * 2 + 4.5} fontSize="13" fill="#1a1a1a" fontFamily="serif">♭</text>
+                  <text x="46" y={bassTopY + lineSpacing * 3 + 4.5} fontSize="13" fill="#1a1a1a" fontFamily="serif">♭</text>
+                </>
+              )}
+              {keyFlatsCount >= 2 && (
+                <>
+                  <text x="53" y={trebleTopY + lineSpacing * 0.5 + 4.5} fontSize="13" fill="#1a1a1a" fontFamily="serif">♭</text>
+                  <text x="53" y={bassTopY + lineSpacing * 1.5 + 4.5} fontSize="13" fill="#1a1a1a" fontFamily="serif">♭</text>
+                </>
+              )}
+              {keyFlatsCount >= 3 && (
+                <>
+                  <text x="60" y={trebleTopY + lineSpacing * 2.5 + 4.5} fontSize="13" fill="#1a1a1a" fontFamily="serif">♭</text>
+                  <text x="60" y={bassTopY + lineSpacing * 3.5 + 4.5} fontSize="13" fill="#1a1a1a" fontFamily="serif">♭</text>
+                </>
+              )}
+            </g>
+          )}
 
-            {/* Authentic Key Signature (Flats / Sharps) */}
-            {keyFlatsCount > 0 && (
-              <g>
-                {/* Bb */}
-                {keyFlatsCount >= 1 && (
-                  <>
-                    <text x="48" y={trebleTopY + lineSpacing * 2 + 4.5} fontSize="14" fill="#1a1a1a" fontFamily="serif">♭</text>
-                    <text x="48" y={bassTopY + lineSpacing * 3 + 4.5} fontSize="14" fill="#1a1a1a" fontFamily="serif">♭</text>
-                  </>
-                )}
-                {/* Eb */}
-                {keyFlatsCount >= 2 && (
-                  <>
-                    <text x="55" y={trebleTopY + lineSpacing * 0.5 + 4.5} fontSize="14" fill="#1a1a1a" fontFamily="serif">♭</text>
-                    <text x="55" y={bassTopY + lineSpacing * 1.5 + 4.5} fontSize="14" fill="#1a1a1a" fontFamily="serif">♭</text>
-                  </>
-                )}
-                {/* Ab */}
-                {keyFlatsCount >= 3 && (
-                  <>
-                    <text x="62" y={trebleTopY + lineSpacing * 2.5 + 4.5} fontSize="14" fill="#1a1a1a" fontFamily="serif">♭</text>
-                    <text x="62" y={bassTopY + lineSpacing * 3.5 + 4.5} fontSize="14" fill="#1a1a1a" fontFamily="serif">♭</text>
-                  </>
-                )}
-                {/* Db */}
-                {keyFlatsCount >= 4 && (
-                  <>
-                    <text x="69" y={trebleTopY + lineSpacing * 1 + 4.5} fontSize="14" fill="#1a1a1a" fontFamily="serif">♭</text>
-                    <text x="69" y={bassTopY + lineSpacing * 2 + 4.5} fontSize="14" fill="#1a1a1a" fontFamily="serif">♭</text>
-                  </>
-                )}
-                {/* Gb */}
-                {keyFlatsCount >= 5 && (
-                  <>
-                    <text x="76" y={trebleTopY + lineSpacing * 3 + 4.5} fontSize="14" fill="#1a1a1a" fontFamily="serif">♭</text>
-                    <text x="76" y={bassTopY + lineSpacing * 4 + 4.5} fontSize="14" fill="#1a1a1a" fontFamily="serif">♭</text>
-                  </>
-                )}
-              </g>
-            )}
+          {/* Key Signature (Sharps) */}
+          {keySharpsCount > 0 && (
+            <g>
+              {keySharpsCount >= 1 && (
+                <>
+                  <text x="46" y={trebleTopY + 4} fontSize="12" fill="#1a1a1a" fontFamily="serif">♯</text>
+                  <text x="46" y={bassTopY + lineSpacing * 1 + 4} fontSize="12" fill="#1a1a1a" fontFamily="serif">♯</text>
+                </>
+              )}
+              {keySharpsCount >= 2 && (
+                <>
+                  <text x="53" y={trebleTopY + lineSpacing * 1.5 + 4} fontSize="12" fill="#1a1a1a" fontFamily="serif">♯</text>
+                  <text x="53" y={bassTopY + lineSpacing * 2.5 + 4} fontSize="12" fill="#1a1a1a" fontFamily="serif">♯</text>
+                </>
+              )}
+            </g>
+          )}
 
-            {keySharpsCount > 0 && (
-              <g>
-                {/* F# */}
-                {keySharpsCount >= 1 && (
-                  <>
-                    <text x="48" y={trebleTopY + 4} fontSize="13" fill="#1a1a1a" fontFamily="serif">♯</text>
-                    <text x="48" y={bassTopY + lineSpacing * 1 + 4} fontSize="13" fill="#1a1a1a" fontFamily="serif">♯</text>
-                  </>
-                )}
-                {/* C# */}
-                {keySharpsCount >= 2 && (
-                  <>
-                    <text x="55" y={trebleTopY + lineSpacing * 1.5 + 4} fontSize="13" fill="#1a1a1a" fontFamily="serif">♯</text>
-                    <text x="55" y={bassTopY + lineSpacing * 2.5 + 4} fontSize="13" fill="#1a1a1a" fontFamily="serif">♯</text>
-                  </>
-                )}
-                {/* G# */}
-                {keySharpsCount >= 3 && (
-                  <>
-                    <text x="62" y={trebleTopY - lineSpacing * 0.5 + 4} fontSize="13" fill="#1a1a1a" fontFamily="serif">♯</text>
-                    <text x="62" y={bassTopY + lineSpacing * 1.5 + 4} fontSize="13" fill="#1a1a1a" fontFamily="serif">♯</text>
-                  </>
-                )}
-                {/* D# */}
-                {keySharpsCount >= 4 && (
-                  <>
-                    <text x="69" y={trebleTopY + lineSpacing * 1 + 4} fontSize="13" fill="#1a1a1a" fontFamily="serif">♯</text>
-                    <text x="69" y={bassTopY + lineSpacing * 2 + 4} fontSize="13" fill="#1a1a1a" fontFamily="serif">♯</text>
-                  </>
-                )}
-                {/* A# */}
-                {keySharpsCount >= 5 && (
-                  <>
-                    <text x="76" y={trebleTopY + lineSpacing * 2.5 + 4} fontSize="13" fill="#1a1a1a" fontFamily="serif">♯</text>
-                    <text x="76" y={bassTopY + lineSpacing * 3 + 4} fontSize="13" fill="#1a1a1a" fontFamily="serif">♯</text>
-                  </>
-                )}
-              </g>
-            )}
+          {/* Time Signature (on first system only) */}
+          {isFirstSystem && (
+            <g>
+              <text
+                x="72"
+                y={trebleTopY + lineSpacing * 1.7}
+                fontSize="15"
+                fontWeight="bold"
+                fill="#1a1a1a"
+                fontFamily="serif"
+                textAnchor="middle"
+              >
+                {piece.timeSignature ? piece.timeSignature[0] : 4}
+              </text>
+              <text
+                x="72"
+                y={trebleTopY + lineSpacing * 3.7}
+                fontSize="15"
+                fontWeight="bold"
+                fill="#1a1a1a"
+                fontFamily="serif"
+                textAnchor="middle"
+              >
+                {piece.timeSignature ? piece.timeSignature[1] : 4}
+              </text>
+              <text
+                x="72"
+                y={bassTopY + lineSpacing * 1.7}
+                fontSize="15"
+                fontWeight="bold"
+                fill="#1a1a1a"
+                fontFamily="serif"
+                textAnchor="middle"
+              >
+                {piece.timeSignature ? piece.timeSignature[0] : 4}
+              </text>
+              <text
+                x="72"
+                y={bassTopY + lineSpacing * 3.7}
+                fontSize="15"
+                fontWeight="bold"
+                fill="#1a1a1a"
+                fontFamily="serif"
+                textAnchor="middle"
+              >
+                {piece.timeSignature ? piece.timeSignature[1] : 4}
+              </text>
+            </g>
+          )}
+        </svg>
+      </div>
+    )
+  }
 
-            {/* Time Signature */}
-            <text
-              x="82"
-              y={trebleTopY + lineSpacing * 1.7}
-              fontSize="16"
-              fontWeight="bold"
-              fill="#1a1a1a"
-              fontFamily="serif"
-              textAnchor="middle"
-            >
-              {piece.timeSignature ? piece.timeSignature[0] : 4}
-            </text>
-            <text
-              x="82"
-              y={trebleTopY + lineSpacing * 3.7}
-              fontSize="16"
-              fontWeight="bold"
-              fill="#1a1a1a"
-              fontFamily="serif"
-              textAnchor="middle"
-            >
-              {piece.timeSignature ? piece.timeSignature[1] : 4}
-            </text>
+  // Render individual Measure Cell
+  const renderMeasure = (mNum: number, measureWidthStyle?: string | number, isFixedPx: boolean = false) => {
+    const mData = measureDataMap.get(mNum)
+    if (!mData) return null
 
-            <text
-              x="82"
-              y={bassTopY + lineSpacing * 1.7}
-              fontSize="16"
-              fontWeight="bold"
-              fill="#1a1a1a"
-              fontFamily="serif"
-              textAnchor="middle"
-            >
-              {piece.timeSignature ? piece.timeSignature[0] : 4}
-            </text>
-            <text
-              x="82"
-              y={bassTopY + lineSpacing * 3.7}
-              fontSize="16"
-              fontWeight="bold"
-              fill="#1a1a1a"
-              fontFamily="serif"
-              textAnchor="middle"
-            >
-              {piece.timeSignature ? piece.timeSignature[1] : 4}
-            </text>
-          </svg>
+    const { sortedNotes, pedalsInMeasure, mStartTime, mDuration, measureBeats, dynamicMeasureWidth } = mData
+    const isCurrent = mNum === currentMeasure
+    const isInLoop = isLooping && mNum >= loopRange[0] && mNum <= loopRange[1]
+    const isLoopStart = isLooping && mNum === loopRange[0]
+    const isLoopEnd = isLooping && mNum === loopRange[1]
+    const isLastMeasure = mNum === measureNumbers[measureNumbers.length - 1]
+
+    // Calculate playhead position ratio inside this measure (0.0 to 1.0)
+    const playheadRatio = Math.max(0, Math.min(1, (currentTime - mStartTime) / mDuration))
+
+    return (
+      <div
+        key={`measure-${mNum}`}
+        data-measure={mNum}
+        onClick={() => {
+          if (sortedNotes[0]) {
+            onSeek(sortedNotes[0].startTime)
+          }
+        }}
+        className={`relative cursor-pointer transition-colors duration-150 ${
+          isCurrent
+            ? isWaitMode
+              ? 'bg-amber-100/60 ring-2 ring-amber-400/70 shadow-sm'
+              : 'bg-amber-50/70 ring-1 ring-amber-400/50'
+            : isInLoop
+            ? 'bg-blue-50/60 ring-1 ring-blue-300/60'
+            : 'hover:bg-stone-100/50'
+        } ${isFixedPx ? 'flex-shrink-0' : 'flex-1 min-w-0'}`}
+        style={{
+          width: isFixedPx ? dynamicMeasureWidth : measureWidthStyle || '100%',
+          height: totalSvgHeight,
+        }}
+      >
+        {/* Measure Number Badge */}
+        <div className="absolute top-1 left-2 font-mono text-[10px] font-bold text-stone-500 pointer-events-none select-none z-10">
+          {mNum}
         </div>
 
-        {/* Continuous Flowkey Measures */}
-        {measureNumbers.map((mNum) => {
-          const mData = measureDataMap.get(mNum)
-          if (!mData) return null
-
-          const { sortedNotes, pedalsInMeasure, mStartTime, mDuration, measureBeats, dynamicMeasureWidth } = mData
-          const isCurrent = mNum === currentMeasure
-          const isInLoop = isLooping && mNum >= loopRange[0] && mNum <= loopRange[1]
-          const isLoopStart = isLooping && mNum === loopRange[0]
-          const isLoopEnd = isLooping && mNum === loopRange[1]
-          const isVisible = mNum >= visibleMeasures.minM && mNum <= visibleMeasures.maxM
-
-          return (
-            <div
-              key={`measure-${mNum}`}
-              data-measure={mNum}
-              onClick={() => {
-                if (sortedNotes[0]) {
-                  onSeek(sortedNotes[0].startTime)
-                }
-              }}
-              className={`flex-shrink-0 relative cursor-pointer transition-colors duration-150 ${
-                isCurrent ? 'bg-amber-100/40' : isInLoop ? 'bg-blue-50/50' : 'hover:bg-stone-100/40'
-              }`}
-              style={{ width: dynamicMeasureWidth, height: totalSvgHeight }}
-            >
-              {/* Measure Number */}
-              <div className="absolute top-1 left-2 font-mono text-[11px] font-bold text-stone-500 pointer-events-none">
-                {mNum}
+        {/* Loop Region Box & Handles */}
+        {isInLoop && (
+          <div className="absolute inset-0 border-y-2 border-blue-400/60 bg-blue-500/10 pointer-events-none z-10">
+            {isLoopStart && (
+              <div
+                onClick={(e) => {
+                  e.stopPropagation()
+                  if (onLoopRangeChange && loopRange[0] > 1) {
+                    onLoopRangeChange([loopRange[0] - 1, loopRange[1]])
+                  }
+                }}
+                className="absolute -left-2.5 top-1/2 -translate-y-1/2 w-5 h-8 rounded bg-stone-800 text-white flex items-center justify-center font-bold text-xs shadow-md pointer-events-auto cursor-pointer"
+                title="Adjust loop start"
+              >
+                <ChevronLeft className="w-3 h-3" />
               </div>
+            )}
+            {isLoopStart && onToggleLoop && (
+              <div
+                onClick={(e) => {
+                  e.stopPropagation()
+                  onToggleLoop()
+                }}
+                className="absolute left-2 -top-2 w-4 h-4 rounded-full bg-stone-800 text-white flex items-center justify-center font-bold text-[9px] shadow pointer-events-auto cursor-pointer"
+                title="Clear loop"
+              >
+                <X className="w-2.5 h-2.5" />
+              </div>
+            )}
+            {isLoopEnd && (
+              <div
+                onClick={(e) => {
+                  e.stopPropagation()
+                  if (onLoopRangeChange) {
+                    onLoopRangeChange([loopRange[0], loopRange[1] + 1])
+                  }
+                }}
+                className="absolute -right-2.5 top-1/2 -translate-y-1/2 w-5 h-8 rounded bg-stone-800 text-white flex items-center justify-center font-bold text-xs shadow-md pointer-events-auto cursor-pointer"
+                title="Adjust loop end"
+              >
+                <ChevronRight className="w-3 h-3" />
+              </div>
+            )}
+          </div>
+        )}
 
-              {/* FLOWKEY LOOP SELECTOR BOX & HANDLES */}
-              {isInLoop && (
-                <div className="absolute inset-0 border-y-2 border-stone-400/50 bg-stone-300/15 pointer-events-none z-10">
-                  {isLoopStart && (
-                    <div
-                      onClick={(e) => {
-                        e.stopPropagation()
-                        if (onLoopRangeChange && loopRange[0] > 1) {
-                          onLoopRangeChange([loopRange[0] - 1, loopRange[1]])
-                        }
-                      }}
-                      className="absolute -left-3 top-1/2 -translate-y-1/2 w-6 h-10 rounded-lg bg-stone-700/90 hover:bg-stone-900 text-white flex items-center justify-center font-bold text-xs shadow-md pointer-events-auto cursor-pointer"
-                      title="Adjust loop start"
-                    >
-                      <ChevronLeft className="w-3.5 h-3.5" />
-                    </div>
-                  )}
+        {/* FLOW PLAYHEAD CURSOR (Flow Mode active sweep) */}
+        {isCurrent && sortedNotes.length > 0 && !isWaitMode && (
+          <div
+            className="absolute top-0 bottom-0 w-0.5 bg-gradient-to-b from-amber-500 via-amber-400 to-amber-600 shadow-[0_0_8px_rgba(245,158,11,0.9)] z-20 pointer-events-none transition-all duration-75"
+            style={{
+              left: `${Math.max(6, Math.min(94, playheadRatio * 100))}%`,
+            }}
+          >
+            <div className="w-2.5 h-2.5 rounded-full bg-amber-500 -ml-1 -top-1 absolute shadow-sm" />
+          </div>
+        )}
 
-                  {isLoopStart && onToggleLoop && (
-                    <div
-                      onClick={(e) => {
-                        e.stopPropagation()
-                        onToggleLoop()
-                      }}
-                      className="absolute left-2 -top-3 w-5 h-5 rounded-full bg-stone-800 text-stone-200 hover:text-white flex items-center justify-center font-bold text-[10px] shadow pointer-events-auto cursor-pointer"
-                      title="Clear loop"
-                    >
-                      <X className="w-3 h-3" />
-                    </div>
-                  )}
+        {/* WAIT MODE GLOWING TARGET POINTER (Pointee above awaited notes) */}
+        {isCurrent && isWaitMode && (
+          <div
+            className="absolute top-0 bottom-0 w-0.5 bg-amber-500/80 shadow-[0_0_12px_rgba(245,158,11,1)] z-20 pointer-events-none animate-pulse"
+            style={{
+              left: `${Math.max(6, Math.min(94, playheadRatio * 100))}%`,
+            }}
+          >
+            <div className="absolute -top-3 -ml-2 w-4 h-4 rounded-full bg-amber-500 text-stone-950 flex items-center justify-center font-bold text-[9px] shadow-lg animate-bounce">
+              ▼
+            </div>
+          </div>
+        )}
 
-                  {isLoopEnd && (
-                    <div
-                      onClick={(e) => {
-                        e.stopPropagation()
-                        if (onLoopRangeChange) {
-                          onLoopRangeChange([loopRange[0], loopRange[1] + 1])
-                        }
-                      }}
-                      className="absolute -right-3 top-1/2 -translate-y-1/2 w-6 h-10 rounded-lg bg-stone-700/90 hover:bg-stone-900 text-white flex items-center justify-center font-bold text-xs shadow-md pointer-events-auto cursor-pointer"
-                      title="Adjust loop end"
-                    >
-                      <ChevronRight className="w-3.5 h-3.5" />
-                    </div>
-                  )}
-                </div>
-              )}
+        <svg className="w-full h-full pointer-events-none" preserveAspectRatio="none">
+          <defs>
+            <filter id={`glow-amber-${mNum}`} x="-30%" y="-30%" width="160%" height="160%">
+              <feGaussianBlur stdDeviation="3.5" result="blur" />
+              <feMerge>
+                <feMergeNode in="blur" />
+                <feMergeNode in="SourceGraphic" />
+              </feMerge>
+            </filter>
+          </defs>
 
-              {/* ACTIVE FLOWKEY ORANGE PLAYBACK CURSOR */}
-              {isCurrent && sortedNotes.length > 0 && (
-                <div
-                  className="absolute top-0 bottom-0 w-0.5 bg-gradient-to-b from-amber-500 via-amber-400 to-amber-600 shadow-[0_0_8px_rgba(245,158,11,0.8)] z-20 pointer-events-none transition-all duration-75"
-                  style={{
-                    left: `${Math.max(
-                      14,
-                      Math.min(
-                        dynamicMeasureWidth - 14,
-                        ((currentTime - mStartTime) / mDuration) * (dynamicMeasureWidth - 40) + 20
-                      )
-                    )}px`,
-                  }}
-                >
-                  <div className="w-2.5 h-2.5 rounded-full bg-amber-500 -ml-1 -top-1 absolute shadow-sm" />
-                </div>
-              )}
+          {/* Measure Bar Line (Right edge) */}
+          {isLastMeasure ? (
+            /* Urtext Final Double Bar Line (thin + thick) */
+            <g>
+              <line x1="96%" y1={trebleTopY} x2="96%" y2={bassBottomY} stroke="#1a1a1a" strokeWidth="1.2" />
+              <line x1="99%" y1={trebleTopY} x2="99%" y2={bassBottomY} stroke="#1a1a1a" strokeWidth="3.2" />
+            </g>
+          ) : (
+            <line x1="100%" y1={trebleTopY} x2="100%" y2={bassBottomY} stroke="#1a1a1a" strokeWidth="1.3" />
+          )}
 
-              <svg className="w-full h-full pointer-events-none">
-                {/* Measure Bar Line */}
-                <line
-                  x1={dynamicMeasureWidth - 1}
-                  y1={trebleTopY}
-                  x2={dynamicMeasureWidth - 1}
-                  y2={bassBottomY}
-                  stroke="#1a1a1a"
-                  strokeWidth="1.5"
+          {/* Treble Stave Lines (5 lines) */}
+          {[0, 1, 2, 3, 4].map((i) => (
+            <line
+              key={`m${mNum}-t-${i}`}
+              x1="0%"
+              y1={trebleTopY + i * lineSpacing}
+              x2="100%"
+              y2={trebleTopY + i * lineSpacing}
+              stroke="#2a2a2a"
+              strokeWidth="1.2"
+            />
+          ))}
+
+          {/* Bass Stave Lines (5 lines) */}
+          {[0, 1, 2, 3, 4].map((i) => (
+            <line
+              key={`m${mNum}-b-${i}`}
+              x1="0%"
+              y1={bassTopY + i * lineSpacing}
+              x2="100%"
+              y2={bassTopY + i * lineSpacing}
+              stroke="#2a2a2a"
+              strokeWidth="1.2"
+            />
+          ))}
+
+          {/* Dynamic Marking (Urtext expression between Treble and Bass staves) */}
+          {(() => {
+            const avgVel =
+              sortedNotes.length > 0
+                ? sortedNotes.reduce((sum, n) => sum + (n.velocity || 75), 0) / sortedNotes.length
+                : 0
+            const dyn =
+              avgVel >= 105 ? 'ff' : avgVel >= 92 ? 'f' : avgVel >= 78 ? 'mf' : avgVel >= 64 ? 'mp' : avgVel >= 48 ? 'p' : avgVel > 0 ? 'pp' : null
+            if (!dyn) return null
+            return (
+              <text
+                x="8%"
+                y={middleCY + 3.5}
+                fontSize="12"
+                fontFamily="serif"
+                fontStyle="italic"
+                fontWeight="bold"
+                fill="#854d0e"
+                textAnchor="start"
+                className="select-none pointer-events-none"
+              >
+                {dyn}
+              </text>
+            )
+          })()}
+
+          {/* Notes in Measure */}
+          {sortedNotes.map((note) => {
+            // Compute percentage X coordinate within measure width
+            let xPercent: number
+            if (note.beat !== undefined && note.beat >= 1) {
+              const beatRatio = (note.beat - 1) / measureBeats
+              xPercent = 12 + beatRatio * 76
+            } else {
+              const noteOffsetInMeasure = (note.startTime - mStartTime) / mDuration
+              xPercent = 14 + noteOffsetInMeasure * 72
+            }
+
+            const y = getYForNote(note)
+
+            // Status: Is note actively awaited in Wait Mode?
+            const isExpectedInWait =
+              isWaitMode &&
+              expectedNotes.length > 0 &&
+              expectedNotes.includes(note.midi) &&
+              Math.abs(note.startTime - currentTime) < 0.25
+
+            // Status: Is note currently sounding / pressed?
+            const isSounding =
+              (activeNotes && activeNotes.has(note.midi)) ||
+              (currentTime >= note.startTime && currentTime <= note.startTime + note.duration)
+
+            const isTreble = y < middleCY + 4
+            const staffCenterY = isTreble ? trebleTopY + lineSpacing * 2 : bassTopY + lineSpacing * 2
+            const isStemUp = y > staffCenterY
+            const stemHeight = 25
+            const stemEndY = isStemUp ? y - stemHeight : y + stemHeight
+
+            const ledgerYList = calculateLedgerLines(y)
+
+            // Note Coloration:
+            // Awaited note in Wait Mode: Radiant Amber (#ea580c)
+            // Actively sounding note: Emerald Green (#16a34a)
+            // Regular Urtext score note: Classical Black (#1a1a1a)
+            const noteColor = isExpectedInWait ? '#ea580c' : isSounding ? '#16a34a' : '#1a1a1a'
+
+            const hasSharp = note.noteName.includes('#')
+            const hasFlat = note.noteName.includes('b')
+            const isCovered = isNoteCoveredByKeySignature(note.noteName)
+            const showSharpSymbol = hasSharp && !isCovered
+            const showFlatSymbol = hasFlat && !isCovered
+
+            return (
+              <g key={note.id}>
+                {/* Ledger Lines */}
+                {ledgerYList.map((ly, lIdx) => (
+                  <line
+                    key={`leg-${note.id}-${lIdx}`}
+                    x1={`${xPercent - 3}%`}
+                    y1={ly}
+                    x2={`${xPercent + 3}%`}
+                    y2={ly}
+                    stroke="#1a1a1a"
+                    strokeWidth="1.4"
+                  />
+                ))}
+
+                {/* Accidental sharp / flat */}
+                {showSharpSymbol && (
+                  <text
+                    x={`${xPercent - 3.8}%`}
+                    y={y + 4.5}
+                    fontSize="13"
+                    fontWeight="bold"
+                    fill={noteColor}
+                    fontFamily="serif"
+                    textAnchor="end"
+                  >
+                    ♯
+                  </text>
+                )}
+                {showFlatSymbol && (
+                  <text
+                    x={`${xPercent - 3.5}%`}
+                    y={y + 3.5}
+                    fontSize="13"
+                    fontWeight="bold"
+                    fill={noteColor}
+                    fontFamily="serif"
+                    textAnchor="end"
+                  >
+                    ♭
+                  </text>
+                )}
+
+                {/* Pulsing halo ring around awaited note in Wait Mode */}
+                {isExpectedInWait && (
+                  <ellipse
+                    cx={`${xPercent}%`}
+                    cy={y}
+                    rx="8"
+                    ry="6"
+                    fill="none"
+                    stroke="#f59e0b"
+                    strokeWidth="2"
+                    className="animate-ping opacity-75"
+                  />
+                )}
+
+                {/* Note Head */}
+                <ellipse
+                  cx={`${xPercent}%`}
+                  cy={y}
+                  rx={isExpectedInWait ? '6.4' : '5.4'}
+                  ry={isExpectedInWait ? '4.8' : '3.8'}
+                  transform={`rotate(-20)`}
+                  fill={noteColor}
+                  filter={isExpectedInWait ? `url(#glow-amber-${mNum})` : undefined}
                 />
 
-                {/* Treble Stave Lines (5 lines) */}
-                {[0, 1, 2, 3, 4].map((i) => (
-                  <line
-                    key={`m${mNum}-t-${i}`}
-                    x1="0"
-                    y1={trebleTopY + i * lineSpacing}
-                    x2={dynamicMeasureWidth}
-                    y2={trebleTopY + i * lineSpacing}
-                    stroke="#2a2a2a"
-                    strokeWidth="1.2"
-                  />
-                ))}
+                {/* Musical Stem */}
+                <line
+                  x1={`${xPercent + (isStemUp ? 1.5 : -1.5)}%`}
+                  y1={y}
+                  x2={`${xPercent + (isStemUp ? 1.5 : -1.5)}%`}
+                  y2={stemEndY}
+                  stroke={noteColor}
+                  strokeWidth="1.4"
+                />
 
-                {/* Bass Stave Lines (5 lines) */}
-                {[0, 1, 2, 3, 4].map((i) => (
-                  <line
-                    key={`m${mNum}-b-${i}`}
-                    x1="0"
-                    y1={bassTopY + i * lineSpacing}
-                    x2={dynamicMeasureWidth}
-                    y2={bassTopY + i * lineSpacing}
-                    stroke="#2a2a2a"
-                    strokeWidth="1.2"
-                  />
-                ))}
-
-                {/* Dynamic Marking (Urtext expression between Treble and Bass staves) */}
-                {(() => {
-                  const avgVel = sortedNotes.length > 0 
-                    ? sortedNotes.reduce((sum, n) => sum + (n.velocity || 75), 0) / sortedNotes.length 
-                    : 0
-                  const dyn = avgVel >= 105 ? 'ff' : avgVel >= 92 ? 'f' : avgVel >= 78 ? 'mf' : avgVel >= 64 ? 'mp' : avgVel >= 48 ? 'p' : avgVel > 0 ? 'pp' : null
-                  if (!dyn) return null
-                  return (
-                    <text
-                      x="10"
-                      y={middleCY + 3.5}
-                      fontSize="12"
-                      fontFamily="serif"
-                      fontStyle="italic"
-                      fontWeight="bold"
-                      fill="#854d0e"
-                      textAnchor="start"
-                      className="select-none pointer-events-none"
-                    >
-                      {dyn}
-                    </text>
-                  )
-                })()}
-
-                {/* Only render note SVG nodes for visible measures to maintain 120 FPS */}
-                {isVisible &&
-                  sortedNotes.map((note) => {
-                    // Beat-based horizontal note positioning
-                    let x: number
-                    if (note.beat !== undefined && note.beat >= 1) {
-                      const beatRatio = (note.beat - 1) / measureBeats
-                      x = 24 + beatRatio * (dynamicMeasureWidth - 48)
-                    } else {
-                      const noteOffsetInMeasure = (note.startTime - mStartTime) / mDuration
-                      x = 28 + noteOffsetInMeasure * (dynamicMeasureWidth - 56)
+                {/* Eighth/Sixteenth note flag */}
+                {note.duration <= 0.35 && (
+                  <path
+                    d={
+                      isStemUp
+                        ? `M ${stemEndY} Q ${stemEndY + 8}, ${stemEndY + 14}`
+                        : `M ${stemEndY} Q ${stemEndY - 8}, ${stemEndY - 14}`
                     }
+                    fill="none"
+                    stroke={noteColor}
+                    strokeWidth="1.6"
+                  />
+                )}
+              </g>
+            )
+          })}
 
-                    const y = getYForNote(note)
-
-                    const isActive =
-                      (activeNotes && activeNotes.has(note.midi)) ||
-                      (currentTime >= note.startTime && currentTime <= note.startTime + note.duration)
-
-                    // Standard engraving rule: notes below staff midline stem UP, notes on/above stem DOWN
-                    const isTreble = y < middleCY + 4
-                    const staffCenterY = isTreble ? trebleTopY + lineSpacing * 2 : bassTopY + lineSpacing * 2
-                    const isStemUp = y > staffCenterY
-                    const stemHeight = 26
-                    const stemEndY = isStemUp ? y - stemHeight : y + stemHeight
-                    const stemX = isStemUp ? x + 5.2 : x - 5.2
-
-                    // Exact multi-ledger line calculation
-                    const ledgerYList = calculateLedgerLines(y)
-
-                    const noteColor = isActive ? '#ea580c' : '#1a1a1a'
-
-                    // Determine if accidental is required (suppress if already defined in key signature)
-                    const hasSharp = note.noteName.includes('#')
-                    const hasFlat = note.noteName.includes('b')
-                    const isCovered = isNoteCoveredByKeySignature(note.noteName)
-                    const showSharpSymbol = hasSharp && !isCovered
-                    const showFlatSymbol = hasFlat && !isCovered
-
-                    return (
-                      <g key={note.id}>
-                        {/* Dynamic Ledger Lines */}
-                        {ledgerYList.map((ly, lIdx) => (
-                          <line
-                            key={`leg-${note.id}-${lIdx}`}
-                            x1={x - 8}
-                            y1={ly}
-                            x2={x + 8}
-                            y2={ly}
-                            stroke="#1a1a1a"
-                            strokeWidth="1.4"
-                          />
-                        ))}
-
-                        {/* Accidental sharp / flat */}
-                        {showSharpSymbol && (
-                          <text
-                            x={x - 12}
-                            y={y + 4.5}
-                            fontSize="13"
-                            fontWeight="bold"
-                            fill={noteColor}
-                            fontFamily="serif"
-                          >
-                            ♯
-                          </text>
-                        )}
-                        {showFlatSymbol && (
-                          <text
-                            x={x - 11}
-                            y={y + 3.5}
-                            fontSize="13"
-                            fontWeight="bold"
-                            fill={noteColor}
-                            fontFamily="serif"
-                          >
-                            ♭
-                          </text>
-                        )}
-
-                        {/* Note Head */}
-                        <ellipse
-                          cx={x}
-                          cy={y}
-                          rx="5.6"
-                          ry="4"
-                          transform={`rotate(-20 ${x} ${y})`}
-                          fill={noteColor}
-                        />
-
-                        {/* Musical Stem */}
-                        <line
-                          x1={stemX}
-                          y1={y}
-                          x2={stemX}
-                          y2={stemEndY}
-                          stroke={noteColor}
-                          strokeWidth="1.4"
-                        />
-
-                        {/* Eighth/Sixteenth note flag */}
-                        {note.duration <= 0.35 && (
-                          <path
-                            d={
-                              isStemUp
-                                ? `M ${stemX} ${stemEndY} Q ${stemX + 6} ${stemEndY + 8}, ${stemX + 8} ${stemEndY + 14}`
-                                : `M ${stemX} ${stemEndY} Q ${stemX + 6} ${stemEndY - 8}, ${stemX + 8} ${stemEndY - 14}`
-                            }
-                            fill="none"
-                            stroke={noteColor}
-                            strokeWidth="1.6"
-                          />
-                        )}
-
-
-                      </g>
-                    )
-                  })}
-
-                {/* Damper Pedal Marking */}
-                {pedalsInMeasure.map((_, pIdx) => {
-                  return (
-                    <g key={`ped-${mNum}-${pIdx}`}>
-                      <text
-                        x="10"
-                        y={pedalLineY + 2}
-                        fontSize="11"
-                        fontFamily="serif"
-                        fontStyle="italic"
-                        fontWeight="bold"
-                        fill="#57534e"
-                      >
-                        Ped.
-                      </text>
-                      <line
-                        x1="36"
-                        y1={pedalLineY}
-                        x2={dynamicMeasureWidth - 12}
-                        y2={pedalLineY}
-                        stroke="#57534e"
-                        strokeWidth="1.4"
-                      />
-                      <line
-                        x1={dynamicMeasureWidth - 12}
-                        y1={pedalLineY}
-                        x2={dynamicMeasureWidth - 12}
-                        y2={pedalLineY - 6}
-                        stroke="#57534e"
-                        strokeWidth="1.4"
-                      />
-                    </g>
-                  )
-                })}
-              </svg>
-            </div>
-          )
-        })}
+          {/* Damper Pedal Marking */}
+          {pedalsInMeasure.map((_, pIdx) => (
+            <g key={`ped-${mNum}-${pIdx}`}>
+              <text
+                x="8%"
+                y={pedalLineY + 2}
+                fontSize="11"
+                fontFamily="serif"
+                fontStyle="italic"
+                fontWeight="bold"
+                fill="#57534e"
+              >
+                Ped.
+              </text>
+              <line x1="28%" y1={pedalLineY} x2="92%" y2={pedalLineY} stroke="#57534e" strokeWidth="1.3" />
+              <line x1="92%" y1={pedalLineY} x2="92%" y2={pedalLineY - 5} stroke="#57534e" strokeWidth="1.3" />
+            </g>
+          ))}
+        </svg>
       </div>
+    )
+  }
+
+  return (
+    <div className="w-full h-full bg-[#fcfaf6] flex flex-col select-none overflow-hidden relative border-t border-stone-200">
+      {/* SCORE MASTHEAD HEADER */}
+      <div className="px-4 py-2 border-b border-stone-200/80 bg-[#f9f6f0] flex items-center justify-between flex-shrink-0 z-10 shadow-xs">
+        <div className="flex items-center gap-3">
+          <div className="flex flex-col">
+            <h2 className="text-stone-900 font-serif font-bold text-sm sm:text-base leading-tight tracking-wide flex items-center gap-2">
+              <span>{piece.title}</span>
+              {isWaitMode && (
+                <span className="inline-flex items-center gap-1 text-[10px] font-sans font-bold bg-amber-500/15 text-amber-800 px-2 py-0.5 rounded-full border border-amber-300">
+                  <Sparkles className="w-2.5 h-2.5 text-amber-600" />
+                  Wartemodus
+                </span>
+              )}
+            </h2>
+            <p className="text-stone-600 text-xs font-serif italic">
+              {piece.composer} • {piece.key || 'Original Tonart'} •{' '}
+              {piece.timeSignature ? `${piece.timeSignature[0]}/${piece.timeSignature[1]}` : '4/4'}
+            </p>
+          </div>
+        </div>
+
+        {/* VIEW MODE TOGGLE (Vollständiges Notenblatt vs Horizontaler Notenband) */}
+        <div className="flex items-center gap-1 bg-stone-200/80 p-0.5 rounded-lg border border-stone-300/60 shadow-inner">
+          <button
+            onClick={() => setLayoutMode('page')}
+            className={`flex items-center gap-1.5 px-2.5 py-1 rounded-md text-xs font-semibold transition-all ${
+              layoutMode === 'page'
+                ? 'bg-white text-stone-900 shadow-sm'
+                : 'text-stone-600 hover:text-stone-900'
+            }`}
+            title="Vollständiges Notenblatt (Henle Urtext Seitenansicht)"
+          >
+            <BookOpen className="w-3.5 h-3.5" />
+            <span className="hidden sm:inline">Notenblatt</span>
+          </button>
+          <button
+            onClick={() => setLayoutMode('strip')}
+            className={`flex items-center gap-1.5 px-2.5 py-1 rounded-md text-xs font-semibold transition-all ${
+              layoutMode === 'strip'
+                ? 'bg-white text-stone-900 shadow-sm'
+                : 'text-stone-600 hover:text-stone-900'
+            }`}
+            title="Horizontaler Notenfluss (Fortlaufendes Band)"
+          >
+            <StretchHorizontal className="w-3.5 h-3.5" />
+            <span className="hidden sm:inline">Notenband</span>
+          </button>
+        </div>
+      </div>
+
+      {/* 1. VOLLSTÄNDIGES NOTENBLATT: MULTI-SYSTEM ENGRAVED SCORE PAGE VIEW */}
+      {layoutMode === 'page' && (
+        <div
+          ref={pageContainerRef}
+          className="flex-1 overflow-y-auto overflow-x-hidden p-3 sm:p-6 space-y-6 scroll-smooth bg-[#fcfaf6]"
+        >
+          {systems.map((sys) => {
+            const isFirstSystem = sys.systemIndex === 0
+            const isSystemActive = sys.systemIndex === currentSystemIndex
+
+            return (
+              <div
+                key={`system-${sys.systemIndex}`}
+                data-system={sys.systemIndex}
+                className={`w-full flex items-center transition-all duration-200 rounded-xl p-1 ${
+                  isSystemActive
+                    ? 'ring-2 ring-amber-400/80 bg-amber-500/[0.04] shadow-md'
+                    : 'hover:bg-stone-100/30'
+                }`}
+                style={{ height: totalSvgHeight + 8 }}
+              >
+                {/* Grand Staff Clef Block for each system */}
+                {renderClefBlock(isFirstSystem)}
+
+                {/* Measures in this system row (spanning full width) */}
+                <div className="flex-1 flex items-center h-full">
+                  {sys.measures.map((mNum) => renderMeasure(mNum))}
+                </div>
+              </div>
+            )
+          })}
+        </div>
+      )}
+
+      {/* 2. HORIZONTALER NOTENWURM: CONTINUOUS HORIZONTAL SCROLL STRIP */}
+      {layoutMode === 'strip' && (
+        <div
+          ref={scrollContainerRef}
+          className="flex-1 flex overflow-x-auto overflow-y-hidden px-4 py-2 scroll-smooth items-center scrollbar-none bg-[#fcfaf6]"
+        >
+          {/* Clefs, Key Signature (Fixed on Left) */}
+          {renderClefBlock(true)}
+
+          {/* Continuous Measures */}
+          {measureNumbers.map((mNum) => renderMeasure(mNum, undefined, true))}
+        </div>
+      )}
     </div>
   )
 }
