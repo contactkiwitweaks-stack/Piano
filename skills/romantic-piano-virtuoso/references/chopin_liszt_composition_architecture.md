@@ -249,6 +249,58 @@ In High Romantic music, the authentic cadence ($\text{V}^7 \to \text{i}$) is con
 
 ---
 
+### 2.10 Comprehensive Voice-Leading Progression Dictionary for G Minor Romanticism
+
+To assist the composer in realizing pure Romantic textures without parallel voice-leading errors, below is an exhaustive inventory of standard multi-voice progressions in G minor, specifying exact pitch registers and MIDI note assignments.
+
+#### Progression Matrix 01: The Classical Tragic Cadence (Schenkerian Urlinie $\hat{3} \to \hat{2} \to \hat{1}$)
+$$\text{i} \longrightarrow \text{iv}^6 \longrightarrow N^6 \longrightarrow \text{i}^6_4 \longrightarrow \text{V}^{7\flat9} \longrightarrow \text{i}$$
+- **Chord 1: $\text{i}$ (G minor)**
+  - Bass: $\text{G}_1$ (MIDI 31) + $\text{G}_2$ (MIDI 43)
+  - Tenor: $\text{D}_3$ (MIDI 50)
+  - Alto: $\text{G}_3$ (MIDI 55)
+  - Soprano: $\text{B}\flat_4$ (MIDI 70) [Scale degree $\hat{3}$]
+- **Chord 2: $\text{iv}^6$ (C minor / $\text{E}\flat$)**
+  - Bass: $\text{E}\flat_2$ (MIDI 51)
+  - Tenor: $\text{C}_3$ (MIDI 48)
+  - Alto: $\text{G}_3$ (MIDI 55) [Sustained common tone]
+  - Soprano: $\text{C}_5$ (MIDI 72) [Expressive leap of a whole tone]
+- **Chord 3: $N^6$ (Neapolitan Sixth, $\text{A}\flat/\text{C}$)**
+  - Bass: $\text{C}_2$ (MIDI 48) [Subdominant foundation]
+  - Tenor: $\text{E}\flat_3$ (MIDI 51)
+  - Alto: $\text{A}\flat_3$ (MIDI 56)
+  - Soprano: $\text{A}\flat_4$ (MIDI 68) [Poignant $\flat\hat{2}$ vocal suspension]
+- **Chord 4: $\text{i}^6_4$ (Cadential $6/4$, $\text{G m/D}$)**
+  - Bass: $\text{D}_2$ (MIDI 50)
+  - Tenor: $\text{D}_3$ (MIDI 50)
+  - Alto: $\text{G}_3$ (MIDI 55)
+  - Soprano: $\text{B}\flat_4$ (MIDI 70) [Suspension preparing dominant]
+- **Chord 5: $\text{V}^{7\flat9}$ (Dominant Seventh Flat Nine, $\text{D}^{7\flat9}$)**
+  - Bass: $\text{D}_2$ (MIDI 50)
+  - Tenor: $\text{C}_3$ (MIDI 48) [Seventh of chord]
+  - Alto: $\text{F}\sharp_3$ (MIDI 54) [Leading tone]
+  - Soprano: $\text{A}_4$ (MIDI 69) $\to$ $\text{E}\flat_4$ (MIDI 63) $\to$ $\text{F}\sharp_4$ (MIDI 66) [Appoggiatura resolution to $\hat{2}$]
+- **Chord 6: $\text{i}$ (G minor Tonic Pillar)**
+  - Bass: $\text{G}_1$ (MIDI 31) [Contra-octave gong]
+  - Tenor: $\text{B}\flat_2$ (MIDI 46)
+  - Alto: $\text{D}_3$ (MIDI 50)
+  - Soprano: $\text{G}_4$ (MIDI 67) [Urlinie resolution to $\hat{1}$]
+
+---
+
+#### Progression Matrix 02: The Chromatic Mediant Transfiguration ($\text{G minor} \to \text{B Major}$)
+$$\text{i} \longrightarrow \flat\text{VI} \ (\text{E}\flat) \longrightarrow \text{Ger}^{+6} \ (\text{E}\flat^7) \longrightarrow \text{Enharmonic Pivot} \ (\text{D}\sharp/\text{E}\flat) \longrightarrow \text{III}^\sharp \ (\text{B Major})$$
+- **Chord 1: $\text{i}$ (G minor)**: $\text{G}_1 - \text{D}_3 - \text{B}\flat_3 - \text{G}_4$
+- **Chord 2: $\flat\text{VI}$ (E$\flat$ Major)**: $\text{E}\flat_1 - \text{E}\flat_2 - \text{G}_3 - \text{B}\flat_3 - \text{E}\flat_4$ (Common tones $\text{G}$ and $\text{B}\flat$ held)
+- **Chord 3: $\text{Ger}^{+6}$ (German Sixth / $\text{E}\flat^7$)**: $\text{E}\flat_1 - \text{G}_2 - \text{B}\flat_3 - \text{C}\sharp_4$ (Adds the biting augmented sixth $\text{C}\sharp$)
+- **Chord 4: Transfigurative Pivot**: Re-spell $\text{E}\flat_4$ as $\text{D}\sharp_4$; voice-slide $\text{C}\sharp_4 \to \text{B}_3$, $\text{B}\flat_3 \to \text{B}_3$, $\text{G}_2 \to \text{F}\sharp_2$
+- **Chord 5: $\text{III}^\sharp$ (B Major Ethereal Dawn)**:
+  - Bass: $\text{B}_0 - \text{B}_1$ (MIDI 23/35)
+  - Arpeggio: $\text{F}\sharp_2 - \text{D}\sharp_3 - \text{F}\sharp_3 - \text{B}_3$
+  - Melody: $\text{D}\sharp_5$ (Singing bell tone, MIDI 75)
+
+---
+
 ## 3. Melodic Contours, Bel Canto Vocalism & Rubato Pacing
 
 Romantic piano melody is fundamentally a human voice made infinite by the mechanical compass of the pianoforte. Chopin openly declared to his students: *"You must sing if you wish to play the piano."* Liszt expanded this singing voice into an operatic protagonist undergoing heroic transformation.
@@ -529,11 +581,11 @@ When Chopin and Liszt engaged with the classical Sonata form (Chopin's Sonatas N
 
 ---
 
-## 6. Actionable Compositional Rules Catalog (Rules 01 to 65)
+## 6. Actionable Compositional Rules Catalog (Rules 01 to 100)
 
-To provide the composer with an uncompromising, professional framework, the following rules codify the essential do's and don'ts of High Romantic virtuoso composition.
+To provide the composer with an uncompromising, professional framework, the following rules codify the essential do's and don'ts of High Romantic virtuoso composition across five strict domains.
 
-### 6.1 Harmonic Syntax Rules (H-01 to H-20)
+### 6.1 Harmonic Syntax Rules (H-01 to H-25)
 - **Rule H-20 (The Neapolitan Pre-Dominant Function)**: Never resolve an $N^6$ chord directly to the tonic root triad in root position ($\flat\text{II}^6 \to \text{i}$). This produces crude consecutive parallel fifths and octaves. Always route through $\text{i}^6_4$, $\text{V}^7$, or $\text{Ger}^{+6}$.
 - **Rule H-21 (Chromatic Voice-Leading Directionality)**: Raised pitches ($\sharp\hat{4}, \sharp\hat{5}, \sharp\hat{1}$) must resolve **upward** by half-step; lowered pitches ($\flat\hat{2}, \flat\hat{6}, \flat\hat{3}, \flat\hat{7}$) must resolve **downward** by half-step. Never reverse these vectors unless executing an enharmonic reinterpretation.
 - **Rule H-22 (The Consecutive Diminished Seventh Rule)**: When chaining diminished seventh chords, avoid parallel tritones in the outer voices. Rotate the inversion of alternating chords so that soprano and bass move in contrary motion.
@@ -545,10 +597,15 @@ To provide the composer with an uncompromising, professional framework, the foll
 - **Rule H-28 (The False Tonic Entrance)**: In the recapitulation, begin the theme in an alien key ($\flat\text{VI}$ or $\flat\text{III}$) for two measures before snapping it back to the true tonic via a chromatic slip, heightening the emotional relief.
 - **Rule H-29 (The Low-Bass Root Anchor)**: At every major structural cadence, the bass fundamental must be struck in the contra-octave ($\text{A}_{-1}$ to $\text{C}_2$) to excite the cabinet and soundboard acoustic resonance.
 - **Rule H-30 (The Chromatic Bass Sinking)**: In lament episodes, construct the bass line as a descending chromatic tetrachord ($\hat{1} \to \flat\hat{7} \to \flat\hat{6} \to \hat{5} = \text{G} \to \text{F} \to \text{E}\flat \to \text{D}$), harmonized with alternating sixth chords and secondary dominants.
+- **Rule H-31 (Tritone Bass Displacement)**: Approach the final dominant downbeat by leaping from the tritone subdominant ($\text{A}\flat \to \text{D}$) rather than diatonic fourth ($\text{A} \to \text{D}$), creating an aggressive romantic crunch.
+- **Rule H-32 (The Suspended Minor Ninth)**: Add a minor ninth ($\text{E}\flat$) above the dominant seventh ($\text{D}^7$) on the downbeat of a tragic climax, resolving it to the root ($\text{D}$) on the weak beat.
+- **Rule H-33 (Picardy Major Fragility)**: If resolving a minor work to major, voice the major third in a quiet, high register ($\text{B}_5$) wrapped in pedal shimmer rather than an aggressive low chord, signifying transcendent release rather than victory.
+- **Rule H-34 (The Swiss Sixth / Re-Spelled German)**: When resolving a German sixth to a cadential $6/4$, re-spell the augmented sixth ($\text{C}\sharp$) as a diminished seventh ($\text{D}\flat$) to clarify linear voice leading towards the tonic third.
+- **Rule H-35 (Subdominant Hexachord Saturation)**: In funeral episodes, prolong the subdominant minor mode by cycling through all six diatonic pitches of $\text{C}$ minor against a sustained tonic G pedal.
 
 ---
 
-### 6.2 Melodic Construction Rules (M-01 to M-18)
+### 6.2 Melodic Construction Rules (M-01 to M-25)
 - **Rule M-09 (The Vocal Breathing Rest)**: Every cantabile phrase must contain at least one eighth-rest or sixteenth-rest before a soaring leap, simulating the physical inhalation of an operatic soprano.
 - **Rule M-10 (The Double Appoggiatura)**: Approach the final melodic note of a cadence not directly, but via a double appoggiatura (upper neighbor followed by lower neighbor, e.g., $\text{E}\flat \to \text{C}\sharp \to \text{D}$).
 - **Rule M-11 (The Fioritura Register Span)**: A virtuosic fioritura should span a minimum of two octaves and a maximum of four octaves, never remaining static in a single register.
@@ -559,10 +616,17 @@ To provide the composer with an uncompromising, professional framework, the foll
 - **Rule M-16 (The Recitative Declamation)**: In dramatic transitions, suspend the accompanimental beat entirely and write an unmetered, dramatic recitative in the right hand (*parlando*), imitating the impassioned speech of a tragic actor.
 - **Rule M-17 (The Inner-Voice Tenor Duet)**: Introduce a counter-melody in the left hand (tenor register) that engages in a polyphonic love duet with the soprano, answering its phrases with two-beat delays.
 - **Rule M-18 (Avoiding Melodic Cliché)**: Never resolve the leading tone ($\text{F}\sharp$) to the tonic ($\text{G}$) directly in the high treble if a tragic ending is desired. Deflect it downward to the fifth ($\text{D}$) or leave it suspended over a void.
+- **Rule M-19 (The Chromatic Neighbor Cluster)**: Encircle a melodic tone with both its upper and lower chromatic half-step neighbors before stating the pure note (e.g., $\text{F}\sharp \to \text{A}\flat \to \text{G}$).
+- **Rule M-20 (The Asymmetrical 7-Bar Arch)**: Structure cantabile themes in $3 + 4$ measure asymmetric units: a 3-measure question followed by a 4-measure expanded, yearning response.
+- **Rule M-21 (Vocal Portamento Acciaccatura)**: Prefix a leap of an octave with an acciaccatura struck a half-step below the target, sliding instantly into the principal melody note.
+- **Rule M-22 (The Sinking Chromatic Sigh)**: Descending stepwise passages must group into two-note slur pairs (strong-weak), dropping velocity by 20% on the second note to mimic human sobs.
+- **Rule M-23 (Apex Elongation)**: When the melody attains its highest register pitch, assign it a tenuto mark and elongate its temporal duration by 15–25% before resuming tempo.
+- **Rule M-24 (The Unaccompanied Solitary Voice)**: Begin the entire composition with a single unaccompanied voice in the tenor register, establishing the solitary narrator before the harmonic cosmos awakens.
+- **Rule M-25 (The Dying Fall / Smorzando)**: End meditative phrases with descending scalar fragments marked *mancando* or *smorzando*, extinguishing both velocity and tempo simultaneously.
 
 ---
 
-### 6.3 Textural Topography Rules (T-01 to T-18)
+### 6.3 Textural Topography Rules (T-01 to T-25)
 - **Rule T-09 (The Register Vacuum)**: To create immense acoustic suspense, deliberately leave the middle register ($\text{C}3 - \text{C}5$) completely empty, pitting deep sub-bass octaves against crystalline ultra-high treble filigree.
 - **Rule T-10 (The Hand-Crossing Sparkle)**: In the Lisztian three-hand texture, the left hand must leap *over* the right hand to strike crystalline bell-tones in the highest octave ($\text{C}6 - \text{G}7$) before plunging back down to the bass.
 - **Rule T-11 (Arpeggio Curve Acceleration)**: In wide arpeggiated accompaniments, accelerate the note values from eighths to triplets to sixteenths as the phrase climbs toward its harmonic zenith.
@@ -573,6 +637,43 @@ To provide the composer with an uncompromising, professional framework, the foll
 - **Rule T-16 (Interlocking Octave Layout)**: In fast interlocking octave passages, assign the upper voice to the right hand and the lower octave voice to the left hand, alternating downbeats to produce an unbroken barrage of sound.
 - **Rule T-17 (Bass Overtone Window)**: Allow deep bass fundamentals to ring for at least two beats before introducing complex treble harmonies, ensuring the soundboard reaches full sympathetic vibration.
 - **Rule T-18 (Polyrhythmic Hand Independence)**: When playing 4:3 or 11:4, focus physical consciousness entirely on the left-hand harmonic cradle; allow the right hand to float as an autonomous, unmetered vocal improvisation.
+- **Rule T-19 (The Open-Fifth Foundation)**: In the sub-contra register ($\text{A}_0 - \text{C}_2$), voice chords strictly as open octaves or fifths ($\text{G}_0 - \text{D}_1 - \text{G}_1$) to prevent mud and maximize acoustic punch.
+- **Rule T-20 (Tremolando Orchestral Swell)**: When imitating orchestral timpani or string sections, write tremolos across double octaves in the left hand, swelling dynamically from $p$ to $ff$.
+- **Rule T-21 (The Flute-Stop Treble)**: In celestial cantabile episodes, position both hands in the upper treble register ($\text{C}5 - \text{C}8$), sounding like a silvery mechanical music box or celestial flute.
+- **Rule T-22 (Thumb Pivot Arpeggiation)**: When executing two-octave left-hand sweeps, use the thumb as an anchor on the upper root to allow the arm to reset its horizontal position without pause.
+- **Rule T-23 (Rapid Broken Tenths)**: If a tenuto chord contains a tenth beyond the performer's span, write it as a rapid upward arpeggiation struck precisely before the beat so the tenth rings on the downbeat.
+- **Rule T-24 (Contrary Wedge Expansion)**: In virtuoso cadenzas, drive the right hand upward by scale and the left hand downward by octave, expanding keyboard compass from 1 octave to 7 octaves in 4 measures.
+- **Rule T-25 (Chopinesque Legatissimo)**: In singing nocturne textures, overlap note releases by 20–30 milliseconds (*over-legato*), creating a physical simulation of the vocal portamento.
+
+---
+
+### 6.4 Macro-Formal Architecture Rules (F-01 to F-15)
+- **Rule F-04 (Dual-Thematic Inversion)**: In the Ballade recapitulation, present the lyrical second theme first in full orchestral splendour, relegating the tragic first theme to a compressed, disintegrated pre-coda fragment.
+- **Rule F-05 (The Inevitable Coda Cataclysm)**: The coda of a tragic Romantic work must never merely confirm the home key; it must function as a self-contained cyclone of kinetic fury that annihilates previous thematic material.
+- **Rule F-06 (The Bardic Frame)**: Enclose the entire piece within an overarching narrative frame: an unaccompanied introduction (the Bard begins the tale) and a desolate, dying postlude (the Bard closes the book).
+- **Rule F-07 (Tonal Journey Arc)**: Structure the tonal path as an epic expedition: Minor Tonic $\to$ Submediant Major $\to$ Double Chromatic Mediant $\to$ Tempestuous Cadenza $\to$ Minor Tonic Coda.
+- **Rule F-08 (Thematic Transformation Integrity)**: When transforming a lyrical cantabile theme into a martial or tragic subject, preserve the exact melodic contour and interval ratios while altering meter, tempo, and accompanimental texture.
+- **Rule F-09 (The False Recapitulation)**: Bring back the opening motto in a distant chromatic key ($\text{C}\sharp$ minor or $\text{E}$ minor) to disorient the listener before the true tonic returns.
+- **Rule F-10 (Continuous Multi-Movement Fusion)**: Eliminate breaks between sections; link sections with improvisatory cadenzas, recitatives, or sustained pedal chords.
+- **Rule F-11 (Dynamic Golden Ratio)**: Position the primary dynamic and textural climax at approximately 61.8% to 75% of the total piece length.
+- **Rule F-12 (The Narrative Foreshadowing)**: In the introduction, state the generative motto in quiet fragments, foreshadowing the tragic conflict before the principal theme begins.
+- **Rule F-13 (Rhythmic Metric Dissolution)**: Transition from stable compound meter (6/8 or 12/8) to chaotic simple duple (2/2 Presto) to represent the loss of emotional control.
+- **Rule F-14 (The Unresolved Question Postlude)**: Let the final chord ring out into infinity, or end on an open fifth rather than a triumphant full triad, cementing tragic resignation.
+- **Rule F-15 (Cyclic Unity)**: Ensure that every secondary subject, bridge run, and ostinato in the piece can be traced back to the intervals of the generative five-note motto.
+
+---
+
+### 6.5 Dynamic & Acoustic Staging Rules (A-01 to A-10)
+- **Rule A-01 (Velocity Calibration)**: Never allow a cantabile melody to drop below MIDI velocity 80, even in a $p$ dynamic, while keeping accompanimental arpeggios clamped below velocity 65.
+- **Rule A-02 (Pedal Catch Synchronization)**: Mark pedal depressions 50 milliseconds *after* the downbeat key strike, allowing the clean hammer transient to ring before raising dampers.
+- **Rule A-03 (Half-Pedal Coloration)**: In murky, mysterious episodes (*sotto voce*), employ half-pedal (CC64 = 60–70) to retain partial string damping while preventing dry staccato emptiness.
+- **Rule A-04 (Una Corda Contrast)**: Mark the *una corda* (soft pedal, CC67) exclusively for distant dreamscapes (e.g., Part II B Major section), releasing it (*tre corde*) with an explosive surge of warmth.
+- **Rule A-05 (Acoustic Soundboard Decay)**: Do not release the sustain pedal on the final chord until at least 4 seconds have elapsed in performance, allowing all 25 overtone partials to settle.
+- **Rule A-06 (The Dynamic Sforzando Shock)**: Place an isolated $\sfz$ on a weak off-beat note within a $pp$ passage to simulate a sudden traumatic memory or physical jolt.
+- **Rule A-07 (Stereo Acoustic Panning)**: In virtual realizations, pan low-bass fundamentals 35% left and high-treble fiorituras 35% right, matching the physical geometry of a 9-foot concert grand.
+- **Rule A-08 (Damper Release Transient)**: Capture the subtle mechanical sound of the damper felt dropping onto the strings at the cutoff point, accentuating the sudden silence.
+- **Rule A-09 (High-Frequency Overtone Excitation)**: Strike rapid treble runs with finger pads arched high, maximizing the attack transient and exciting partials above 8 kHz.
+- **Rule A-10 (Sub-Bass Overtone Masking Prevention)**: When low-bass octaves are vibrating, keep middle-register chords spaced thinly to prevent acoustic phase cancellation.
 
 ---
 
