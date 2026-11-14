@@ -1,0 +1,66 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 600 600" width="100%" height="100%">
+  <defs>
+    <radialGradient id="bgMidnight" cx="50%" cy="35%" r="75%">
+      <stop offset="0%" stop-color="#1e1b4b" />
+      <stop offset="45%" stop-color="#0f172a" />
+      <stop offset="100%" stop-color="#020617" />
+    </radialGradient>
+    <radialGradient id="starlightGlow" cx="50%" cy="36%" r="50%">
+      <stop offset="0%" stop-color="#fef08a" stop-opacity="0.45" />
+      <stop offset="40%" stop-color="#38bdf8" stop-opacity="0.18" />
+      <stop offset="100%" stop-color="#1e1b4b" stop-opacity="0" />
+    </radialGradient>
+    <linearGradient id="viennaGold" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="#ffffff" />
+      <stop offset="30%" stop-color="#fef08a" />
+      <stop offset="70%" stop-color="#eab308" />
+      <stop offset="100%" stop-color="#ca8a04" />
+    </linearGradient>
+    <linearGradient id="orbitRing" x1="0%" y1="0%" x2="100%" y2="0%">
+      <stop offset="0%" stop-color="#38bdf8" stop-opacity="0.1" />
+      <stop offset="50%" stop-color="#fef08a" stop-opacity="0.8" />
+      <stop offset="100%" stop-color="#38bdf8" stop-opacity="0.1" />
+    </linearGradient>
+  </defs>
+
+  <!-- Deep Viennese Night Sky -->
+  <rect width="600" height="600" fill="url(#bgMidnight)" />
+  <circle cx="300" cy="230" r="210" fill="url(#starlightGlow)" />
+
+  <!-- Constellations & Sparkling Stars -->
+  <g fill="#ffffff">
+    <!-- Center 8-pointed star -->
+    <path d="M 300,140 L 305,215 L 380,220 L 305,225 L 300,300 L 295,225 L 220,220 L 295,215 Z" fill="url(#viennaGold)" opacity="0.9" />
+    <circle cx="300" cy="220" r="8" fill="#ffffff" />
+
+    <!-- Surrounding 12 Variation Stars (representing 12 variations) -->
+    <circle cx="160" cy="120" r="3" fill="#fef08a" opacity="0.85" />
+    <circle cx="230" cy="90" r="2.5" fill="#fef08a" opacity="0.8" />
+    <circle cx="370" cy="95" r="3" fill="#fef08a" opacity="0.85" />
+    <circle cx="440" cy="130" r="2.5" fill="#fef08a" opacity="0.8" />
+    <circle cx="480" cy="200" r="3" fill="#fef08a" opacity="0.9" />
+    <circle cx="470" cy="280" r="2.5" fill="#fef08a" opacity="0.8" />
+    <circle cx="420" cy="340" r="3" fill="#fef08a" opacity="0.85" />
+    <circle cx="360" cy="370" r="2.5" fill="#fef08a" opacity="0.8" />
+    <circle cx="240" cy="365" r="3" fill="#fef08a" opacity="0.85" />
+    <circle cx="180" cy="330" r="2.5" fill="#fef08a" opacity="0.8" />
+    <circle cx="130" cy="270" r="3" fill="#fef08a" opacity="0.9" />
+    <circle cx="120" cy="190" r="2.5" fill="#fef08a" opacity="0.8" />
+  </g>
+
+  <!-- Golden Orbit Rings (Harmonic Polyphony) -->
+  <ellipse cx="300" cy="225" rx="180" ry="120" fill="none" stroke="url(#orbitRing)" stroke-width="1.8" transform="rotate(-15 300 225)" />
+  <ellipse cx="300" cy="225" rx="150" ry="80" fill="none" stroke="url(#orbitRing)" stroke-width="1.2" transform="rotate(25 300 225)" opacity="0.6" />
+
+  <!-- Typography Plaque -->
+  <rect x="50" y="440" width="500" height="110" rx="16" fill="#030712" fill-opacity="0.8" stroke="#38bdf8" stroke-width="1.5" stroke-opacity="0.3" />
+  <text x="300" y="478" text-anchor="middle" font-family="'Cinzel', 'Playfair Display', Georgia, serif" font-weight="900" font-size="22" fill="url(#viennaGold)" letter-spacing="3">
+    12 VARIATIONS K. 265
+  </text>
+  <text x="300" y="502" text-anchor="middle" font-family="'Cinzel', 'Playfair Display', Georgia, serif" font-style="italic" font-size="14" fill="#93c5fd" letter-spacing="1.5">
+    W. A. Mozart • Ah vous dirai-je Maman
+  </text>
+  <text x="300" y="528" text-anchor="middle" font-family="-apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif" font-weight="700" font-size="11" fill="#fef08a" letter-spacing="2">
+    TWINKLE TWINKLE • COMPLETE 6,338 NOTES
+  </text>
+</svg>

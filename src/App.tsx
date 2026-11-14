@@ -489,9 +489,7 @@ export function App() {
           let keepCheckingChords = true
           while (keepCheckingChords && nextNoteIndexRef.current < activePiece.notes.length) {
             const upcomingLeader = activePiece.notes[nextNoteIndexRef.current]
-            if (upcomingLeader && upcomingLeader.startTime > nextTime + 0.085 && nextNoteIndexRef.current !== 0) {
-              break
-            }
+            if (!upcomingLeader) break
 
             // Collect all simultaneous notes in this chord cluster (within 85ms for expressive rolled arpeggios)
             const chordNotes: NoteEvent[] = []
@@ -513,50 +511,60 @@ export function App() {
 
             if (targetChordNotes.length > 0) {
               const expectedMidis = targetChordNotes.map((n) => n.midi)
-              expectedWaitMidisRef.current = expectedMidis
-              AcousticNoteRecognizer.getInstance().setTargetNotes(expectedMidis)
 
-              // Check if all expected midis in this chord have been freshly struck
-              // STRICT PEDAGOGICAL ENGAGEMENT:
-              // Merely holding down a key continuously from a previous chord DOES NOT count for repeated identical notes!
-              // Each repeated note/chord strictly requires a distinct fresh key strike (attack)
-              // occurring AFTER that note was previously consumed!
+              // Check if player has already struck or is holding these notes
+              // Pair each expected MIDI with an unmatched strike token from performanceBuffer or fresh active hold
+              const matchedTokens: Array<{ midi: number; token: { matched: boolean; timestampMs: number } | null; strikeTime: number }> = []
+
               const allHit = expectedMidis.every((m) => {
                 const lastConsumed = consumedNoteStrikeTimeRef.current.get(m) || 0
 
-                // 1. Check for unconsumed fresh strike in performance buffer (MIDI, screen tap, or acoustic mic)
-                const hasFreshBufferStrike = performanceBufferRef.current.some(
+                // 1. Look for earliest unconsumed fresh strike in performance buffer (FIFO strike queue)
+                const bufMatch = performanceBufferRef.current.find(
                   (b) => !b.matched && b.midi === m && b.timestampMs > lastConsumed
                 )
-                if (hasFreshBufferStrike) return true
+                if (bufMatch) {
+                  matchedTokens.push({ midi: m, token: bufMatch, strikeTime: bufMatch.timestampMs })
+                  return true
+                }
 
-                // 2. Check for active note hold, but ONLY IF the strike occurred AFTER the last consumption!
-                // If strikeTime <= lastConsumed, this key is merely held down from a previous chord and MUST be struck again!
+                // 2. Look for active key hold struck AFTER the last consumption
                 const strikeTime = lastNoteStrikeTimeRef.current.get(m) || 0
                 const isCurrentlyActive =
                   midiState.activeNotes.has(m) ||
                   screenActiveNotesRef.current.has(m) ||
                   hitWaitNotesRef.current.has(m)
 
-                return isCurrentlyActive && strikeTime > lastConsumed
+                if (isCurrentlyActive && strikeTime > lastConsumed) {
+                  matchedTokens.push({ midi: m, token: null, strikeTime })
+                  return true
+                }
+
+                return false
               })
 
+              // If chord is not yet struck and upcoming chord is further in the future, let playhead advance naturally
+              if (!allHit && upcomingLeader.startTime > nextTime + 0.085 && nextNoteIndexRef.current !== 0) {
+                break
+              }
+
               if (!allHit) {
-                // Hold and wait for player's fingers!
+                // Playhead is at the chord, hold and wait for player's fingers!
+                expectedWaitMidisRef.current = expectedMidis
+                AcousticNoteRecognizer.getInstance().setTargetNotes(expectedMidis)
                 keepCheckingChords = false
                 animId = requestAnimationFrame(tick)
                 return
               }
 
-              // Chord satisfied! Consume matching strikes and buffer notes
-              const satisfyTime = performance.now()
-              expectedMidis.forEach((m) => {
-                const lastConsumed = consumedNoteStrikeTimeRef.current.get(m) || 0
-                const bufMatch = performanceBufferRef.current.find(
-                  (b) => !b.matched && b.midi === m && b.timestampMs > lastConsumed
-                )
-                if (bufMatch) bufMatch.matched = true
-                consumedNoteStrikeTimeRef.current.set(m, satisfyTime)
+              // Chord satisfied! Consume matching strikes and advance strike consumption record
+              matchedTokens.forEach(({ midi: m, token, strikeTime }) => {
+                if (token) {
+                  token.matched = true
+                }
+                // Record the actual performance strike timestamp as consumed, so subsequent strikes
+                // in the queue (e.g. repeated chords or played-ahead chords) are preserved and recognized!
+                consumedNoteStrikeTimeRef.current.set(m, strikeTime)
                 hitWaitNotesRef.current.delete(m)
                 screenActiveNotesRef.current.delete(m)
               })
@@ -588,7 +596,7 @@ export function App() {
                   )
                 }
               })
-              // The while-loop automatically checks the next chord! If the player already played ahead, it leaps again!
+              // The while-loop automatically checks the next chord! If the player played ahead, it leaps again!
             } else {
               nextNoteIndexRef.current = cIdx
             }

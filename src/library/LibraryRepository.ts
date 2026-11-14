@@ -16,9 +16,78 @@ import chopinNocturneScore from '../data/scores/chopin-nocturne-c-sharp-minor.js
 import hisaishiOneSummerDayScore from '../data/scores/joe-hisaishi-one-summers-day.json'
 import hisaishiMerryGoRoundScore from '../data/scores/joe-hisaishi-merry-go-round.json'
 import djOkawariFlowerDanceScore from '../data/scores/dj-okawari-flower-dance.json'
+import montiCzardasScore from '../data/scores/monti-czardas.json'
+import mozartTwinkleScore from '../data/scores/mozart-twinkle-twinkle.json'
+import chopinLisztSorrowScore from '../data/scores/chopin-liszt-sorrow.json'
 
 export class LibraryRepository {
   private static catalog: LibraryPieceSummary[] = [
+    {
+      id: 'chopin-liszt-sorrow',
+      title: 'Sorrow (Concert Rhapsody in G Minor)',
+      composer: 'Frédéric Chopin & Franz Liszt',
+      opus: 'Virtuoso Original',
+      difficulty: 7,
+      key: 'G minor',
+      period: 'Romantic',
+      durationSeconds: 407,
+      coverColor: 'from-rose-600 via-purple-950 to-zinc-950',
+      coverImage: '/images/covers/chopin-liszt-sorrow.svg',
+      badge: 'Zimerman 7:40 Energy',
+      quote: 'Original High Romantic masterwork capturing the volcanic Presto con fuoco energy and tragic drop-off of Zimerman.',
+      availableEditions: [
+        {
+          id: 'urtext',
+          name: 'Concert Grand Edition',
+          year: '2026 / Complete Score',
+          description: 'Full 2,622-note concert score: weeping lament bass, Liszt three-hand texture, harrowing downward cascade, and 152 BPM Coda drop-off.',
+        },
+      ],
+    },
+    {
+      id: 'monti-czardas',
+      title: 'Czardas',
+      composer: 'Vittorio Monti (Arr. Kristopha K. S.)',
+      opus: '1904',
+      difficulty: 6,
+      key: 'D minor / D Major',
+      period: 'Romantic',
+      durationSeconds: 314,
+      coverColor: 'from-red-600 via-rose-950 to-zinc-950',
+      coverImage: '/images/covers/monti-czardas.svg',
+      badge: 'Gypsy Rhapsody',
+      quote: 'Fiery Hungarian czardas: rhapsodic Lassú rubato and blinding 160 BPM Friss prestissimo.',
+      availableEditions: [
+        {
+          id: 'urtext',
+          name: 'Virtuoso Concert Edition',
+          year: '1904 / Complete Score',
+          description: 'Full 5,465-note arrangement: gypsy violin ornamentation, driving cimbalom chords, and explosive prestissimo coda.',
+        },
+      ],
+    },
+    {
+      id: 'mozart-twinkle-twinkle',
+      title: '12 Variations on Ah vous dirai-je Maman (Twinkle, Twinkle)',
+      composer: 'Wolfgang Amadeus Mozart',
+      opus: 'K. 265 / 300e',
+      difficulty: 4,
+      key: 'C Major',
+      period: 'Classical',
+      durationSeconds: 714,
+      coverColor: 'from-amber-500 via-sky-950 to-zinc-950',
+      coverImage: '/images/covers/mozart-twinkle-twinkle.svg',
+      badge: 'Viennese Masterwork',
+      quote: 'Complete 6,338-note classical masterwork: sparkling right-hand 16ths, operatic Adagio in 3/4, and jubilant Coda.',
+      availableEditions: [
+        {
+          id: 'urtext',
+          name: 'Urtext Complete 12 Variations',
+          year: '1781 / Complete Score',
+          description: 'Full 6,338-note Urtext: pearly right-hand scales, flowing left-hand arpeggios, tragic C minor canon, and Adagio cantabile.',
+        },
+      ],
+    },
     {
       id: 'carol-of-the-bells',
       title: 'Carol of the Bells',
@@ -722,6 +791,15 @@ export class LibraryRepository {
     }
     if (pieceId === 'dj-okawari-flower-dance') {
       return djOkawariFlowerDanceScore as unknown as Piece
+    }
+    if (pieceId === 'chopin-liszt-sorrow') {
+      return chopinLisztSorrowScore as unknown as Piece
+    }
+    if (pieceId === 'monti-czardas') {
+      return montiCzardasScore as unknown as Piece
+    }
+    if (pieceId === 'mozart-twinkle-twinkle') {
+      return mozartTwinkleScore as unknown as Piece
     }
 
     // 1. Try loading complete pre-parsed canonical JSON score

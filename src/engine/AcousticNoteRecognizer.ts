@@ -235,8 +235,8 @@ export class AcousticNoteRecognizer {
 
   /**
    * Flowkey-Grade Polyphonic & Monophonic Piano Recognition
-   * Combines Target-Informed Bayesian Prior Matching, Harmonic Energy Summation with
-   * inharmonicity correction, subharmonic overtone cancellation, and McLeod NSDF.
+   * Combines Target-Informed Bayesian Prior Matching, McLeod NSDF for single notes,
+   * and Harmonic Energy Summation with Spectral Peeling for polyphonic chords.
    */
   private detectChordsAndNotes(
     freqData: Float32Array,
@@ -274,7 +274,6 @@ export class AcousticNoteRecognizer {
     }
 
     // Helper: compute multi-harmonic energy score for a piano pitch with string inharmonicity
-    // String inharmonicity factor B ~ 0.0003 for acoustic piano steel wires
     const inharmonicityB = 0.0003
     const computeHarmonicScore = (f0: number): { fundamental: number; score: number } => {
       const f1 = f0
@@ -290,14 +289,33 @@ export class AcousticNoteRecognizer {
       const e5 = getFrequencyEnergy(f5)
 
       // Weighted harmonic energy profile: fundamental is primary, harmonics confirm pitch
-      const score = e1 * 0.40 + e2 * 0.28 + e3 * 0.18 + e4 * 0.09 + e5 * 0.05
+      const score = e1 * 0.45 + e2 * 0.25 + e3 * 0.15 + e4 * 0.10 + e5 * 0.05
       return { fundamental: e1, score }
     }
 
     // -------------------------------------------------------------
-    // STAGE 1: TARGET-INFORMED PRIOR MATCHING (Flowkey Core Superpower)
+    // STAGE 1: MONOPHONIC MCLEOD PITCH METHOD (NSDF) FOR SINGLE KEYS
     // -------------------------------------------------------------
-    // If the song or trainer is waiting for specific target notes, evaluate them with high sensitivity
+    // If only one key is played, McLeod NSDF provides mathematically exact fundamental pitch,
+    // completely immune to overtone false-positives (octaves and fifths).
+    const monoResult = this.detectMcLeodPitch(timeData, sampleRate)
+    if (monoResult.clarity > 0.70 && monoResult.freq > 60 && monoResult.freq < 2500) {
+      const closestMidi = Math.round(69 + 12 * Math.log2(monoResult.freq / 440))
+      if (closestMidi >= 21 && closestMidi <= 108) {
+        const standardFreq = 440 * Math.pow(2, (closestMidi - 69) / 12)
+        const centDiff = Math.abs(1200 * Math.log2(monoResult.freq / standardFreq))
+        if (centDiff <= 42) {
+          results.add(closestMidi)
+          // Clean single note detected: return immediately without triggering overtone accumulation!
+          return results
+        }
+      }
+    }
+
+    // -------------------------------------------------------------
+    // STAGE 2: TARGET-INFORMED PRIOR MATCHING (Flowkey Core Feature)
+    // -------------------------------------------------------------
+    // If the song is waiting for specific target chord notes, verify if their fundamental is active
     if (this.targetNotes.size > 0) {
       this.targetNotes.forEach((targetMidi) => {
         const p = this.pianoFrequencies.find((item) => item.midi === targetMidi)
@@ -307,52 +325,59 @@ export class AcousticNoteRecognizer {
         const snr = score - avgNoiseFloor
         const fundamentalSnr = fundamental - avgNoiseFloor
 
-        // Target note matching requires lower threshold (~6 dB SNR above noise) because of prior expectation
-        if (snr > 7 && fundamentalSnr > 5) {
+        // Target note requires both overall harmonic score and prominent fundamental
+        if (snr > 8 && fundamentalSnr > 7) {
           results.add(targetMidi)
         }
       })
 
-      // If all expected targets are confirmed, return immediately for sub-millisecond responsiveness!
       if (results.size >= this.targetNotes.size && results.size > 0) {
         return results
       }
     }
 
     // -------------------------------------------------------------
-    // STAGE 2: POLYPHONIC HARMONIC ENERGY SUMMATION (Chord Recognition)
+    // STAGE 3: POLYPHONIC SPECTRAL PEELING & HARMONIC CANCELLATION
     // -------------------------------------------------------------
-    const candidateNotes: Array<{ midi: number; score: number; fundamental: number }> = []
+    // For simultaneous piano chords: evaluate candidates from lowest pitch to highest
+    // and suppress integer overtones (2f0, 3f0, 4f0, 5f0) to prevent false octave/fifth doubles.
+    const candidateNotes: Array<{ midi: number; score: number; fundamental: number; freq: number }> = []
 
     for (const p of this.pianoFrequencies) {
-      if (p.freq < 65 || p.freq > 2600) continue // Active piano performance range (C2 to E7)
+      if (p.freq < 65 || p.freq > 2600) continue
 
       const { fundamental, score } = computeHarmonicScore(p.freq)
       const snr = score - avgNoiseFloor
       const fundamentalSnr = fundamental - avgNoiseFloor
 
-      if (snr > 12 && fundamentalSnr > 8) {
-        candidateNotes.push({ midi: p.midi, score, fundamental })
+      if (snr > 13 && fundamentalSnr > 9) {
+        candidateNotes.push({ midi: p.midi, score, fundamental, freq: p.freq })
       }
     }
 
-    // Sort candidates by prominence
-    candidateNotes.sort((a, b) => b.score - a.score)
+    // Sort candidates by pitch ascending (lowest fundamental first for bottom-up overtone suppression)
+    candidateNotes.sort((a, b) => a.midi - b.midi)
 
-    // Subharmonic Overtone Demixing:
-    // If candidate C5 is detected, but C4 is already strong, C5 is likely the 2nd harmonic of C4.
-    // Only accept C5 if its energy significantly exceeds what C4 would contribute.
-    const acceptedCandidates: Array<{ midi: number; score: number }> = []
+    const acceptedCandidates: Array<{ midi: number; score: number; freq: number }> = []
 
     for (const cand of candidateNotes) {
       let isOvertoneOfAccepted = false
 
       for (const accepted of acceptedCandidates) {
-        // Octave (12 semitones) or Octave+Fifth (19 semitones) or Double Octave (24 semitones)
-        const diff = cand.midi - accepted.midi
-        if (diff === 12 || diff === 19 || diff === 24) {
-          // If cand score is not distinctly louder than the lower note's expected harmonic roll-off, suppress it
-          if (cand.score < accepted.score + 4) {
+        const semitoneDiff = cand.midi - accepted.midi
+        // Common harmonic intervals: Octave (12), Octave+Fifth (19), Double Octave (24), 2 Octaves + Major 3rd (28)
+        const isHarmonicInterval =
+          semitoneDiff === 12 ||
+          semitoneDiff === 19 ||
+          semitoneDiff === 24 ||
+          semitoneDiff === 28 ||
+          semitoneDiff === 31 ||
+          semitoneDiff === 36
+
+        if (isHarmonicInterval) {
+          // A higher note is only accepted if its fundamental is significantly louder (+8 dB)
+          // than what the lower note naturally produces as an overtone
+          if (cand.fundamental < accepted.score + 8) {
             isOvertoneOfAccepted = true
             break
           }
@@ -362,26 +387,7 @@ export class AcousticNoteRecognizer {
       if (!isOvertoneOfAccepted) {
         acceptedCandidates.push(cand)
         results.add(cand.midi)
-        if (acceptedCandidates.length >= 4) break // Max 4 concurrent notes in piano chords
-      }
-    }
-
-    // -------------------------------------------------------------
-    // STAGE 3: MONOPHONIC MCLEOD PITCH METHOD (NSDF) FOR SINGLE NOTES
-    // -------------------------------------------------------------
-    // If no polyphonic chord was resolved, run mathematically exact NSDF autocorrelation
-    if (results.size === 0) {
-      const monoPitch = this.detectMcLeodPitch(timeData, sampleRate)
-      if (monoPitch > 60 && monoPitch < 2500) {
-        const closestMidi = Math.round(69 + 12 * Math.log2(monoPitch / 440))
-        if (closestMidi >= 21 && closestMidi <= 108) {
-          // Verify cent tolerance (+/- 45 cents)
-          const standardFreq = 440 * Math.pow(2, (closestMidi - 69) / 12)
-          const centDiff = Math.abs(1200 * Math.log2(monoPitch / standardFreq))
-          if (centDiff <= 45) {
-            results.add(closestMidi)
-          }
-        }
+        if (acceptedCandidates.length >= 4) break
       }
     }
 
@@ -393,9 +399,12 @@ export class AcousticNoteRecognizer {
    * The gold standard time-domain pitch algorithm with parabolic interpolation.
    * Completely immune to octave-jumping and amplitude fluctuations.
    */
-  private detectMcLeodPitch(timeData: Float32Array, sampleRate: number): number {
+  private detectMcLeodPitch(
+    timeData: Float32Array,
+    sampleRate: number
+  ): { freq: number; clarity: number } {
     const size = 2048
-    if (timeData.length < size) return -1
+    if (timeData.length < size) return { freq: -1, clarity: 0 }
 
     const maxLag = Math.floor(sampleRate / 65) // 65 Hz (approx C2)
     const minLag = Math.floor(sampleRate / 2400) // 2400 Hz (approx D7)
@@ -413,8 +422,9 @@ export class AcousticNoteRecognizer {
       nsdf[lag] = den > 0.0001 ? (2 * num) / den : 0
     }
 
-    // Find the first dominant peak above clarity threshold (0.68)
+    // Find the dominant peak
     let bestLag = -1
+    let bestClarity = 0
     const clarityThreshold = 0.68
 
     for (let lag = minLag + 1; lag < maxLag - 1; lag++) {
@@ -435,13 +445,14 @@ export class AcousticNoteRecognizer {
         } else {
           bestLag = lag
         }
+        bestClarity = beta
         break
       }
     }
 
     if (bestLag > 0) {
-      return sampleRate / bestLag
+      return { freq: sampleRate / bestLag, clarity: bestClarity }
     }
-    return -1
+    return { freq: -1, clarity: 0 }
   }
 }

@@ -64,6 +64,15 @@ const BASS_BOTTOM_Y = BASS_TOP_Y + STAFF_HEIGHT // 144px
 const PEDAL_Y = BASS_BOTTOM_Y + 22 // 166px
 const SYSTEM_HEIGHT = PEDAL_Y + 16 // 182px
 
+interface MeasureColumn {
+  tKey: number
+  startTime: number
+  beat: number | undefined
+  rightHandNotes: NoteEvent[]
+  leftHandNotes: NoteEvent[]
+  x: number
+}
+
 export const SheetMusicView: React.FC<SheetMusicViewProps> = ({
   piece,
   currentTime,
@@ -112,7 +121,7 @@ export const SheetMusicView: React.FC<SheetMusicViewProps> = ({
   const measuresPerSystem = useMemo(() => {
     if (containerWidth >= 1150) return 4
     if (containerWidth >= 700) return 3
-    return 2 // 2 measures per line on iPhone portrait for maximum note legibility
+    return 2 // 2 measures per line on iPhone portrait for maximum legibility
   }, [containerWidth])
 
   // Key signature analysis: sharps vs flats
@@ -143,7 +152,6 @@ export const SheetMusicView: React.FC<SheetMusicViewProps> = ({
       f = 1
     }
 
-    // Standard accidental coverage arrays
     const sharpPitches = ['F', 'C', 'G', 'D', 'A', 'E', 'B'].slice(0, s)
     const flatPitches = ['B', 'E', 'A', 'D', 'G', 'C', 'F'].slice(0, f)
 
@@ -258,14 +266,12 @@ export const SheetMusicView: React.FC<SheetMusicViewProps> = ({
     if (hand === 'right') {
       // Below treble staff (Line 1 E4 is 90)
       if (y >= 96) {
-        // C4 is 99, A3 is 108
         for (let ly = MIDDLE_C_Y; ly <= y + 2; ly += LINE_SPACING) {
           lines.push(ly)
         }
       }
       // Above treble staff (Line 5 F5 is 54)
       if (y <= 48) {
-        // A5 is 45, C6 is 36, E6 is 27
         for (let ly = TREBLE_TOP_Y - LINE_SPACING; ly >= y - 2; ly -= LINE_SPACING) {
           lines.push(ly)
         }
@@ -273,14 +279,12 @@ export const SheetMusicView: React.FC<SheetMusicViewProps> = ({
     } else {
       // Above bass staff (Line 5 A3 is 108)
       if (y <= 102) {
-        // C4 is 99, E4 is 90
         for (let ly = MIDDLE_C_Y; ly >= y - 2; ly -= LINE_SPACING) {
           lines.push(ly)
         }
       }
       // Below bass staff (Line 1 G2 is 144)
       if (y >= 150) {
-        // E2 is 153, C2 is 162
         for (let ly = BASS_BOTTOM_Y + LINE_SPACING; ly <= y + 2; ly += LINE_SPACING) {
           lines.push(ly)
         }
@@ -500,24 +504,77 @@ export const SheetMusicView: React.FC<SheetMusicViewProps> = ({
                   const mDuration = Math.max(0.6, mEndTime - mStartTime)
                   const measureBeats = piece.timeSignature ? piece.timeSignature[0] : 4
 
-                  // Calculate active playhead X for current measure in Flow Mode
-                  const playheadRatio = Math.max(0, Math.min(1, (currentTime - mStartTime) / mDuration))
-                  const playheadX = mStartX + 14 + playheadRatio * (measureWidth - 28)
-
-                  // Group notes into time-aligned chords for clean stem sharing
-                  const rightHandChords = new Map<number, NoteEvent[]>()
-                  const leftHandChords = new Map<number, NoteEvent[]>()
-
+                  // 1. Unified Time-Aligned Chord Grid: Vertically align RH and LH on every beat
+                  const colMap = new Map<number, MeasureColumn>()
                   sortedNotes.forEach((n) => {
-                    const tKey = Math.round(n.startTime * 100) / 100
+                    // Cluster notes within 40ms into the same column
+                    const clusterKey = Math.round(n.startTime * 25) / 25
+                    if (!colMap.has(clusterKey)) {
+                      colMap.set(clusterKey, {
+                        tKey: clusterKey,
+                        startTime: n.startTime,
+                        beat: n.beat,
+                        rightHandNotes: [],
+                        leftHandNotes: [],
+                        x: 0,
+                      })
+                    }
+                    const col = colMap.get(clusterKey)!
                     if (n.hand === 'left') {
-                      if (!leftHandChords.has(tKey)) leftHandChords.set(tKey, [])
-                      leftHandChords.get(tKey)!.push(n)
+                      col.leftHandNotes.push(n)
                     } else {
-                      if (!rightHandChords.has(tKey)) rightHandChords.set(tKey, [])
-                      rightHandChords.get(tKey)!.push(n)
+                      col.rightHandNotes.push(n)
                     }
                   })
+
+                  const columns = Array.from(colMap.values()).sort((a, b) => a.startTime - b.startTime)
+                  const innerPaddingLeft = 20
+                  const innerPaddingRight = 20
+                  const usableMeasureWidth = Math.max(30, measureWidth - innerPaddingLeft - innerPaddingRight)
+
+                  // Compute non-overlapping proportional horizontal X for every chord column
+                  if (columns.length === 1) {
+                    columns[0].x = mStartX + innerPaddingLeft + usableMeasureWidth * 0.38
+                  } else if (columns.length > 1) {
+                    columns.forEach((col) => {
+                      let ratio = 0
+                      if (col.beat !== undefined && col.beat >= 1) {
+                        // Beat strictly normalized within [0, 1] for current measure
+                        const beatOffset = Math.max(0, col.beat - 1)
+                        ratio = Math.min(0.96, beatOffset / measureBeats)
+                      } else {
+                        ratio = Math.min(0.96, Math.max(0, (col.startTime - mStartTime) / mDuration))
+                      }
+                      col.x = mStartX + innerPaddingLeft + ratio * usableMeasureWidth
+                    })
+
+                    // Minimum spacing pass to prevent note collisions
+                    const minSpacing = Math.min(22, usableMeasureWidth / columns.length)
+                    for (let i = 1; i < columns.length; i++) {
+                      if (columns[i].x < columns[i - 1].x + minSpacing) {
+                        columns[i].x = columns[i - 1].x + minSpacing
+                      }
+                    }
+
+                    // Rescale if columns exceed measure boundary
+                    const lastCol = columns[columns.length - 1]
+                    const maxAllowedX = mEndX - innerPaddingRight
+                    if (lastCol.x > maxAllowedX) {
+                      const firstX = columns[0].x
+                      const span = lastCol.x - firstX
+                      const targetSpan = maxAllowedX - firstX
+                      if (span > 0 && targetSpan > 0) {
+                        const factor = targetSpan / span
+                        for (let i = 1; i < columns.length; i++) {
+                          columns[i].x = firstX + (columns[i].x - firstX) * factor
+                        }
+                      }
+                    }
+                  }
+
+                  // Flow Mode Playhead X calculation (strictly bounded within current measure)
+                  const playheadRatio = Math.max(0, Math.min(1, (currentTime - mStartTime) / mDuration))
+                  const playheadX = mStartX + innerPaddingLeft + playheadRatio * usableMeasureWidth
 
                   return (
                     <g
@@ -606,45 +663,28 @@ export const SheetMusicView: React.FC<SheetMusicViewProps> = ({
                         )
                       })()}
 
-                      {/* --- NOTES & CHORDS: RIGHT HAND (Treble Staff) --- */}
-                      {Array.from(rightHandChords.entries()).map(([tKey, chordNotes]) => {
-                        const firstNote = chordNotes[0]
-                        let noteX: number
-                        if (firstNote.beat !== undefined && firstNote.beat >= 1) {
-                          const beatRatio = (firstNote.beat - 1) / measureBeats
-                          noteX = mStartX + 16 + beatRatio * (measureWidth - 32)
-                        } else {
-                          const timeRatio = (firstNote.startTime - mStartTime) / mDuration
-                          noteX = mStartX + 16 + timeRatio * (measureWidth - 32)
-                        }
+                      {/* --- UNIFIED VERTICAL CHORD COLUMNS --- */}
+                      {columns.map((col) => {
+                        const noteX = col.x
+                        const allColNotes = [...col.rightHandNotes, ...col.leftHandNotes]
 
                         // Status checks
                         const isExpected =
                           isWaitMode &&
                           expectedNotes.length > 0 &&
-                          chordNotes.some((n) => expectedNotes.includes(n.midi)) &&
-                          Math.abs(firstNote.startTime - currentTime) < 0.35
+                          allColNotes.some((n) => expectedNotes.includes(n.midi)) &&
+                          Math.abs(col.startTime - currentTime) < 0.45
 
-                        const isSounding = chordNotes.some(
+                        const isSounding = allColNotes.some(
                           (n) =>
                             (activeNotes && activeNotes.has(n.midi)) ||
                             (currentTime >= n.startTime && currentTime <= n.startTime + n.duration)
                         )
 
-                        const chordColor = isExpected ? '#ea580c' : isSounding ? '#10b981' : inkColor
-
-                        const yPositions = chordNotes.map((n) => getNoteY(n)).sort((a, b) => a - b)
-                        const highestY = yPositions[0]
-                        const lowestY = yPositions[yPositions.length - 1]
-
-                        // Stem up if notes are low in treble; stem down if notes are high
-                        const isStemUp = highestY > TREBLE_TOP_Y + LINE_SPACING * 2
-                        const stemX = isStemUp ? noteX + 4.8 : noteX - 4.8
-                        const stemStartY = isStemUp ? lowestY : highestY
-                        const stemEndY = isStemUp ? highestY - 26 : lowestY + 26
+                        const chordColor = isExpected ? '#f59e0b' : isSounding ? '#10b981' : inkColor
 
                         return (
-                          <g key={`rh-chord-${mNum}-${tKey}`}>
+                          <g key={`col-${mNum}-${col.tKey}`}>
                             {/* Awaited Target Pointer in Wait Mode */}
                             {isExpected && (
                               <g>
@@ -666,230 +706,227 @@ export const SheetMusicView: React.FC<SheetMusicViewProps> = ({
                               </g>
                             )}
 
-                            {/* Consolidated Musical Stem */}
-                            <line
-                              x1={stemX}
-                              y1={stemStartY}
-                              x2={stemX}
-                              y2={stemEndY}
-                              stroke={chordColor}
-                              strokeWidth="1.4"
-                            />
+                            {/* --- RIGHT HAND CHORD (Treble Staff) --- */}
+                            {col.rightHandNotes.length > 0 && (() => {
+                              const chordNotes = col.rightHandNotes
+                              const yPositions = chordNotes.map((n) => getNoteY(n)).sort((a, b) => a - b)
+                              const highestY = yPositions[0]
+                              const lowestY = yPositions[yPositions.length - 1]
 
-                            {/* Single Note Curved Flag (for 8th notes) */}
-                            {firstNote.duration <= 0.32 && (
-                              <path
-                                d={
-                                  isStemUp
-                                    ? `M ${stemX} ${stemEndY} C ${stemX + 5} ${stemEndY + 6}, ${stemX + 7} ${stemEndY + 12}, ${stemX + 1} ${stemEndY + 18}`
-                                    : `M ${stemX} ${stemEndY} C ${stemX - 5} ${stemEndY - 6}, ${stemX - 7} ${stemEndY - 12}, ${stemX - 1} ${stemEndY - 18}`
-                                }
-                                fill="none"
-                                stroke={chordColor}
-                                strokeWidth="1.5"
-                              />
-                            )}
-
-                            {/* Noteheads & Ledger Lines */}
-                            {chordNotes.map((note) => {
-                              const y = getNoteY(note)
-                              const ledgers = getLedgerLines(y, 'right')
-                              const hasSharp = note.noteName.includes('#')
-                              const hasFlat = note.noteName.includes('b')
-                              const showAccidental = (hasSharp || hasFlat) && !isAccidentalCovered(note.noteName)
+                              // Stem up if notes are low in treble; stem down if notes are high
+                              const isStemUp = highestY > TREBLE_TOP_Y + LINE_SPACING * 2
+                              const stemX = isStemUp ? noteX + 4.8 : noteX - 4.8
+                              const stemStartY = isStemUp ? lowestY : highestY
+                              const stemEndY = isStemUp ? highestY - 26 : lowestY + 26
+                              const isWhole = chordNotes[0].duration >= 3.0
+                              const isHalf = chordNotes[0].duration >= 1.4 && !isWhole
 
                               return (
-                                <g key={`rh-note-${note.id}`}>
-                                  {/* Ledger Lines */}
-                                  {ledgers.map((ly, lIdx) => (
+                                <g key={`rh-${col.tKey}`}>
+                                  {/* Musical Stem (only if not whole note) */}
+                                  {!isWhole && (
                                     <line
-                                      key={`rh-leg-${note.id}-${lIdx}`}
-                                      x1={noteX - 8.5}
-                                      y1={ly}
-                                      x2={noteX + 8.5}
-                                      y2={ly}
-                                      stroke={staveLineColor}
-                                      strokeWidth="1.3"
+                                      x1={stemX}
+                                      y1={stemStartY}
+                                      x2={stemX}
+                                      y2={stemEndY}
+                                      stroke={chordColor}
+                                      strokeWidth="1.4"
                                     />
-                                  ))}
-
-                                  {/* Accidental sharp / flat */}
-                                  {showAccidental && (
-                                    <text
-                                      x={noteX - 10.5}
-                                      y={y + 4.5}
-                                      fontSize="13"
-                                      fontWeight="bold"
-                                      fill={chordColor}
-                                      fontFamily="serif"
-                                      textAnchor="end"
-                                    >
-                                      {hasSharp ? '♯' : '♭'}
-                                    </text>
                                   )}
 
-                                  {/* Pulsing halo around awaited notehead */}
-                                  {isExpected && (
-                                    <ellipse
-                                      cx={noteX}
-                                      cy={y}
-                                      rx="8"
-                                      ry="6"
+                                  {/* Flag for single 8th/16th notes */}
+                                  {!isWhole && !isHalf && chordNotes[0].duration <= 0.32 && (
+                                    <path
+                                      d={
+                                        isStemUp
+                                          ? `M ${stemX} ${stemEndY} C ${stemX + 5} ${stemEndY + 6}, ${stemX + 7} ${stemEndY + 12}, ${stemX + 1} ${stemEndY + 18}`
+                                          : `M ${stemX} ${stemEndY} C ${stemX - 5} ${stemEndY - 6}, ${stemX - 7} ${stemEndY - 12}, ${stemX - 1} ${stemEndY - 18}`
+                                      }
                                       fill="none"
-                                      stroke="#f59e0b"
-                                      strokeWidth="2"
-                                      opacity="0.8"
+                                      stroke={chordColor}
+                                      strokeWidth="1.5"
                                     />
                                   )}
 
-                                  {/* Tilted Elliptical Notehead (Rotated exactly around cx, cy) */}
-                                  <ellipse
-                                    cx={noteX}
-                                    cy={y}
-                                    rx="5.3"
-                                    ry="3.8"
-                                    transform={`rotate(-20 ${noteX} ${y})`}
-                                    fill={chordColor}
-                                  />
+                                  {/* Noteheads & Ledger Lines */}
+                                  {chordNotes.map((note) => {
+                                    const y = getNoteY(note)
+                                    const ledgers = getLedgerLines(y, 'right')
+                                    const hasSharp = note.noteName.includes('#')
+                                    const hasFlat = note.noteName.includes('b')
+                                    const showAccidental = (hasSharp || hasFlat) && !isAccidentalCovered(note.noteName)
+
+                                    return (
+                                      <g key={`rh-note-${note.id}`}>
+                                        {/* Ledger Lines */}
+                                        {ledgers.map((ly, lIdx) => (
+                                          <line
+                                            key={`rh-leg-${note.id}-${lIdx}`}
+                                            x1={noteX - 8.5}
+                                            y1={ly}
+                                            x2={noteX + 8.5}
+                                            y2={ly}
+                                            stroke={staveLineColor}
+                                            strokeWidth="1.3"
+                                          />
+                                        ))}
+
+                                        {/* Accidental sharp / flat */}
+                                        {showAccidental && (
+                                          <text
+                                            x={noteX - 10.5}
+                                            y={y + 4.5}
+                                            fontSize="13"
+                                            fontWeight="bold"
+                                            fill={chordColor}
+                                            fontFamily="serif"
+                                            textAnchor="end"
+                                          >
+                                            {hasSharp ? '♯' : '♭'}
+                                          </text>
+                                        )}
+
+                                        {/* Pulsing halo around awaited notehead */}
+                                        {isExpected && expectedNotes.includes(note.midi) && (
+                                          <ellipse
+                                            cx={noteX}
+                                            cy={y}
+                                            rx="8.5"
+                                            ry="6.5"
+                                            fill="none"
+                                            stroke="#f59e0b"
+                                            strokeWidth="2.2"
+                                            opacity="0.9"
+                                          />
+                                        )}
+
+                                        {/* Tilted Elliptical Notehead */}
+                                        <ellipse
+                                          cx={noteX}
+                                          cy={y}
+                                          rx="5.3"
+                                          ry="3.8"
+                                          transform={`rotate(-20 ${noteX} ${y})`}
+                                          fill={isWhole || isHalf ? pageBgColor : chordColor}
+                                          stroke={chordColor}
+                                          strokeWidth={isWhole || isHalf ? '1.6' : '0'}
+                                        />
+                                      </g>
+                                    )
+                                  })}
                                 </g>
                               )
-                            })}
-                          </g>
-                        )
-                      })}
+                            })()}
 
-                      {/* --- NOTES & CHORDS: LEFT HAND (Bass Staff) --- */}
-                      {Array.from(leftHandChords.entries()).map(([tKey, chordNotes]) => {
-                        const firstNote = chordNotes[0]
-                        let noteX: number
-                        if (firstNote.beat !== undefined && firstNote.beat >= 1) {
-                          const beatRatio = (firstNote.beat - 1) / measureBeats
-                          noteX = mStartX + 16 + beatRatio * (measureWidth - 32)
-                        } else {
-                          const timeRatio = (firstNote.startTime - mStartTime) / mDuration
-                          noteX = mStartX + 16 + timeRatio * (measureWidth - 32)
-                        }
+                            {/* --- LEFT HAND CHORD (Bass Staff) --- */}
+                            {col.leftHandNotes.length > 0 && (() => {
+                              const chordNotes = col.leftHandNotes
+                              const yPositions = chordNotes.map((n) => getNoteY(n)).sort((a, b) => a - b)
+                              const highestY = yPositions[0]
+                              const lowestY = yPositions[yPositions.length - 1]
 
-                        const isExpected =
-                          isWaitMode &&
-                          expectedNotes.length > 0 &&
-                          chordNotes.some((n) => expectedNotes.includes(n.midi)) &&
-                          Math.abs(firstNote.startTime - currentTime) < 0.35
-
-                        const isSounding = chordNotes.some(
-                          (n) =>
-                            (activeNotes && activeNotes.has(n.midi)) ||
-                            (currentTime >= n.startTime && currentTime <= n.startTime + n.duration)
-                        )
-
-                        const chordColor = isExpected ? '#ea580c' : isSounding ? '#10b981' : inkColor
-
-                        const yPositions = chordNotes.map((n) => getNoteY(n)).sort((a, b) => a - b)
-                        const highestY = yPositions[0]
-                        const lowestY = yPositions[yPositions.length - 1]
-
-                        const isStemUp = highestY > BASS_TOP_Y + LINE_SPACING * 2
-                        const stemX = isStemUp ? noteX + 4.8 : noteX - 4.8
-                        const stemStartY = isStemUp ? lowestY : highestY
-                        const stemEndY = isStemUp ? highestY - 26 : lowestY + 26
-
-                        return (
-                          <g key={`lh-chord-${mNum}-${tKey}`}>
-                            {/* Awaited Target Pointer in Wait Mode */}
-                            {isExpected && (
-                              <g>
-                                <polygon
-                                  points={`${noteX},${BASS_TOP_Y - 9} ${noteX - 4.5},${BASS_TOP_Y - 17} ${noteX + 4.5},${BASS_TOP_Y - 17}`}
-                                  fill="#f59e0b"
-                                />
-                                <text
-                                  x={noteX}
-                                  y={BASS_TOP_Y - 19}
-                                  fontSize="8.5"
-                                  fontWeight="900"
-                                  fontFamily="sans-serif"
-                                  fill="#f59e0b"
-                                  textAnchor="middle"
-                                >
-                                  WAIT
-                                </text>
-                              </g>
-                            )}
-
-                            {/* Consolidated Musical Stem */}
-                            <line
-                              x1={stemX}
-                              y1={stemStartY}
-                              x2={stemX}
-                              y2={stemEndY}
-                              stroke={chordColor}
-                              strokeWidth="1.4"
-                            />
-
-                            {/* Noteheads & Ledger Lines */}
-                            {chordNotes.map((note) => {
-                              const y = getNoteY(note)
-                              const ledgers = getLedgerLines(y, 'left')
-                              const hasSharp = note.noteName.includes('#')
-                              const hasFlat = note.noteName.includes('b')
-                              const showAccidental = (hasSharp || hasFlat) && !isAccidentalCovered(note.noteName)
+                              const isStemUp = highestY > BASS_TOP_Y + LINE_SPACING * 2
+                              const stemX = isStemUp ? noteX + 4.8 : noteX - 4.8
+                              const stemStartY = isStemUp ? lowestY : highestY
+                              const stemEndY = isStemUp ? highestY - 26 : lowestY + 26
+                              const isWhole = chordNotes[0].duration >= 3.0
+                              const isHalf = chordNotes[0].duration >= 1.4 && !isWhole
 
                               return (
-                                <g key={`lh-note-${note.id}`}>
-                                  {/* Ledger Lines */}
-                                  {ledgers.map((ly, lIdx) => (
+                                <g key={`lh-${col.tKey}`}>
+                                  {!isWhole && (
                                     <line
-                                      key={`lh-leg-${note.id}-${lIdx}`}
-                                      x1={noteX - 8.5}
-                                      y1={ly}
-                                      x2={noteX + 8.5}
-                                      y2={ly}
-                                      stroke={staveLineColor}
-                                      strokeWidth="1.3"
+                                      x1={stemX}
+                                      y1={stemStartY}
+                                      x2={stemX}
+                                      y2={stemEndY}
+                                      stroke={chordColor}
+                                      strokeWidth="1.4"
                                     />
-                                  ))}
-
-                                  {/* Accidental sharp / flat */}
-                                  {showAccidental && (
-                                    <text
-                                      x={noteX - 10.5}
-                                      y={y + 4.5}
-                                      fontSize="13"
-                                      fontWeight="bold"
-                                      fill={chordColor}
-                                      fontFamily="serif"
-                                      textAnchor="end"
-                                    >
-                                      {hasSharp ? '♯' : '♭'}
-                                    </text>
                                   )}
 
-                                  {/* Pulsing halo around awaited notehead */}
-                                  {isExpected && (
-                                    <ellipse
-                                      cx={noteX}
-                                      cy={y}
-                                      rx="8"
-                                      ry="6"
+                                  {!isWhole && !isHalf && chordNotes[0].duration <= 0.32 && (
+                                    <path
+                                      d={
+                                        isStemUp
+                                          ? `M ${stemX} ${stemEndY} C ${stemX + 5} ${stemEndY + 6}, ${stemX + 7} ${stemEndY + 12}, ${stemX + 1} ${stemEndY + 18}`
+                                          : `M ${stemX} ${stemEndY} C ${stemX - 5} ${stemEndY - 6}, ${stemX - 7} ${stemEndY - 12}, ${stemX - 1} ${stemEndY - 18}`
+                                      }
                                       fill="none"
-                                      stroke="#f59e0b"
-                                      strokeWidth="2"
-                                      opacity="0.8"
+                                      stroke={chordColor}
+                                      strokeWidth="1.5"
                                     />
                                   )}
 
-                                  {/* Tilted Elliptical Notehead */}
-                                  <ellipse
-                                    cx={noteX}
-                                    cy={y}
-                                    rx="5.3"
-                                    ry="3.8"
-                                    transform={`rotate(-20 ${noteX} ${y})`}
-                                    fill={chordColor}
-                                  />
+                                  {chordNotes.map((note) => {
+                                    const y = getNoteY(note)
+                                    const ledgers = getLedgerLines(y, 'left')
+                                    const hasSharp = note.noteName.includes('#')
+                                    const hasFlat = note.noteName.includes('b')
+                                    const showAccidental = (hasSharp || hasFlat) && !isAccidentalCovered(note.noteName)
+
+                                    return (
+                                      <g key={`lh-note-${note.id}`}>
+                                        {/* Ledger Lines */}
+                                        {ledgers.map((ly, lIdx) => (
+                                          <line
+                                            key={`lh-leg-${note.id}-${lIdx}`}
+                                            x1={noteX - 8.5}
+                                            y1={ly}
+                                            x2={noteX + 8.5}
+                                            y2={ly}
+                                            stroke={staveLineColor}
+                                            strokeWidth="1.3"
+                                          />
+                                        ))}
+
+                                        {/* Accidental sharp / flat */}
+                                        {showAccidental && (
+                                          <text
+                                            x={noteX - 10.5}
+                                            y={y + 4.5}
+                                            fontSize="13"
+                                            fontWeight="bold"
+                                            fill={chordColor}
+                                            fontFamily="serif"
+                                            textAnchor="end"
+                                          >
+                                            {hasSharp ? '♯' : '♭'}
+                                          </text>
+                                        )}
+
+                                        {/* Pulsing halo around awaited notehead */}
+                                        {isExpected && expectedNotes.includes(note.midi) && (
+                                          <ellipse
+                                            cx={noteX}
+                                            cy={y}
+                                            rx="8.5"
+                                            ry="6.5"
+                                            fill="none"
+                                            stroke="#f59e0b"
+                                            strokeWidth="2.2"
+                                            opacity="0.9"
+                                          />
+                                        )}
+
+                                        {/* Tilted Elliptical Notehead */}
+                                        <ellipse
+                                          cx={noteX}
+                                          cy={y}
+                                          rx="5.3"
+                                          ry="3.8"
+                                          transform={`rotate(-20 ${noteX} ${y})`}
+                                          fill={isWhole || isHalf ? pageBgColor : chordColor}
+                                          stroke={chordColor}
+                                          strokeWidth={isWhole || isHalf ? '1.6' : '0'}
+                                        />
+                                      </g>
+                                    )
+                                  })}
                                 </g>
                               )
-                            })}
+                            })()}
                           </g>
                         )
                       })}
@@ -931,6 +968,7 @@ export const SheetMusicView: React.FC<SheetMusicViewProps> = ({
                             strokeWidth="2.2"
                           />
                           <circle cx={playheadX} cy={TREBLE_TOP_Y - 8} r="3.5" fill="#f59e0b" />
+                          <circle cx={playheadX} cy={BASS_BOTTOM_Y + 12} r="3.5" fill="#f59e0b" />
                         </g>
                       )}
                     </g>

@@ -966,6 +966,14 @@ export const FlowkeyPlayerView: React.FC<FlowkeyPlayerViewProps> = ({
           {/* Quick auxiliary toggles visible on mobile portrait */}
           <div className="flex sm:hidden items-center gap-1.5">
             <button
+              onClick={() => setSectionsMenuOpen(true)}
+              className="px-2 py-1 rounded-lg border text-[10px] font-bold flex items-center gap-1 transition-all bg-zinc-900 border-white/10 text-amber-400 hover:text-amber-300"
+              title="Practice Specific Part"
+            >
+              <Layers className="w-3 h-3" />
+              <span>Part</span>
+            </button>
+            <button
               onClick={onToggleLoop}
               className={`px-2 py-1 rounded-lg border text-[10px] font-bold flex items-center gap-1 transition-all ${
                 isLooping
@@ -1233,6 +1241,80 @@ export const FlowkeyPlayerView: React.FC<FlowkeyPlayerViewProps> = ({
           <div className="w-3 h-3 rounded-full bg-orange-600 absolute right-0 top-1/2 -translate-y-1/2 shadow-md opacity-0 group-hover:opacity-100 transition-opacity" />
         </div>
       </div>
+
+      {/* Universal Section & Part Practice Modal (Mobile & Desktop) */}
+      {sectionsMenuOpen && (
+        <div className="fixed inset-0 z-50 bg-black/80 backdrop-blur-md flex items-center justify-center p-4">
+          <div className="bg-zinc-900 border border-white/15 rounded-3xl w-full max-w-lg shadow-2xl overflow-hidden flex flex-col max-h-[85vh]">
+            <div className="px-5 py-4 border-b border-white/10 flex items-center justify-between">
+              <div className="flex items-center gap-2.5">
+                <div className="p-2 rounded-xl bg-amber-500/15 text-amber-400">
+                  <Layers className="w-5 h-5" />
+                </div>
+                <div>
+                  <h3 className="text-sm font-bold text-white">
+                    {language === 'de' ? 'Abschnitt zum Üben wählen' : 'Select Part to Practice'}
+                  </h3>
+                  <p className="text-[11px] text-zinc-400">
+                    {language === 'de' ? 'Wähle einen Teil oder Taktbereich zum Wiederholen' : 'Select a part or measure range to loop'}
+                  </p>
+                </div>
+              </div>
+              <button
+                onClick={() => setSectionsMenuOpen(false)}
+                className="p-2 rounded-xl bg-zinc-800 text-zinc-400 hover:text-white"
+              >
+                <X className="w-4 h-4" />
+              </button>
+            </div>
+
+            <div className="p-4 overflow-y-auto space-y-2 flex-1">
+              {piece.sections.map((sec) => {
+                const isActive = currentSection?.id === sec.id
+                return (
+                  <div
+                    key={sec.id}
+                    onClick={() => {
+                      onSeek(sec.startTime)
+                      onLoopRangeChange([sec.startMeasure, sec.endMeasure])
+                      if (!isLooping) onToggleLoop()
+                      setSectionsMenuOpen(false)
+                    }}
+                    className={`p-3.5 rounded-2xl cursor-pointer transition-all border flex items-center justify-between ${
+                      isActive
+                        ? 'bg-amber-500/20 border-amber-500/60 text-white'
+                        : 'bg-zinc-800/60 hover:bg-zinc-800 border-white/5 text-zinc-200'
+                    }`}
+                  >
+                    <div className="flex-1 pr-3">
+                      <div className="text-xs font-bold text-white flex items-center gap-2">
+                        <span>{sec.title}</span>
+                        {isActive && (
+                          <span className="px-1.5 py-0.5 rounded text-[9px] bg-amber-500 text-zinc-950 font-black">
+                            ACTIVE
+                          </span>
+                        )}
+                      </div>
+                      <div className="text-[11px] text-zinc-400 mt-0.5">{sec.character}</div>
+                      {sec.tempoSuggestion && (
+                        <div className="text-[10px] text-amber-400/90 font-mono mt-0.5">{sec.tempoSuggestion}</div>
+                      )}
+                    </div>
+                    <div className="text-right flex flex-col items-end gap-1">
+                      <span className="font-mono text-xs font-bold text-amber-400 bg-amber-500/10 px-2 py-0.5 rounded-lg border border-amber-500/20">
+                        M. {sec.startMeasure}–{sec.endMeasure}
+                      </span>
+                      <span className="text-[10px] text-zinc-400">
+                        {Math.round(sec.endTime - sec.startTime)}s
+                      </span>
+                    </div>
+                  </div>
+                )
+              })}
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   )
 }
