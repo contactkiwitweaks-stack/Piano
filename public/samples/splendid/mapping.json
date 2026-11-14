@@ -5,7 +5,7 @@
       "lokey": 21,
       "hikey": 24,
       "center": 23,
-      "sample": "PP B-1.flac",
+      "sample": "PP_Bneg1.flac",
       "release": 0.6,
       "offset": 0
     },
@@ -14,7 +14,7 @@
       "lokey": 21,
       "hikey": 24,
       "center": 23,
-      "sample": "Mp B-1.flac",
+      "sample": "Mp_Bneg1.flac",
       "release": 0.6,
       "offset": 0
     },
@@ -23,7 +23,7 @@
       "lokey": 21,
       "hikey": 24,
       "center": 23,
-      "sample": "Mf B-1.flac",
+      "sample": "Mf_Bneg1.flac",
       "release": 0.6,
       "offset": 0
     },
@@ -32,7 +32,7 @@
       "lokey": 21,
       "hikey": 24,
       "center": 23,
-      "sample": "FF B-1.flac",
+      "sample": "FF_Bneg1.flac",
       "release": 0.6,
       "offset": 0
     }
@@ -43,7 +43,7 @@
       "lokey": 21,
       "hikey": 24,
       "center": 23,
-      "sample": "PP B-1.flac",
+      "sample": "PP_Bneg1.flac",
       "release": 0.6,
       "offset": 0
     },
@@ -52,7 +52,7 @@
       "lokey": 21,
       "hikey": 24,
       "center": 23,
-      "sample": "Mp B-1.flac",
+      "sample": "Mp_Bneg1.flac",
       "release": 0.6,
       "offset": 0
     },
@@ -61,7 +61,7 @@
       "lokey": 21,
       "hikey": 24,
       "center": 23,
-      "sample": "Mf B-1.flac",
+      "sample": "Mf_Bneg1.flac",
       "release": 0.6,
       "offset": 0
     },
@@ -70,7 +70,7 @@
       "lokey": 21,
       "hikey": 24,
       "center": 23,
-      "sample": "FF B-1.flac",
+      "sample": "FF_Bneg1.flac",
       "release": 0.6,
       "offset": 0
     }
@@ -81,7 +81,7 @@
       "lokey": 21,
       "hikey": 24,
       "center": 23,
-      "sample": "PP B-1.flac",
+      "sample": "PP_Bneg1.flac",
       "release": 0.6,
       "offset": 0
     },
@@ -90,7 +90,7 @@
       "lokey": 21,
       "hikey": 24,
       "center": 23,
-      "sample": "Mp B-1.flac",
+      "sample": "Mp_Bneg1.flac",
       "release": 0.6,
       "offset": 0
     },
@@ -99,7 +99,7 @@
       "lokey": 21,
       "hikey": 24,
       "center": 23,
-      "sample": "Mf B-1.flac",
+      "sample": "Mf_Bneg1.flac",
       "release": 0.6,
       "offset": 0
     },
@@ -108,7 +108,7 @@
       "lokey": 21,
       "hikey": 24,
       "center": 23,
-      "sample": "FF B-1.flac",
+      "sample": "FF_Bneg1.flac",
       "release": 0.6,
       "offset": 0
     }
@@ -119,7 +119,7 @@
       "lokey": 21,
       "hikey": 24,
       "center": 23,
-      "sample": "PP B-1.flac",
+      "sample": "PP_Bneg1.flac",
       "release": 0.6,
       "offset": 0
     },
@@ -128,7 +128,7 @@
       "lokey": 21,
       "hikey": 24,
       "center": 23,
-      "sample": "Mp B-1.flac",
+      "sample": "Mp_Bneg1.flac",
       "release": 0.6,
       "offset": 0
     },
@@ -137,7 +137,7 @@
       "lokey": 21,
       "hikey": 24,
       "center": 23,
-      "sample": "Mf B-1.flac",
+      "sample": "Mf_Bneg1.flac",
       "release": 0.6,
       "offset": 0
     },
@@ -146,7 +146,7 @@
       "lokey": 21,
       "hikey": 24,
       "center": 23,
-      "sample": "FF B-1.flac",
+      "sample": "FF_Bneg1.flac",
       "release": 0.6,
       "offset": 0
     }
@@ -157,7 +157,7 @@
       "lokey": 25,
       "hikey": 27,
       "center": 27,
-      "sample": "PP D#0.flac",
+      "sample": "PP_Ds0.flac",
       "release": 0.5,
       "offset": 0
     },
@@ -166,7 +166,7 @@
       "lokey": 25,
       "hikey": 27,
       "center": 27,
-      "sample": "Mp D#0.flac",
+      "sample": "Mp_Ds0.flac",
       "release": 0.5,
       "offset": 0
     },
@@ -175,7 +175,7 @@
       "lokey": 25,
       "hikey": 27,
       "center": 27,
-      "sample": "Mf D#0.flac",
+      "sample": "Mf_Ds0.flac",
       "release": 0.5,
       "offset": 0
     },
@@ -184,7 +184,7 @@
       "lokey": 25,
       "hikey": 27,
       "center": 27,
-      "sample": "FF D#0.flac",
+      "sample": "FF_Ds0.flac",
       "release": 0.5,
       "offset": 0
     }
@@ -195,7 +195,7 @@
       "lokey": 25,
       "hikey": 27,
       "center": 27,
-      "sample": "PP D#0.flac",
+      "sample": "PP_Ds0.flac",
       "release": 0.5,
       "offset": 0
     },
@@ -204,7 +204,7 @@
       "lokey": 25,
       "hikey": 27,
       "center": 27,
-      "sample": "Mp D#0.flac",
+      "sample": "Mp_Ds0.flac",
       "release": 0.5,
       "offset": 0
     },
@@ -213,7 +213,7 @@
       "lokey": 25,
       "hikey": 27,
       "center": 27,
-      "sample": "Mf D#0.flac",
+      "sample": "Mf_Ds0.flac",
       "release": 0.5,
       "offset": 0
     },
@@ -222,7 +222,7 @@
       "lokey": 25,
       "hikey": 27,
       "center": 27,
-      "sample": "FF D#0.flac",
+      "sample": "FF_Ds0.flac",
       "release": 0.5,
       "offset": 0
     }
@@ -233,7 +233,7 @@
       "lokey": 25,
       "hikey": 27,
       "center": 27,
-      "sample": "PP D#0.flac",
+      "sample": "PP_Ds0.flac",
       "release": 0.5,
       "offset": 0
     },
@@ -242,7 +242,7 @@
       "lokey": 25,
       "hikey": 27,
       "center": 27,
-      "sample": "Mp D#0.flac",
+      "sample": "Mp_Ds0.flac",
       "release": 0.5,
       "offset": 0
     },
@@ -251,7 +251,7 @@
       "lokey": 25,
       "hikey": 27,
       "center": 27,
-      "sample": "Mf D#0.flac",
+      "sample": "Mf_Ds0.flac",
       "release": 0.5,
       "offset": 0
     },
@@ -260,7 +260,7 @@
       "lokey": 25,
       "hikey": 27,
       "center": 27,
-      "sample": "FF D#0.flac",
+      "sample": "FF_Ds0.flac",
       "release": 0.5,
       "offset": 0
     }
@@ -271,7 +271,7 @@
       "lokey": 28,
       "hikey": 30,
       "center": 29,
-      "sample": "PP F0.flac",
+      "sample": "PP_F0.flac",
       "release": 0.4,
       "offset": 0
     },
@@ -280,7 +280,7 @@
       "lokey": 28,
       "hikey": 30,
       "center": 29,
-      "sample": "Mp F0.flac",
+      "sample": "Mp_F0.flac",
       "release": 0.4,
       "offset": 0
     },
@@ -289,7 +289,7 @@
       "lokey": 28,
       "hikey": 30,
       "center": 29,
-      "sample": "Mf F0.flac",
+      "sample": "Mf_F0.flac",
       "release": 0.4,
       "offset": 0
     },
@@ -298,7 +298,7 @@
       "lokey": 28,
       "hikey": 30,
       "center": 29,
-      "sample": "FF F0.flac",
+      "sample": "FF_F0.flac",
       "release": 0.4,
       "offset": 0
     }
@@ -309,7 +309,7 @@
       "lokey": 28,
       "hikey": 30,
       "center": 29,
-      "sample": "PP F0.flac",
+      "sample": "PP_F0.flac",
       "release": 0.4,
       "offset": 0
     },
@@ -318,7 +318,7 @@
       "lokey": 28,
       "hikey": 30,
       "center": 29,
-      "sample": "Mp F0.flac",
+      "sample": "Mp_F0.flac",
       "release": 0.4,
       "offset": 0
     },
@@ -327,7 +327,7 @@
       "lokey": 28,
       "hikey": 30,
       "center": 29,
-      "sample": "Mf F0.flac",
+      "sample": "Mf_F0.flac",
       "release": 0.4,
       "offset": 0
     },
@@ -336,7 +336,7 @@
       "lokey": 28,
       "hikey": 30,
       "center": 29,
-      "sample": "FF F0.flac",
+      "sample": "FF_F0.flac",
       "release": 0.4,
       "offset": 0
     }
@@ -347,7 +347,7 @@
       "lokey": 28,
       "hikey": 30,
       "center": 29,
-      "sample": "PP F0.flac",
+      "sample": "PP_F0.flac",
       "release": 0.4,
       "offset": 0
     },
@@ -356,7 +356,7 @@
       "lokey": 28,
       "hikey": 30,
       "center": 29,
-      "sample": "Mp F0.flac",
+      "sample": "Mp_F0.flac",
       "release": 0.4,
       "offset": 0
     },
@@ -365,7 +365,7 @@
       "lokey": 28,
       "hikey": 30,
       "center": 29,
-      "sample": "Mf F0.flac",
+      "sample": "Mf_F0.flac",
       "release": 0.4,
       "offset": 0
     },
@@ -374,7 +374,7 @@
       "lokey": 28,
       "hikey": 30,
       "center": 29,
-      "sample": "FF F0.flac",
+      "sample": "FF_F0.flac",
       "release": 0.4,
       "offset": 0
     }
@@ -385,7 +385,7 @@
       "lokey": 31,
       "hikey": 32,
       "center": 31,
-      "sample": "PP G0.flac",
+      "sample": "PP_G0.flac",
       "release": 0.3,
       "offset": 0
     },
@@ -394,7 +394,7 @@
       "lokey": 31,
       "hikey": 32,
       "center": 31,
-      "sample": "Mp G0.flac",
+      "sample": "Mp_G0.flac",
       "release": 0.3,
       "offset": 0
     },
@@ -403,7 +403,7 @@
       "lokey": 31,
       "hikey": 32,
       "center": 31,
-      "sample": "Mf G0.flac",
+      "sample": "Mf_G0.flac",
       "release": 0.3,
       "offset": 0
     },
@@ -412,7 +412,7 @@
       "lokey": 31,
       "hikey": 32,
       "center": 31,
-      "sample": "FF G0.flac",
+      "sample": "FF_G0.flac",
       "release": 0.3,
       "offset": 0
     }
@@ -423,7 +423,7 @@
       "lokey": 31,
       "hikey": 32,
       "center": 31,
-      "sample": "PP G0.flac",
+      "sample": "PP_G0.flac",
       "release": 0.3,
       "offset": 0
     },
@@ -432,7 +432,7 @@
       "lokey": 31,
       "hikey": 32,
       "center": 31,
-      "sample": "Mp G0.flac",
+      "sample": "Mp_G0.flac",
       "release": 0.3,
       "offset": 0
     },
@@ -441,7 +441,7 @@
       "lokey": 31,
       "hikey": 32,
       "center": 31,
-      "sample": "Mf G0.flac",
+      "sample": "Mf_G0.flac",
       "release": 0.3,
       "offset": 0
     },
@@ -450,7 +450,7 @@
       "lokey": 31,
       "hikey": 32,
       "center": 31,
-      "sample": "FF G0.flac",
+      "sample": "FF_G0.flac",
       "release": 0.3,
       "offset": 0
     }
@@ -461,7 +461,7 @@
       "lokey": 33,
       "hikey": 34,
       "center": 33,
-      "sample": "PP A0.flac",
+      "sample": "PP_A0.flac",
       "release": 0.2,
       "offset": 0
     },
@@ -470,7 +470,7 @@
       "lokey": 33,
       "hikey": 34,
       "center": 33,
-      "sample": "Mp A0.flac",
+      "sample": "Mp_A0.flac",
       "release": 0.2,
       "offset": 0
     },
@@ -479,7 +479,7 @@
       "lokey": 33,
       "hikey": 34,
       "center": 33,
-      "sample": "Mf A0.flac",
+      "sample": "Mf_A0.flac",
       "release": 0.2,
       "offset": 0
     },
@@ -488,7 +488,7 @@
       "lokey": 33,
       "hikey": 34,
       "center": 33,
-      "sample": "FF A0.flac",
+      "sample": "FF_A0.flac",
       "release": 0.2,
       "offset": 0
     }
@@ -499,7 +499,7 @@
       "lokey": 33,
       "hikey": 34,
       "center": 33,
-      "sample": "PP A0.flac",
+      "sample": "PP_A0.flac",
       "release": 0.2,
       "offset": 0
     },
@@ -508,7 +508,7 @@
       "lokey": 33,
       "hikey": 34,
       "center": 33,
-      "sample": "Mp A0.flac",
+      "sample": "Mp_A0.flac",
       "release": 0.2,
       "offset": 0
     },
@@ -517,7 +517,7 @@
       "lokey": 33,
       "hikey": 34,
       "center": 33,
-      "sample": "Mf A0.flac",
+      "sample": "Mf_A0.flac",
       "release": 0.2,
       "offset": 0
     },
@@ -526,7 +526,7 @@
       "lokey": 33,
       "hikey": 34,
       "center": 33,
-      "sample": "FF A0.flac",
+      "sample": "FF_A0.flac",
       "release": 0.2,
       "offset": 0
     }
@@ -537,7 +537,7 @@
       "lokey": 35,
       "hikey": 35,
       "center": 35,
-      "sample": "PP B0.flac",
+      "sample": "PP_B0.flac",
       "release": 0.1,
       "offset": 618
     },
@@ -546,7 +546,7 @@
       "lokey": 35,
       "hikey": 35,
       "center": 35,
-      "sample": "Mp B0.flac",
+      "sample": "Mp_B0.flac",
       "release": 0.1,
       "offset": 0
     },
@@ -555,7 +555,7 @@
       "lokey": 35,
       "hikey": 35,
       "center": 35,
-      "sample": "Mf B0.flac",
+      "sample": "Mf_B0.flac",
       "release": 0.1,
       "offset": 0
     },
@@ -564,7 +564,7 @@
       "lokey": 35,
       "hikey": 35,
       "center": 35,
-      "sample": "FF B0.flac",
+      "sample": "FF_B0.flac",
       "release": 0.1,
       "offset": 0
     }
@@ -575,7 +575,7 @@
       "lokey": 36,
       "hikey": 37,
       "center": 37,
-      "sample": "PP C#1.flac",
+      "sample": "PP_Cs1.flac",
       "release": 0.45,
       "offset": 0
     },
@@ -584,7 +584,7 @@
       "lokey": 36,
       "hikey": 37,
       "center": 37,
-      "sample": "Mp C#1.flac",
+      "sample": "Mp_Cs1.flac",
       "release": 0.45,
       "offset": 0
     },
@@ -593,7 +593,7 @@
       "lokey": 36,
       "hikey": 37,
       "center": 37,
-      "sample": "MF C#1.flac",
+      "sample": "MF_Cs1.flac",
       "release": 0.45,
       "offset": 0
     },
@@ -602,7 +602,7 @@
       "lokey": 36,
       "hikey": 37,
       "center": 37,
-      "sample": "FF C#1.flac",
+      "sample": "FF_Cs1.flac",
       "release": 0.45,
       "offset": 0
     }
@@ -613,7 +613,7 @@
       "lokey": 36,
       "hikey": 37,
       "center": 37,
-      "sample": "PP C#1.flac",
+      "sample": "PP_Cs1.flac",
       "release": 0.45,
       "offset": 0
     },
@@ -622,7 +622,7 @@
       "lokey": 36,
       "hikey": 37,
       "center": 37,
-      "sample": "Mp C#1.flac",
+      "sample": "Mp_Cs1.flac",
       "release": 0.45,
       "offset": 0
     },
@@ -631,7 +631,7 @@
       "lokey": 36,
       "hikey": 37,
       "center": 37,
-      "sample": "MF C#1.flac",
+      "sample": "MF_Cs1.flac",
       "release": 0.45,
       "offset": 0
     },
@@ -640,7 +640,7 @@
       "lokey": 36,
       "hikey": 37,
       "center": 37,
-      "sample": "FF C#1.flac",
+      "sample": "FF_Cs1.flac",
       "release": 0.45,
       "offset": 0
     }
@@ -651,7 +651,7 @@
       "lokey": 38,
       "hikey": 39,
       "center": 38,
-      "sample": "PP D1.flac",
+      "sample": "PP_D1.flac",
       "release": 0.45,
       "offset": 1046
     },
@@ -660,7 +660,7 @@
       "lokey": 38,
       "hikey": 39,
       "center": 38,
-      "sample": "Mp D1.flac",
+      "sample": "Mp_D1.flac",
       "release": 0.45,
       "offset": 0
     },
@@ -669,7 +669,7 @@
       "lokey": 38,
       "hikey": 39,
       "center": 38,
-      "sample": "MF D1.flac",
+      "sample": "MF_D1.flac",
       "release": 0.45,
       "offset": 0
     },
@@ -678,7 +678,7 @@
       "lokey": 38,
       "hikey": 39,
       "center": 38,
-      "sample": "FF D1.flac",
+      "sample": "FF_D1.flac",
       "release": 0.45,
       "offset": 0
     }
@@ -689,7 +689,7 @@
       "lokey": 38,
       "hikey": 39,
       "center": 38,
-      "sample": "PP D1.flac",
+      "sample": "PP_D1.flac",
       "release": 0.45,
       "offset": 1046
     },
@@ -698,7 +698,7 @@
       "lokey": 38,
       "hikey": 39,
       "center": 38,
-      "sample": "Mp D1.flac",
+      "sample": "Mp_D1.flac",
       "release": 0.45,
       "offset": 0
     },
@@ -707,7 +707,7 @@
       "lokey": 38,
       "hikey": 39,
       "center": 38,
-      "sample": "MF D1.flac",
+      "sample": "MF_D1.flac",
       "release": 0.45,
       "offset": 0
     },
@@ -716,7 +716,7 @@
       "lokey": 38,
       "hikey": 39,
       "center": 38,
-      "sample": "FF D1.flac",
+      "sample": "FF_D1.flac",
       "release": 0.45,
       "offset": 0
     }
@@ -727,7 +727,7 @@
       "lokey": 40,
       "hikey": 40,
       "center": 40,
-      "sample": "PP E1.flac",
+      "sample": "PP_E1.flac",
       "release": 0.45,
       "offset": 0
     },
@@ -736,7 +736,7 @@
       "lokey": 40,
       "hikey": 40,
       "center": 40,
-      "sample": "Mp E1.flac",
+      "sample": "Mp_E1.flac",
       "release": 0.45,
       "offset": 0
     },
@@ -745,7 +745,7 @@
       "lokey": 40,
       "hikey": 40,
       "center": 40,
-      "sample": "MF E1.flac",
+      "sample": "MF_E1.flac",
       "release": 0.45,
       "offset": 0
     },
@@ -754,7 +754,7 @@
       "lokey": 40,
       "hikey": 40,
       "center": 40,
-      "sample": "FF E1.flac",
+      "sample": "FF_E1.flac",
       "release": 0.45,
       "offset": 0
     }
@@ -765,7 +765,7 @@
       "lokey": 41,
       "hikey": 41,
       "center": 41,
-      "sample": "PP F1.flac",
+      "sample": "PP_F1.flac",
       "release": 0.45,
       "offset": 0
     },
@@ -774,7 +774,7 @@
       "lokey": 41,
       "hikey": 41,
       "center": 41,
-      "sample": "Mp F1.flac",
+      "sample": "Mp_F1.flac",
       "release": 0.45,
       "offset": 0
     },
@@ -783,7 +783,7 @@
       "lokey": 41,
       "hikey": 41,
       "center": 41,
-      "sample": "MF F1.flac",
+      "sample": "MF_F1.flac",
       "release": 0.45,
       "offset": 0
     },
@@ -792,7 +792,7 @@
       "lokey": 41,
       "hikey": 41,
       "center": 41,
-      "sample": "FF F1.flac",
+      "sample": "FF_F1.flac",
       "release": 0.45,
       "offset": 0
     }
@@ -803,7 +803,7 @@
       "lokey": 42,
       "hikey": 44,
       "center": 43,
-      "sample": "PP G1.flac",
+      "sample": "PP_G1.flac",
       "release": 0.45,
       "offset": 0
     },
@@ -812,7 +812,7 @@
       "lokey": 42,
       "hikey": 44,
       "center": 43,
-      "sample": "Mp G1.flac",
+      "sample": "Mp_G1.flac",
       "release": 0.45,
       "offset": 0
     },
@@ -821,7 +821,7 @@
       "lokey": 42,
       "hikey": 44,
       "center": 43,
-      "sample": "MF G1.flac",
+      "sample": "MF_G1.flac",
       "release": 0.45,
       "offset": 0
     },
@@ -830,7 +830,7 @@
       "lokey": 42,
       "hikey": 44,
       "center": 43,
-      "sample": "FF G1.flac",
+      "sample": "FF_G1.flac",
       "release": 0.45,
       "offset": 100
     }
@@ -841,7 +841,7 @@
       "lokey": 42,
       "hikey": 44,
       "center": 43,
-      "sample": "PP G1.flac",
+      "sample": "PP_G1.flac",
       "release": 0.45,
       "offset": 0
     },
@@ -850,7 +850,7 @@
       "lokey": 42,
       "hikey": 44,
       "center": 43,
-      "sample": "Mp G1.flac",
+      "sample": "Mp_G1.flac",
       "release": 0.45,
       "offset": 0
     },
@@ -859,7 +859,7 @@
       "lokey": 42,
       "hikey": 44,
       "center": 43,
-      "sample": "MF G1.flac",
+      "sample": "MF_G1.flac",
       "release": 0.45,
       "offset": 0
     },
@@ -868,7 +868,7 @@
       "lokey": 42,
       "hikey": 44,
       "center": 43,
-      "sample": "FF G1.flac",
+      "sample": "FF_G1.flac",
       "release": 0.45,
       "offset": 100
     }
@@ -879,7 +879,7 @@
       "lokey": 42,
       "hikey": 44,
       "center": 43,
-      "sample": "PP G1.flac",
+      "sample": "PP_G1.flac",
       "release": 0.45,
       "offset": 0
     },
@@ -888,7 +888,7 @@
       "lokey": 42,
       "hikey": 44,
       "center": 43,
-      "sample": "Mp G1.flac",
+      "sample": "Mp_G1.flac",
       "release": 0.45,
       "offset": 0
     },
@@ -897,7 +897,7 @@
       "lokey": 42,
       "hikey": 44,
       "center": 43,
-      "sample": "MF G1.flac",
+      "sample": "MF_G1.flac",
       "release": 0.45,
       "offset": 0
     },
@@ -906,7 +906,7 @@
       "lokey": 42,
       "hikey": 44,
       "center": 43,
-      "sample": "FF G1.flac",
+      "sample": "FF_G1.flac",
       "release": 0.45,
       "offset": 100
     }
@@ -917,7 +917,7 @@
       "lokey": 45,
       "hikey": 46,
       "center": 45,
-      "sample": "PP A1.flac",
+      "sample": "PP_A1.flac",
       "release": 0.45,
       "offset": 0
     },
@@ -926,7 +926,7 @@
       "lokey": 45,
       "hikey": 46,
       "center": 45,
-      "sample": "Mp A1.flac",
+      "sample": "Mp_A1.flac",
       "release": 0.45,
       "offset": 0
     },
@@ -935,7 +935,7 @@
       "lokey": 45,
       "hikey": 46,
       "center": 45,
-      "sample": "MF A1.flac",
+      "sample": "MF_A1.flac",
       "release": 0.45,
       "offset": 0
     },
@@ -944,7 +944,7 @@
       "lokey": 45,
       "hikey": 46,
       "center": 45,
-      "sample": "FF A1.flac",
+      "sample": "FF_A1.flac",
       "release": 0.45,
       "offset": 0
     }
@@ -955,7 +955,7 @@
       "lokey": 45,
       "hikey": 46,
       "center": 45,
-      "sample": "PP A1.flac",
+      "sample": "PP_A1.flac",
       "release": 0.45,
       "offset": 0
     },
@@ -964,7 +964,7 @@
       "lokey": 45,
       "hikey": 46,
       "center": 45,
-      "sample": "Mp A1.flac",
+      "sample": "Mp_A1.flac",
       "release": 0.45,
       "offset": 0
     },
@@ -973,7 +973,7 @@
       "lokey": 45,
       "hikey": 46,
       "center": 45,
-      "sample": "MF A1.flac",
+      "sample": "MF_A1.flac",
       "release": 0.45,
       "offset": 0
     },
@@ -982,7 +982,7 @@
       "lokey": 45,
       "hikey": 46,
       "center": 45,
-      "sample": "FF A1.flac",
+      "sample": "FF_A1.flac",
       "release": 0.45,
       "offset": 0
     }
@@ -993,7 +993,7 @@
       "lokey": 47,
       "hikey": 47,
       "center": 47,
-      "sample": "PP B1.flac",
+      "sample": "PP_B1.flac",
       "release": 0.45,
       "offset": 0
     },
@@ -1002,7 +1002,7 @@
       "lokey": 47,
       "hikey": 47,
       "center": 47,
-      "sample": "Mp B1.flac",
+      "sample": "Mp_B1.flac",
       "release": 0.45,
       "offset": 0
     },
@@ -1011,7 +1011,7 @@
       "lokey": 47,
       "hikey": 47,
       "center": 47,
-      "sample": "MF B1.flac",
+      "sample": "MF_B1.flac",
       "release": 0.45,
       "offset": 0
     },
@@ -1020,7 +1020,7 @@
       "lokey": 47,
       "hikey": 47,
       "center": 47,
-      "sample": "FF B1.flac",
+      "sample": "FF_B1.flac",
       "release": 0.45,
       "offset": 0
     }
@@ -1031,7 +1031,7 @@
       "lokey": 48,
       "hikey": 49,
       "center": 48,
-      "sample": "PP C2.flac",
+      "sample": "PP_C2.flac",
       "release": 0.45,
       "offset": 0
     },
@@ -1040,7 +1040,7 @@
       "lokey": 48,
       "hikey": 49,
       "center": 48,
-      "sample": "Mp C2.flac",
+      "sample": "Mp_C2.flac",
       "release": 0.45,
       "offset": 0
     },
@@ -1049,7 +1049,7 @@
       "lokey": 48,
       "hikey": 49,
       "center": 48,
-      "sample": "MF C2.flac",
+      "sample": "MF_C2.flac",
       "release": 0.45,
       "offset": 0
     },
@@ -1058,7 +1058,7 @@
       "lokey": 48,
       "hikey": 49,
       "center": 48,
-      "sample": "FF C2.flac",
+      "sample": "FF_C2.flac",
       "release": 0.45,
       "offset": 0
     }
@@ -1069,7 +1069,7 @@
       "lokey": 48,
       "hikey": 49,
       "center": 48,
-      "sample": "PP C2.flac",
+      "sample": "PP_C2.flac",
       "release": 0.45,
       "offset": 0
     },
@@ -1078,7 +1078,7 @@
       "lokey": 48,
       "hikey": 49,
       "center": 48,
-      "sample": "Mp C2.flac",
+      "sample": "Mp_C2.flac",
       "release": 0.45,
       "offset": 0
     },
@@ -1087,7 +1087,7 @@
       "lokey": 48,
       "hikey": 49,
       "center": 48,
-      "sample": "MF C2.flac",
+      "sample": "MF_C2.flac",
       "release": 0.45,
       "offset": 0
     },
@@ -1096,7 +1096,7 @@
       "lokey": 48,
       "hikey": 49,
       "center": 48,
-      "sample": "FF C2.flac",
+      "sample": "FF_C2.flac",
       "release": 0.45,
       "offset": 0
     }
@@ -1107,7 +1107,7 @@
       "lokey": 50,
       "hikey": 50,
       "center": 50,
-      "sample": "PP D2.flac",
+      "sample": "PP_D2.flac",
       "release": 0.45,
       "offset": 0
     },
@@ -1116,7 +1116,7 @@
       "lokey": 50,
       "hikey": 50,
       "center": 50,
-      "sample": "Mp D2.flac",
+      "sample": "Mp_D2.flac",
       "release": 0.45,
       "offset": 0
     },
@@ -1125,7 +1125,7 @@
       "lokey": 50,
       "hikey": 50,
       "center": 50,
-      "sample": "MF D2.flac",
+      "sample": "MF_D2.flac",
       "release": 0.45,
       "offset": 0
     },
@@ -1134,7 +1134,7 @@
       "lokey": 50,
       "hikey": 50,
       "center": 50,
-      "sample": "FF D2.flac",
+      "sample": "FF_D2.flac",
       "release": 0.45,
       "offset": 0
     }
@@ -1145,7 +1145,7 @@
       "lokey": 51,
       "hikey": 52,
       "center": 52,
-      "sample": "PP E2.flac",
+      "sample": "PP_E2.flac",
       "release": 0.45,
       "offset": 0
     },
@@ -1154,7 +1154,7 @@
       "lokey": 51,
       "hikey": 52,
       "center": 52,
-      "sample": "Mp E2.flac",
+      "sample": "Mp_E2.flac",
       "release": 0.45,
       "offset": 0
     },
@@ -1163,7 +1163,7 @@
       "lokey": 51,
       "hikey": 52,
       "center": 52,
-      "sample": "MF E2.flac",
+      "sample": "MF_E2.flac",
       "release": 0.45,
       "offset": 0
     },
@@ -1172,7 +1172,7 @@
       "lokey": 51,
       "hikey": 52,
       "center": 52,
-      "sample": "FF E2.flac",
+      "sample": "FF_E2.flac",
       "release": 0.45,
       "offset": 0
     }
@@ -1183,7 +1183,7 @@
       "lokey": 51,
       "hikey": 52,
       "center": 52,
-      "sample": "PP E2.flac",
+      "sample": "PP_E2.flac",
       "release": 0.45,
       "offset": 0
     },
@@ -1192,7 +1192,7 @@
       "lokey": 51,
       "hikey": 52,
       "center": 52,
-      "sample": "Mp E2.flac",
+      "sample": "Mp_E2.flac",
       "release": 0.45,
       "offset": 0
     },
@@ -1201,7 +1201,7 @@
       "lokey": 51,
       "hikey": 52,
       "center": 52,
-      "sample": "MF E2.flac",
+      "sample": "MF_E2.flac",
       "release": 0.45,
       "offset": 0
     },
@@ -1210,7 +1210,7 @@
       "lokey": 51,
       "hikey": 52,
       "center": 52,
-      "sample": "FF E2.flac",
+      "sample": "FF_E2.flac",
       "release": 0.45,
       "offset": 0
     }
@@ -1221,7 +1221,7 @@
       "lokey": 53,
       "hikey": 54,
       "center": 53,
-      "sample": "PP F2.flac",
+      "sample": "PP_F2.flac",
       "release": 0.45,
       "offset": 0
     },
@@ -1230,7 +1230,7 @@
       "lokey": 53,
       "hikey": 54,
       "center": 53,
-      "sample": "Mp F2.flac",
+      "sample": "Mp_F2.flac",
       "release": 0.45,
       "offset": 0
     },
@@ -1239,7 +1239,7 @@
       "lokey": 53,
       "hikey": 54,
       "center": 53,
-      "sample": "MF F2.flac",
+      "sample": "MF_F2.flac",
       "release": 0.45,
       "offset": 0
     },
@@ -1248,7 +1248,7 @@
       "lokey": 53,
       "hikey": 54,
       "center": 53,
-      "sample": "FF F2.flac",
+      "sample": "FF_F2.flac",
       "release": 0.45,
       "offset": 0
     }
@@ -1259,7 +1259,7 @@
       "lokey": 53,
       "hikey": 54,
       "center": 53,
-      "sample": "PP F2.flac",
+      "sample": "PP_F2.flac",
       "release": 0.45,
       "offset": 0
     },
@@ -1268,7 +1268,7 @@
       "lokey": 53,
       "hikey": 54,
       "center": 53,
-      "sample": "Mp F2.flac",
+      "sample": "Mp_F2.flac",
       "release": 0.45,
       "offset": 0
     },
@@ -1277,7 +1277,7 @@
       "lokey": 53,
       "hikey": 54,
       "center": 53,
-      "sample": "MF F2.flac",
+      "sample": "MF_F2.flac",
       "release": 0.45,
       "offset": 0
     },
@@ -1286,7 +1286,7 @@
       "lokey": 53,
       "hikey": 54,
       "center": 53,
-      "sample": "FF F2.flac",
+      "sample": "FF_F2.flac",
       "release": 0.45,
       "offset": 0
     }
@@ -1297,7 +1297,7 @@
       "lokey": 55,
       "hikey": 55,
       "center": 55,
-      "sample": "PP G2.flac",
+      "sample": "PP_G2.flac",
       "release": 0.45,
       "offset": 0
     },
@@ -1306,7 +1306,7 @@
       "lokey": 55,
       "hikey": 55,
       "center": 55,
-      "sample": "Mp G2.flac",
+      "sample": "Mp_G2.flac",
       "release": 0.45,
       "offset": 0
     },
@@ -1315,7 +1315,7 @@
       "lokey": 55,
       "hikey": 55,
       "center": 55,
-      "sample": "MF G2.flac",
+      "sample": "MF_G2.flac",
       "release": 0.45,
       "offset": 0
     },
@@ -1324,7 +1324,7 @@
       "lokey": 55,
       "hikey": 55,
       "center": 55,
-      "sample": "FF G2.flac",
+      "sample": "FF_G2.flac",
       "release": 0.45,
       "offset": 0
     }
@@ -1335,7 +1335,7 @@
       "lokey": 56,
       "hikey": 56,
       "center": 56,
-      "sample": "PP G#2.flac",
+      "sample": "PP_Gs2.flac",
       "release": 0.45,
       "offset": 0
     },
@@ -1344,7 +1344,7 @@
       "lokey": 56,
       "hikey": 56,
       "center": 56,
-      "sample": "Mp G#2.flac",
+      "sample": "Mp_Gs2.flac",
       "release": 0.45,
       "offset": 0
     },
@@ -1353,7 +1353,7 @@
       "lokey": 56,
       "hikey": 56,
       "center": 56,
-      "sample": "MF G#2.flac",
+      "sample": "MF_Gs2.flac",
       "release": 0.45,
       "offset": 0
     },
@@ -1362,7 +1362,7 @@
       "lokey": 56,
       "hikey": 56,
       "center": 56,
-      "sample": "FF G#2.flac",
+      "sample": "FF_Gs2.flac",
       "release": 0.45,
       "offset": 0
     }
@@ -1373,7 +1373,7 @@
       "lokey": 57,
       "hikey": 57,
       "center": 57,
-      "sample": "PP A2.flac",
+      "sample": "PP_A2.flac",
       "release": 0.45,
       "offset": 0
     },
@@ -1382,7 +1382,7 @@
       "lokey": 57,
       "hikey": 57,
       "center": 57,
-      "sample": "Mp A2.flac",
+      "sample": "Mp_A2.flac",
       "release": 0.45,
       "offset": 0
     },
@@ -1391,7 +1391,7 @@
       "lokey": 57,
       "hikey": 57,
       "center": 57,
-      "sample": "MF A2.flac",
+      "sample": "MF_A2.flac",
       "release": 0.45,
       "offset": 0
     },
@@ -1400,7 +1400,7 @@
       "lokey": 57,
       "hikey": 57,
       "center": 57,
-      "sample": "FF A2.flac",
+      "sample": "FF_A2.flac",
       "release": 0.45,
       "offset": 0
     }
@@ -1411,7 +1411,7 @@
       "lokey": 58,
       "hikey": 58,
       "center": 58,
-      "sample": "PP A#2.flac",
+      "sample": "PP_As2.flac",
       "release": 0.45,
       "offset": 0
     },
@@ -1420,7 +1420,7 @@
       "lokey": 58,
       "hikey": 58,
       "center": 58,
-      "sample": "Mp A#2.flac",
+      "sample": "Mp_As2.flac",
       "release": 0.45,
       "offset": 0
     },
@@ -1429,7 +1429,7 @@
       "lokey": 58,
       "hikey": 58,
       "center": 58,
-      "sample": "MF A#2.flac",
+      "sample": "MF_As2.flac",
       "release": 0.45,
       "offset": 0
     },
@@ -1438,7 +1438,7 @@
       "lokey": 58,
       "hikey": 58,
       "center": 58,
-      "sample": "FF A#2.flac",
+      "sample": "FF_As2.flac",
       "release": 0.45,
       "offset": 0
     }
@@ -1449,7 +1449,7 @@
       "lokey": 59,
       "hikey": 59,
       "center": 59,
-      "sample": "PP B2.flac",
+      "sample": "PP_B2.flac",
       "release": 0.45,
       "offset": 0
     },
@@ -1458,7 +1458,7 @@
       "lokey": 59,
       "hikey": 59,
       "center": 59,
-      "sample": "Mp B2.flac",
+      "sample": "Mp_B2.flac",
       "release": 0.45,
       "offset": 0
     },
@@ -1467,7 +1467,7 @@
       "lokey": 59,
       "hikey": 59,
       "center": 59,
-      "sample": "MF B2.flac",
+      "sample": "MF_B2.flac",
       "release": 0.45,
       "offset": 0
     },
@@ -1476,7 +1476,7 @@
       "lokey": 59,
       "hikey": 59,
       "center": 59,
-      "sample": "FF B2.flac",
+      "sample": "FF_B2.flac",
       "release": 0.45,
       "offset": 0
     }
@@ -1487,7 +1487,7 @@
       "lokey": 60,
       "hikey": 61,
       "center": 60,
-      "sample": "PP C3.flac",
+      "sample": "PP_C3.flac",
       "release": 0.45,
       "offset": 0
     },
@@ -1496,7 +1496,7 @@
       "lokey": 60,
       "hikey": 61,
       "center": 60,
-      "sample": "Mp C3.flac",
+      "sample": "Mp_C3.flac",
       "release": 0.45,
       "offset": 0
     },
@@ -1505,7 +1505,7 @@
       "lokey": 60,
       "hikey": 61,
       "center": 60,
-      "sample": "MF C3.flac",
+      "sample": "MF_C3.flac",
       "release": 0.45,
       "offset": 0
     },
@@ -1514,7 +1514,7 @@
       "lokey": 60,
       "hikey": 61,
       "center": 60,
-      "sample": "FF C3.flac",
+      "sample": "FF_C3.flac",
       "release": 0.45,
       "offset": 325
     }
@@ -1525,7 +1525,7 @@
       "lokey": 60,
       "hikey": 61,
       "center": 60,
-      "sample": "PP C3.flac",
+      "sample": "PP_C3.flac",
       "release": 0.45,
       "offset": 0
     },
@@ -1534,7 +1534,7 @@
       "lokey": 60,
       "hikey": 61,
       "center": 60,
-      "sample": "Mp C3.flac",
+      "sample": "Mp_C3.flac",
       "release": 0.45,
       "offset": 0
     },
@@ -1543,7 +1543,7 @@
       "lokey": 60,
       "hikey": 61,
       "center": 60,
-      "sample": "MF C3.flac",
+      "sample": "MF_C3.flac",
       "release": 0.45,
       "offset": 0
     },
@@ -1552,7 +1552,7 @@
       "lokey": 60,
       "hikey": 61,
       "center": 60,
-      "sample": "FF C3.flac",
+      "sample": "FF_C3.flac",
       "release": 0.45,
       "offset": 325
     }
@@ -1563,7 +1563,7 @@
       "lokey": 62,
       "hikey": 63,
       "center": 62,
-      "sample": "PP D3.flac",
+      "sample": "PP_D3.flac",
       "release": 0.45,
       "offset": 0
     },
@@ -1572,7 +1572,7 @@
       "lokey": 62,
       "hikey": 63,
       "center": 62,
-      "sample": "Mp D3.flac",
+      "sample": "Mp_D3.flac",
       "release": 0.45,
       "offset": 11
     },
@@ -1581,7 +1581,7 @@
       "lokey": 62,
       "hikey": 63,
       "center": 62,
-      "sample": "MF D3.flac",
+      "sample": "MF_D3.flac",
       "release": 0.45,
       "offset": 0
     },
@@ -1590,7 +1590,7 @@
       "lokey": 62,
       "hikey": 63,
       "center": 62,
-      "sample": "FF D3.flac",
+      "sample": "FF_D3.flac",
       "release": 0.45,
       "offset": 0
     }
@@ -1601,7 +1601,7 @@
       "lokey": 62,
       "hikey": 63,
       "center": 62,
-      "sample": "PP D3.flac",
+      "sample": "PP_D3.flac",
       "release": 0.45,
       "offset": 0
     },
@@ -1610,7 +1610,7 @@
       "lokey": 62,
       "hikey": 63,
       "center": 62,
-      "sample": "Mp D3.flac",
+      "sample": "Mp_D3.flac",
       "release": 0.45,
       "offset": 11
     },
@@ -1619,7 +1619,7 @@
       "lokey": 62,
       "hikey": 63,
       "center": 62,
-      "sample": "MF D3.flac",
+      "sample": "MF_D3.flac",
       "release": 0.45,
       "offset": 0
     },
@@ -1628,7 +1628,7 @@
       "lokey": 62,
       "hikey": 63,
       "center": 62,
-      "sample": "FF D3.flac",
+      "sample": "FF_D3.flac",
       "release": 0.45,
       "offset": 0
     }
@@ -1639,7 +1639,7 @@
       "lokey": 64,
       "hikey": 64,
       "center": 64,
-      "sample": "PP E3.flac",
+      "sample": "PP_E3.flac",
       "release": 0.45,
       "offset": 0
     },
@@ -1648,7 +1648,7 @@
       "lokey": 64,
       "hikey": 64,
       "center": 64,
-      "sample": "Mp E3.flac",
+      "sample": "Mp_E3.flac",
       "release": 0.45,
       "offset": 0
     },
@@ -1657,7 +1657,7 @@
       "lokey": 64,
       "hikey": 64,
       "center": 64,
-      "sample": "MF E3.flac",
+      "sample": "MF_E3.flac",
       "release": 0.45,
       "offset": 0
     },
@@ -1666,7 +1666,7 @@
       "lokey": 64,
       "hikey": 64,
       "center": 64,
-      "sample": "FF E3.flac",
+      "sample": "FF_E3.flac",
       "release": 0.45,
       "offset": 0
     }
@@ -1677,7 +1677,7 @@
       "lokey": 65,
       "hikey": 66,
       "center": 65,
-      "sample": "PP F3.flac",
+      "sample": "PP_F3.flac",
       "release": 0.45,
       "offset": 0
     },
@@ -1686,7 +1686,7 @@
       "lokey": 65,
       "hikey": 66,
       "center": 65,
-      "sample": "Mp F3.flac",
+      "sample": "Mp_F3.flac",
       "release": 0.45,
       "offset": 0
     },
@@ -1695,7 +1695,7 @@
       "lokey": 65,
       "hikey": 66,
       "center": 65,
-      "sample": "MF F3.flac",
+      "sample": "MF_F3.flac",
       "release": 0.45,
       "offset": 0
     },
@@ -1704,7 +1704,7 @@
       "lokey": 65,
       "hikey": 66,
       "center": 65,
-      "sample": "FF F3.flac",
+      "sample": "FF_F3.flac",
       "release": 0.45,
       "offset": 0
     }
@@ -1715,7 +1715,7 @@
       "lokey": 65,
       "hikey": 66,
       "center": 65,
-      "sample": "PP F3.flac",
+      "sample": "PP_F3.flac",
       "release": 0.45,
       "offset": 0
     },
@@ -1724,7 +1724,7 @@
       "lokey": 65,
       "hikey": 66,
       "center": 65,
-      "sample": "Mp F3.flac",
+      "sample": "Mp_F3.flac",
       "release": 0.45,
       "offset": 0
     },
@@ -1733,7 +1733,7 @@
       "lokey": 65,
       "hikey": 66,
       "center": 65,
-      "sample": "MF F3.flac",
+      "sample": "MF_F3.flac",
       "release": 0.45,
       "offset": 0
     },
@@ -1742,7 +1742,7 @@
       "lokey": 65,
       "hikey": 66,
       "center": 65,
-      "sample": "FF F3.flac",
+      "sample": "FF_F3.flac",
       "release": 0.45,
       "offset": 0
     }
@@ -1753,7 +1753,7 @@
       "lokey": 67,
       "hikey": 68,
       "center": 67,
-      "sample": "PP G3.flac",
+      "sample": "PP_G3.flac",
       "release": 0.45,
       "offset": 0
     },
@@ -1762,7 +1762,7 @@
       "lokey": 67,
       "hikey": 68,
       "center": 67,
-      "sample": "Mp G3.flac",
+      "sample": "Mp_G3.flac",
       "release": 0.45,
       "offset": 0
     },
@@ -1771,7 +1771,7 @@
       "lokey": 67,
       "hikey": 68,
       "center": 67,
-      "sample": "MF G3.flac",
+      "sample": "MF_G3.flac",
       "release": 0.45,
       "offset": 0
     },
@@ -1780,7 +1780,7 @@
       "lokey": 67,
       "hikey": 68,
       "center": 67,
-      "sample": "FF G3.flac",
+      "sample": "FF_G3.flac",
       "release": 0.45,
       "offset": 0
     }
@@ -1791,7 +1791,7 @@
       "lokey": 67,
       "hikey": 68,
       "center": 67,
-      "sample": "PP G3.flac",
+      "sample": "PP_G3.flac",
       "release": 0.45,
       "offset": 0
     },
@@ -1800,7 +1800,7 @@
       "lokey": 67,
       "hikey": 68,
       "center": 67,
-      "sample": "Mp G3.flac",
+      "sample": "Mp_G3.flac",
       "release": 0.45,
       "offset": 0
     },
@@ -1809,7 +1809,7 @@
       "lokey": 67,
       "hikey": 68,
       "center": 67,
-      "sample": "MF G3.flac",
+      "sample": "MF_G3.flac",
       "release": 0.45,
       "offset": 0
     },
@@ -1818,7 +1818,7 @@
       "lokey": 67,
       "hikey": 68,
       "center": 67,
-      "sample": "FF G3.flac",
+      "sample": "FF_G3.flac",
       "release": 0.45,
       "offset": 0
     }
@@ -1829,7 +1829,7 @@
       "lokey": 69,
       "hikey": 69,
       "center": 69,
-      "sample": "PP A3.flac",
+      "sample": "PP_A3.flac",
       "release": 0.45,
       "offset": 0
     },
@@ -1838,7 +1838,7 @@
       "lokey": 69,
       "hikey": 69,
       "center": 69,
-      "sample": "Mp A3.flac",
+      "sample": "Mp_A3.flac",
       "release": 0.45,
       "offset": 0
     },
@@ -1847,7 +1847,7 @@
       "lokey": 69,
       "hikey": 69,
       "center": 69,
-      "sample": "MF A3.flac",
+      "sample": "MF_A3.flac",
       "release": 0.45,
       "offset": 0
     },
@@ -1856,7 +1856,7 @@
       "lokey": 69,
       "hikey": 69,
       "center": 69,
-      "sample": "FF A3.flac",
+      "sample": "FF_A3.flac",
       "release": 0.45,
       "offset": 0
     }
@@ -1867,7 +1867,7 @@
       "lokey": 70,
       "hikey": 71,
       "center": 71,
-      "sample": "PP B3.flac",
+      "sample": "PP_B3.flac",
       "release": 0.45,
       "offset": 0
     },
@@ -1876,7 +1876,7 @@
       "lokey": 70,
       "hikey": 71,
       "center": 71,
-      "sample": "Mp B3.flac",
+      "sample": "Mp_B3.flac",
       "release": 0.45,
       "offset": 0
     },
@@ -1885,7 +1885,7 @@
       "lokey": 70,
       "hikey": 71,
       "center": 71,
-      "sample": "MF B3.flac",
+      "sample": "MF_B3.flac",
       "release": 0.45,
       "offset": 0
     },
@@ -1894,7 +1894,7 @@
       "lokey": 70,
       "hikey": 71,
       "center": 71,
-      "sample": "FF B3.flac",
+      "sample": "FF_B3.flac",
       "release": 0.45,
       "offset": 0
     }
@@ -1905,7 +1905,7 @@
       "lokey": 70,
       "hikey": 71,
       "center": 71,
-      "sample": "PP B3.flac",
+      "sample": "PP_B3.flac",
       "release": 0.45,
       "offset": 0
     },
@@ -1914,7 +1914,7 @@
       "lokey": 70,
       "hikey": 71,
       "center": 71,
-      "sample": "Mp B3.flac",
+      "sample": "Mp_B3.flac",
       "release": 0.45,
       "offset": 0
     },
@@ -1923,7 +1923,7 @@
       "lokey": 70,
       "hikey": 71,
       "center": 71,
-      "sample": "MF B3.flac",
+      "sample": "MF_B3.flac",
       "release": 0.45,
       "offset": 0
     },
@@ -1932,7 +1932,7 @@
       "lokey": 70,
       "hikey": 71,
       "center": 71,
-      "sample": "FF B3.flac",
+      "sample": "FF_B3.flac",
       "release": 0.45,
       "offset": 0
     }
@@ -1943,7 +1943,7 @@
       "lokey": 72,
       "hikey": 73,
       "center": 72,
-      "sample": "PP C4.flac",
+      "sample": "PP_C4.flac",
       "release": 0.45,
       "offset": 0
     },
@@ -1952,7 +1952,7 @@
       "lokey": 72,
       "hikey": 73,
       "center": 72,
-      "sample": "Mp C4.flac",
+      "sample": "Mp_C4.flac",
       "release": 0.45,
       "offset": 0
     },
@@ -1961,7 +1961,7 @@
       "lokey": 72,
       "hikey": 73,
       "center": 72,
-      "sample": "MF C4.flac",
+      "sample": "MF_C4.flac",
       "release": 0.45,
       "offset": 0
     },
@@ -1970,7 +1970,7 @@
       "lokey": 72,
       "hikey": 73,
       "center": 72,
-      "sample": "FF C4.flac",
+      "sample": "FF_C4.flac",
       "release": 0.45,
       "offset": 0
     }
@@ -1981,7 +1981,7 @@
       "lokey": 72,
       "hikey": 73,
       "center": 72,
-      "sample": "PP C4.flac",
+      "sample": "PP_C4.flac",
       "release": 0.45,
       "offset": 0
     },
@@ -1990,7 +1990,7 @@
       "lokey": 72,
       "hikey": 73,
       "center": 72,
-      "sample": "Mp C4.flac",
+      "sample": "Mp_C4.flac",
       "release": 0.45,
       "offset": 0
     },
@@ -1999,7 +1999,7 @@
       "lokey": 72,
       "hikey": 73,
       "center": 72,
-      "sample": "MF C4.flac",
+      "sample": "MF_C4.flac",
       "release": 0.45,
       "offset": 0
     },
@@ -2008,7 +2008,7 @@
       "lokey": 72,
       "hikey": 73,
       "center": 72,
-      "sample": "FF C4.flac",
+      "sample": "FF_C4.flac",
       "release": 0.45,
       "offset": 0
     }
@@ -2019,7 +2019,7 @@
       "lokey": 74,
       "hikey": 75,
       "center": 74,
-      "sample": "PP D4.flac",
+      "sample": "PP_D4.flac",
       "release": 0.45,
       "offset": 0
     },
@@ -2028,7 +2028,7 @@
       "lokey": 74,
       "hikey": 75,
       "center": 74,
-      "sample": "Mp D4.flac",
+      "sample": "Mp_D4.flac",
       "release": 0.45,
       "offset": 0
     },
@@ -2037,7 +2037,7 @@
       "lokey": 74,
       "hikey": 75,
       "center": 74,
-      "sample": "Mf D4.flac",
+      "sample": "Mf_D4.flac",
       "release": 0.45,
       "offset": 0
     },
@@ -2046,7 +2046,7 @@
       "lokey": 74,
       "hikey": 75,
       "center": 74,
-      "sample": "FF D4.flac",
+      "sample": "FF_D4.flac",
       "release": 0.45,
       "offset": 0
     }
@@ -2057,7 +2057,7 @@
       "lokey": 74,
       "hikey": 75,
       "center": 74,
-      "sample": "PP D4.flac",
+      "sample": "PP_D4.flac",
       "release": 0.45,
       "offset": 0
     },
@@ -2066,7 +2066,7 @@
       "lokey": 74,
       "hikey": 75,
       "center": 74,
-      "sample": "Mp D4.flac",
+      "sample": "Mp_D4.flac",
       "release": 0.45,
       "offset": 0
     },
@@ -2075,7 +2075,7 @@
       "lokey": 74,
       "hikey": 75,
       "center": 74,
-      "sample": "Mf D4.flac",
+      "sample": "Mf_D4.flac",
       "release": 0.45,
       "offset": 0
     },
@@ -2084,7 +2084,7 @@
       "lokey": 74,
       "hikey": 75,
       "center": 74,
-      "sample": "FF D4.flac",
+      "sample": "FF_D4.flac",
       "release": 0.45,
       "offset": 0
     }
@@ -2095,7 +2095,7 @@
       "lokey": 76,
       "hikey": 76,
       "center": 76,
-      "sample": "PP E4.flac",
+      "sample": "PP_E4.flac",
       "release": 0.45,
       "offset": 0
     },
@@ -2104,7 +2104,7 @@
       "lokey": 76,
       "hikey": 76,
       "center": 76,
-      "sample": "Mp E4.flac",
+      "sample": "Mp_E4.flac",
       "release": 0.45,
       "offset": 0
     },
@@ -2113,7 +2113,7 @@
       "lokey": 76,
       "hikey": 76,
       "center": 76,
-      "sample": "Mf E4.flac",
+      "sample": "Mf_E4.flac",
       "release": 0.45,
       "offset": 0
     },
@@ -2122,7 +2122,7 @@
       "lokey": 76,
       "hikey": 76,
       "center": 76,
-      "sample": "FF E4.flac",
+      "sample": "FF_E4.flac",
       "release": 0.45,
       "offset": 0
     }
@@ -2133,7 +2133,7 @@
       "lokey": 77,
       "hikey": 78,
       "center": 77,
-      "sample": "PP F4.flac",
+      "sample": "PP_F4.flac",
       "release": 0.45,
       "offset": 0
     },
@@ -2142,7 +2142,7 @@
       "lokey": 77,
       "hikey": 78,
       "center": 77,
-      "sample": "Mp F4.flac",
+      "sample": "Mp_F4.flac",
       "release": 0.45,
       "offset": 0
     },
@@ -2151,7 +2151,7 @@
       "lokey": 77,
       "hikey": 78,
       "center": 77,
-      "sample": "Mf F4.flac",
+      "sample": "Mf_F4.flac",
       "release": 0.45,
       "offset": 0
     },
@@ -2160,7 +2160,7 @@
       "lokey": 77,
       "hikey": 78,
       "center": 77,
-      "sample": "FF F4.flac",
+      "sample": "FF_F4.flac",
       "release": 0.45,
       "offset": 0
     }
@@ -2171,7 +2171,7 @@
       "lokey": 77,
       "hikey": 78,
       "center": 77,
-      "sample": "PP F4.flac",
+      "sample": "PP_F4.flac",
       "release": 0.45,
       "offset": 0
     },
@@ -2180,7 +2180,7 @@
       "lokey": 77,
       "hikey": 78,
       "center": 77,
-      "sample": "Mp F4.flac",
+      "sample": "Mp_F4.flac",
       "release": 0.45,
       "offset": 0
     },
@@ -2189,7 +2189,7 @@
       "lokey": 77,
       "hikey": 78,
       "center": 77,
-      "sample": "Mf F4.flac",
+      "sample": "Mf_F4.flac",
       "release": 0.45,
       "offset": 0
     },
@@ -2198,7 +2198,7 @@
       "lokey": 77,
       "hikey": 78,
       "center": 77,
-      "sample": "FF F4.flac",
+      "sample": "FF_F4.flac",
       "release": 0.45,
       "offset": 0
     }
@@ -2209,7 +2209,7 @@
       "lokey": 79,
       "hikey": 79,
       "center": 79,
-      "sample": "PP G4.flac",
+      "sample": "PP_G4.flac",
       "release": 0.45,
       "offset": 0
     },
@@ -2218,7 +2218,7 @@
       "lokey": 79,
       "hikey": 79,
       "center": 79,
-      "sample": "Mp G4.flac",
+      "sample": "Mp_G4.flac",
       "release": 0.45,
       "offset": 0
     },
@@ -2227,7 +2227,7 @@
       "lokey": 79,
       "hikey": 79,
       "center": 79,
-      "sample": "Mf G4.flac",
+      "sample": "Mf_G4.flac",
       "release": 0.45,
       "offset": 0
     },
@@ -2236,7 +2236,7 @@
       "lokey": 79,
       "hikey": 79,
       "center": 79,
-      "sample": "FF G4.flac",
+      "sample": "FF_G4.flac",
       "release": 0.45,
       "offset": 0
     }
@@ -2247,7 +2247,7 @@
       "lokey": 80,
       "hikey": 80,
       "center": 80,
-      "sample": "PP G#4.flac",
+      "sample": "PP_Gs4.flac",
       "release": 0.45,
       "offset": 0
     },
@@ -2256,7 +2256,7 @@
       "lokey": 80,
       "hikey": 80,
       "center": 80,
-      "sample": "Mp G#4.flac",
+      "sample": "Mp_Gs4.flac",
       "release": 0.45,
       "offset": 0
     },
@@ -2265,7 +2265,7 @@
       "lokey": 80,
       "hikey": 80,
       "center": 80,
-      "sample": "Mf G#4.flac",
+      "sample": "Mf_Gs4.flac",
       "release": 0.45,
       "offset": 0
     },
@@ -2274,7 +2274,7 @@
       "lokey": 80,
       "hikey": 80,
       "center": 80,
-      "sample": "FF G#4.flac",
+      "sample": "FF_Gs4.flac",
       "release": 0.45,
       "offset": 0
     }
@@ -2285,7 +2285,7 @@
       "lokey": 81,
       "hikey": 81,
       "center": 81,
-      "sample": "PP A4.flac",
+      "sample": "PP_A4.flac",
       "release": 0.45,
       "offset": 0
     },
@@ -2294,7 +2294,7 @@
       "lokey": 81,
       "hikey": 81,
       "center": 81,
-      "sample": "Mp A4.flac",
+      "sample": "Mp_A4.flac",
       "release": 0.45,
       "offset": 0
     },
@@ -2303,7 +2303,7 @@
       "lokey": 81,
       "hikey": 81,
       "center": 81,
-      "sample": "Mf A4.flac",
+      "sample": "Mf_A4.flac",
       "release": 0.45,
       "offset": 0
     },
@@ -2312,7 +2312,7 @@
       "lokey": 81,
       "hikey": 81,
       "center": 81,
-      "sample": "FF A4.flac",
+      "sample": "FF_A4.flac",
       "release": 0.45,
       "offset": 0
     }
@@ -2323,7 +2323,7 @@
       "lokey": 82,
       "hikey": 82,
       "center": 82,
-      "sample": "PP A#4.flac",
+      "sample": "PP_As4.flac",
       "release": 0.45,
       "offset": 0
     },
@@ -2332,7 +2332,7 @@
       "lokey": 82,
       "hikey": 82,
       "center": 82,
-      "sample": "Mp A#4.flac",
+      "sample": "Mp_As4.flac",
       "release": 0.45,
       "offset": 0
     },
@@ -2341,7 +2341,7 @@
       "lokey": 82,
       "hikey": 82,
       "center": 82,
-      "sample": "Mf A#4.flac",
+      "sample": "Mf_As4.flac",
       "release": 0.45,
       "offset": 0
     },
@@ -2350,7 +2350,7 @@
       "lokey": 82,
       "hikey": 82,
       "center": 82,
-      "sample": "FF A#4.flac",
+      "sample": "FF_As4.flac",
       "release": 0.45,
       "offset": 0
     }
@@ -2361,7 +2361,7 @@
       "lokey": 83,
       "hikey": 83,
       "center": 83,
-      "sample": "PP B4.flac",
+      "sample": "PP_B4.flac",
       "release": 0.45,
       "offset": 0
     },
@@ -2370,7 +2370,7 @@
       "lokey": 83,
       "hikey": 83,
       "center": 83,
-      "sample": "Mp B4.flac",
+      "sample": "Mp_B4.flac",
       "release": 0.45,
       "offset": 0
     },
@@ -2379,7 +2379,7 @@
       "lokey": 83,
       "hikey": 83,
       "center": 83,
-      "sample": "Mf B4.flac",
+      "sample": "Mf_B4.flac",
       "release": 0.45,
       "offset": 0
     },
@@ -2388,7 +2388,7 @@
       "lokey": 83,
       "hikey": 83,
       "center": 83,
-      "sample": "FF B4.flac",
+      "sample": "FF_B4.flac",
       "release": 0.45,
       "offset": 0
     }
@@ -2399,7 +2399,7 @@
       "lokey": 84,
       "hikey": 85,
       "center": 85,
-      "sample": "PP C#5.flac",
+      "sample": "PP_Cs5.flac",
       "release": 0.1,
       "offset": 0
     },
@@ -2408,7 +2408,7 @@
       "lokey": 84,
       "hikey": 85,
       "center": 85,
-      "sample": "Mp C#5.flac",
+      "sample": "Mp_Cs5.flac",
       "release": 0.1,
       "offset": 0
     },
@@ -2417,7 +2417,7 @@
       "lokey": 84,
       "hikey": 85,
       "center": 85,
-      "sample": "Mf C#5.flac",
+      "sample": "Mf_Cs5.flac",
       "release": 0.1,
       "offset": 0
     },
@@ -2426,7 +2426,7 @@
       "lokey": 84,
       "hikey": 85,
       "center": 85,
-      "sample": "FF C#5.flac",
+      "sample": "FF_Cs5.flac",
       "release": 0.2,
       "offset": 0
     }
@@ -2437,7 +2437,7 @@
       "lokey": 84,
       "hikey": 85,
       "center": 85,
-      "sample": "PP C#5.flac",
+      "sample": "PP_Cs5.flac",
       "release": 0.1,
       "offset": 0
     },
@@ -2446,7 +2446,7 @@
       "lokey": 84,
       "hikey": 85,
       "center": 85,
-      "sample": "Mp C#5.flac",
+      "sample": "Mp_Cs5.flac",
       "release": 0.1,
       "offset": 0
     },
@@ -2455,7 +2455,7 @@
       "lokey": 84,
       "hikey": 85,
       "center": 85,
-      "sample": "Mf C#5.flac",
+      "sample": "Mf_Cs5.flac",
       "release": 0.1,
       "offset": 0
     },
@@ -2464,7 +2464,7 @@
       "lokey": 84,
       "hikey": 85,
       "center": 85,
-      "sample": "FF C#5.flac",
+      "sample": "FF_Cs5.flac",
       "release": 0.2,
       "offset": 0
     }
@@ -2475,7 +2475,7 @@
       "lokey": 86,
       "hikey": 86,
       "center": 86,
-      "sample": "PP D5.flac",
+      "sample": "PP_D5.flac",
       "release": 0.2,
       "offset": 0
     },
@@ -2484,7 +2484,7 @@
       "lokey": 86,
       "hikey": 86,
       "center": 86,
-      "sample": "Mp D5.flac",
+      "sample": "Mp_D5.flac",
       "release": 0.2,
       "offset": 0
     },
@@ -2493,7 +2493,7 @@
       "lokey": 86,
       "hikey": 86,
       "center": 86,
-      "sample": "Mf D5.flac",
+      "sample": "Mf_D5.flac",
       "release": 0.2,
       "offset": 0
     },
@@ -2502,7 +2502,7 @@
       "lokey": 86,
       "hikey": 87,
       "center": 86,
-      "sample": "FF D5.flac",
+      "sample": "FF_D5.flac",
       "release": 0.4,
       "offset": 0
     }
@@ -2513,7 +2513,7 @@
       "lokey": 87,
       "hikey": 87,
       "center": 87,
-      "sample": "PP D#5.flac",
+      "sample": "PP_Ds5.flac",
       "release": 0.3,
       "offset": 0
     },
@@ -2522,7 +2522,7 @@
       "lokey": 87,
       "hikey": 87,
       "center": 87,
-      "sample": "Mp D#5.flac",
+      "sample": "Mp_Ds5.flac",
       "release": 0.3,
       "offset": 0
     },
@@ -2531,7 +2531,7 @@
       "lokey": 87,
       "hikey": 87,
       "center": 87,
-      "sample": "Mf D#5.flac",
+      "sample": "Mf_Ds5.flac",
       "release": 0.3,
       "offset": 0
     },
@@ -2540,7 +2540,7 @@
       "lokey": 86,
       "hikey": 87,
       "center": 86,
-      "sample": "FF D5.flac",
+      "sample": "FF_D5.flac",
       "release": 0.4,
       "offset": 0
     }
@@ -2551,7 +2551,7 @@
       "lokey": 88,
       "hikey": 89,
       "center": 89,
-      "sample": "PP F5.flac",
+      "sample": "PP_F5.flac",
       "release": 0.4,
       "offset": 0
     },
@@ -2560,7 +2560,7 @@
       "lokey": 88,
       "hikey": 88,
       "center": 88,
-      "sample": "Mp E5.flac",
+      "sample": "Mp_E5.flac",
       "release": 0.4,
       "offset": 0
     },
@@ -2569,7 +2569,7 @@
       "lokey": 88,
       "hikey": 88,
       "center": 88,
-      "sample": "Mf E5.flac",
+      "sample": "Mf_E5.flac",
       "release": 0.4,
       "offset": 0
     },
@@ -2578,7 +2578,7 @@
       "lokey": 88,
       "hikey": 88,
       "center": 88,
-      "sample": "FF E5.flac",
+      "sample": "FF_E5.flac",
       "release": 0.5,
       "offset": 0
     }
@@ -2589,7 +2589,7 @@
       "lokey": 88,
       "hikey": 89,
       "center": 89,
-      "sample": "PP F5.flac",
+      "sample": "PP_F5.flac",
       "release": 0.4,
       "offset": 0
     },
@@ -2598,7 +2598,7 @@
       "lokey": 89,
       "hikey": 89,
       "center": 89,
-      "sample": "Mp F5.flac",
+      "sample": "Mp_F5.flac",
       "release": 0.5,
       "offset": 0
     },
@@ -2607,7 +2607,7 @@
       "lokey": 89,
       "hikey": 89,
       "center": 89,
-      "sample": "Mf F5.flac",
+      "sample": "Mf_F5.flac",
       "release": 0.5,
       "offset": 0
     },
@@ -2616,7 +2616,7 @@
       "lokey": 89,
       "hikey": 90,
       "center": 89,
-      "sample": "FF F5.flac",
+      "sample": "FF_F5.flac",
       "release": 0.6,
       "offset": 0
     }
@@ -2627,7 +2627,7 @@
       "lokey": 90,
       "hikey": 90,
       "center": 90,
-      "sample": "PP F#5.flac",
+      "sample": "PP_Fs5.flac",
       "release": 0.6,
       "offset": 0
     },
@@ -2636,7 +2636,7 @@
       "lokey": 90,
       "hikey": 90,
       "center": 90,
-      "sample": "Mp F#5.flac",
+      "sample": "Mp_Fs5.flac",
       "release": 0.6,
       "offset": 0
     },
@@ -2645,7 +2645,7 @@
       "lokey": 90,
       "hikey": 90,
       "center": 90,
-      "sample": "Mf F#5.flac",
+      "sample": "Mf_Fs5.flac",
       "release": 0.6,
       "offset": 0
     },
@@ -2654,7 +2654,7 @@
       "lokey": 89,
       "hikey": 90,
       "center": 89,
-      "sample": "FF F5.flac",
+      "sample": "FF_F5.flac",
       "release": 0.6,
       "offset": 0
     }
@@ -2665,7 +2665,7 @@
       "lokey": 91,
       "hikey": 91,
       "center": 91,
-      "sample": "PP G5.flac",
+      "sample": "PP_G5.flac",
       "release": 10,
       "offset": 135
     },
@@ -2674,7 +2674,7 @@
       "lokey": 91,
       "hikey": 91,
       "center": 91,
-      "sample": "Mp G5.flac",
+      "sample": "Mp_G5.flac",
       "release": 10,
       "offset": 0
     },
@@ -2683,7 +2683,7 @@
       "lokey": 91,
       "hikey": 91,
       "center": 91,
-      "sample": "Mf G5.flac",
+      "sample": "Mf_G5.flac",
       "release": 10,
       "offset": 0
     },
@@ -2692,7 +2692,7 @@
       "lokey": 91,
       "hikey": 92,
       "center": 91,
-      "sample": "FF G5.flac",
+      "sample": "FF_G5.flac",
       "release": 10,
       "offset": 0
     }
@@ -2703,7 +2703,7 @@
       "lokey": 92,
       "hikey": 92,
       "center": 92,
-      "sample": "PP G#5.flac",
+      "sample": "PP_Gs5.flac",
       "release": 10,
       "offset": 0
     },
@@ -2712,7 +2712,7 @@
       "lokey": 92,
       "hikey": 92,
       "center": 92,
-      "sample": "Mp G#5.flac",
+      "sample": "Mp_Gs5.flac",
       "release": 10,
       "offset": 0
     },
@@ -2721,7 +2721,7 @@
       "lokey": 92,
       "hikey": 92,
       "center": 92,
-      "sample": "Mf G#5.flac",
+      "sample": "Mf_Gs5.flac",
       "release": 10,
       "offset": 0
     },
@@ -2730,7 +2730,7 @@
       "lokey": 91,
       "hikey": 92,
       "center": 91,
-      "sample": "FF G5.flac",
+      "sample": "FF_G5.flac",
       "release": 10,
       "offset": 0
     }
@@ -2741,7 +2741,7 @@
       "lokey": 93,
       "hikey": 93,
       "center": 93,
-      "sample": "PP A5.flac",
+      "sample": "PP_A5.flac",
       "release": 10,
       "offset": 0
     },
@@ -2750,7 +2750,7 @@
       "lokey": 93,
       "hikey": 93,
       "center": 93,
-      "sample": "Mp A5.flac",
+      "sample": "Mp_A5.flac",
       "release": 10,
       "offset": 0
     },
@@ -2759,7 +2759,7 @@
       "lokey": 93,
       "hikey": 93,
       "center": 93,
-      "sample": "Mf A5.flac",
+      "sample": "Mf_A5.flac",
       "release": 10,
       "offset": 0
     },
@@ -2768,7 +2768,7 @@
       "lokey": 93,
       "hikey": 94,
       "center": 93,
-      "sample": "FF A5.flac",
+      "sample": "FF_A5.flac",
       "release": 10,
       "offset": 0
     }
@@ -2779,7 +2779,7 @@
       "lokey": 94,
       "hikey": 94,
       "center": 94,
-      "sample": "PP A#5.flac",
+      "sample": "PP_As5.flac",
       "release": 10,
       "offset": 0
     },
@@ -2788,7 +2788,7 @@
       "lokey": 94,
       "hikey": 94,
       "center": 94,
-      "sample": "Mp A#5.flac",
+      "sample": "Mp_As5.flac",
       "release": 10,
       "offset": 0
     },
@@ -2797,7 +2797,7 @@
       "lokey": 94,
       "hikey": 94,
       "center": 94,
-      "sample": "Mf A#5.flac",
+      "sample": "Mf_As5.flac",
       "release": 10,
       "offset": 0
     },
@@ -2806,7 +2806,7 @@
       "lokey": 93,
       "hikey": 94,
       "center": 93,
-      "sample": "FF A5.flac",
+      "sample": "FF_A5.flac",
       "release": 10,
       "offset": 0
     }
@@ -2817,7 +2817,7 @@
       "lokey": 95,
       "hikey": 95,
       "center": 95,
-      "sample": "PP B5.flac",
+      "sample": "PP_B5.flac",
       "release": 10,
       "offset": 324
     },
@@ -2826,7 +2826,7 @@
       "lokey": 95,
       "hikey": 95,
       "center": 95,
-      "sample": "Mp B5.flac",
+      "sample": "Mp_B5.flac",
       "release": 10,
       "offset": 0
     },
@@ -2835,7 +2835,7 @@
       "lokey": 95,
       "hikey": 95,
       "center": 95,
-      "sample": "Mf B5.flac",
+      "sample": "Mf_B5.flac",
       "release": 10,
       "offset": 0
     },
@@ -2844,7 +2844,7 @@
       "lokey": 95,
       "hikey": 95,
       "center": 95,
-      "sample": "Mf B5.flac",
+      "sample": "Mf_B5.flac",
       "release": 10,
       "offset": 0
     }
@@ -2855,7 +2855,7 @@
       "lokey": 96,
       "hikey": 96,
       "center": 96,
-      "sample": "PP C6.flac",
+      "sample": "PP_C6.flac",
       "release": 10,
       "offset": 57
     },
@@ -2864,7 +2864,7 @@
       "lokey": 96,
       "hikey": 96,
       "center": 96,
-      "sample": "Mp C6.flac",
+      "sample": "Mp_C6.flac",
       "release": 10,
       "offset": 0
     },
@@ -2873,7 +2873,7 @@
       "lokey": 96,
       "hikey": 96,
       "center": 96,
-      "sample": "Mf C6.flac",
+      "sample": "Mf_C6.flac",
       "release": 10,
       "offset": 0
     },
@@ -2882,7 +2882,7 @@
       "lokey": 96,
       "hikey": 97,
       "center": 96,
-      "sample": "Mf C6.flac",
+      "sample": "Mf_C6.flac",
       "release": 10,
       "offset": 0
     }
@@ -2893,7 +2893,7 @@
       "lokey": 97,
       "hikey": 97,
       "center": 97,
-      "sample": "PP C#6.flac",
+      "sample": "PP_Cs6.flac",
       "release": 10,
       "offset": 265
     },
@@ -2902,7 +2902,7 @@
       "lokey": 97,
       "hikey": 97,
       "center": 97,
-      "sample": "Mp C#6.flac",
+      "sample": "Mp_Cs6.flac",
       "release": 10,
       "offset": 0
     },
@@ -2911,7 +2911,7 @@
       "lokey": 97,
       "hikey": 97,
       "center": 97,
-      "sample": "Mf C#6.flac",
+      "sample": "Mf_Cs6.flac",
       "release": 10,
       "offset": 0
     },
@@ -2920,7 +2920,7 @@
       "lokey": 96,
       "hikey": 97,
       "center": 96,
-      "sample": "Mf C6.flac",
+      "sample": "Mf_C6.flac",
       "release": 10,
       "offset": 0
     }
@@ -2931,7 +2931,7 @@
       "lokey": 98,
       "hikey": 98,
       "center": 98,
-      "sample": "PP D6.flac",
+      "sample": "PP_D6.flac",
       "release": 10,
       "offset": 0
     },
@@ -2940,7 +2940,7 @@
       "lokey": 98,
       "hikey": 98,
       "center": 98,
-      "sample": "Mp D6.flac",
+      "sample": "Mp_D6.flac",
       "release": 10,
       "offset": 0
     },
@@ -2949,7 +2949,7 @@
       "lokey": 98,
       "hikey": 98,
       "center": 98,
-      "sample": "Mf D6.flac",
+      "sample": "Mf_D6.flac",
       "release": 10,
       "offset": 0
     },
@@ -2958,7 +2958,7 @@
       "lokey": 98,
       "hikey": 98,
       "center": 97,
-      "sample": "Mf C#6.flac",
+      "sample": "Mf_Cs6.flac",
       "release": 10,
       "offset": 0
     }
@@ -2969,7 +2969,7 @@
       "lokey": 99,
       "hikey": 99,
       "center": 99,
-      "sample": "PP D#6.flac",
+      "sample": "PP_Ds6.flac",
       "release": 10,
       "offset": 0
     },
@@ -2978,7 +2978,7 @@
       "lokey": 99,
       "hikey": 99,
       "center": 99,
-      "sample": "Mp D#6.flac",
+      "sample": "Mp_Ds6.flac",
       "release": 10,
       "offset": 0
     },
@@ -2987,7 +2987,7 @@
       "lokey": 99,
       "hikey": 99,
       "center": 99,
-      "sample": "Mf D#6.flac",
+      "sample": "Mf_Ds6.flac",
       "release": 10,
       "offset": 0
     },
@@ -2996,7 +2996,7 @@
       "lokey": 99,
       "hikey": 99,
       "center": 98,
-      "sample": "Mf D6.flac",
+      "sample": "Mf_D6.flac",
       "release": 10,
       "offset": 0
     }
@@ -3007,7 +3007,7 @@
       "lokey": 100,
       "hikey": 100,
       "center": 100,
-      "sample": "PP E6.flac",
+      "sample": "PP_E6.flac",
       "release": 10,
       "offset": 0
     },
@@ -3016,7 +3016,7 @@
       "lokey": 100,
       "hikey": 100,
       "center": 100,
-      "sample": "PP E6.flac",
+      "sample": "PP_E6.flac",
       "release": 10,
       "offset": 0
     },
@@ -3025,7 +3025,7 @@
       "lokey": 100,
       "hikey": 100,
       "center": 100,
-      "sample": "Mf E6.flac",
+      "sample": "Mf_E6.flac",
       "release": 10,
       "offset": 0
     },
@@ -3034,7 +3034,7 @@
       "lokey": 100,
       "hikey": 100,
       "center": 99,
-      "sample": "Mf D#6.flac",
+      "sample": "Mf_Ds6.flac",
       "release": 10,
       "offset": 0
     }
@@ -3045,7 +3045,7 @@
       "lokey": 101,
       "hikey": 101,
       "center": 101,
-      "sample": "PP F6.flac",
+      "sample": "PP_F6.flac",
       "release": 10,
       "offset": 0
     },
@@ -3054,7 +3054,7 @@
       "lokey": 101,
       "hikey": 101,
       "center": 101,
-      "sample": "Mp F6.flac",
+      "sample": "Mp_F6.flac",
       "release": 10,
       "offset": 0
     },
@@ -3063,7 +3063,7 @@
       "lokey": 101,
       "hikey": 101,
       "center": 101,
-      "sample": "Mf F6.flac",
+      "sample": "Mf_F6.flac",
       "release": 10,
       "offset": 0
     },
@@ -3072,7 +3072,7 @@
       "lokey": 101,
       "hikey": 101,
       "center": 100,
-      "sample": "Mf E6.flac",
+      "sample": "Mf_E6.flac",
       "release": 10,
       "offset": 0
     }
@@ -3083,7 +3083,7 @@
       "lokey": 102,
       "hikey": 102,
       "center": 102,
-      "sample": "PP F#6.flac",
+      "sample": "PP_Fs6.flac",
       "release": 10,
       "offset": 0
     },
@@ -3092,7 +3092,7 @@
       "lokey": 102,
       "hikey": 102,
       "center": 102,
-      "sample": "Mp F#6.flac",
+      "sample": "Mp_Fs6.flac",
       "release": 10,
       "offset": 0
     },
@@ -3101,7 +3101,7 @@
       "lokey": 102,
       "hikey": 102,
       "center": 102,
-      "sample": "Mf F#6.flac",
+      "sample": "Mf_Fs6.flac",
       "release": 10,
       "offset": 0
     },
@@ -3110,7 +3110,7 @@
       "lokey": 102,
       "hikey": 102,
       "center": 102,
-      "sample": "Mf F#6.flac",
+      "sample": "Mf_Fs6.flac",
       "release": 10,
       "offset": 0
     }
@@ -3121,7 +3121,7 @@
       "lokey": 103,
       "hikey": 103,
       "center": 103,
-      "sample": "PP G6.flac",
+      "sample": "PP_G6.flac",
       "release": 10,
       "offset": 0
     },
@@ -3130,7 +3130,7 @@
       "lokey": 103,
       "hikey": 103,
       "center": 103,
-      "sample": "Mp G6.flac",
+      "sample": "Mp_G6.flac",
       "release": 10,
       "offset": 0
     },
@@ -3139,7 +3139,7 @@
       "lokey": 103,
       "hikey": 103,
       "center": 103,
-      "sample": "Mf G6.flac",
+      "sample": "Mf_G6.flac",
       "release": 10,
       "offset": 0
     },
@@ -3148,7 +3148,7 @@
       "lokey": 103,
       "hikey": 103,
       "center": 103,
-      "sample": "Mf G6.flac",
+      "sample": "Mf_G6.flac",
       "release": 10,
       "offset": 0
     }
@@ -3159,7 +3159,7 @@
       "lokey": 104,
       "hikey": 104,
       "center": 104,
-      "sample": "PP G#6.flac",
+      "sample": "PP_Gs6.flac",
       "release": 10,
       "offset": 0
     },
@@ -3168,7 +3168,7 @@
       "lokey": 104,
       "hikey": 104,
       "center": 104,
-      "sample": "Mp G#6.flac",
+      "sample": "Mp_Gs6.flac",
       "release": 10,
       "offset": 0
     },
@@ -3177,7 +3177,7 @@
       "lokey": 104,
       "hikey": 104,
       "center": 104,
-      "sample": "Mf G#6.flac",
+      "sample": "Mf_Gs6.flac",
       "release": 10,
       "offset": 0
     },
@@ -3186,7 +3186,7 @@
       "lokey": 104,
       "hikey": 104,
       "center": 104,
-      "sample": "Mf G#6.flac",
+      "sample": "Mf_Gs6.flac",
       "release": 10,
       "offset": 0
     }
@@ -3197,7 +3197,7 @@
       "lokey": 105,
       "hikey": 105,
       "center": 105,
-      "sample": "PP A6.flac",
+      "sample": "PP_A6.flac",
       "release": 10,
       "offset": 146
     },
@@ -3206,7 +3206,7 @@
       "lokey": 105,
       "hikey": 105,
       "center": 105,
-      "sample": "Mp A6.flac",
+      "sample": "Mp_A6.flac",
       "release": 10,
       "offset": 0
     },
@@ -3215,7 +3215,7 @@
       "lokey": 105,
       "hikey": 105,
       "center": 105,
-      "sample": "Mf A6.flac",
+      "sample": "Mf_A6.flac",
       "release": 10,
       "offset": 0
     },
@@ -3224,7 +3224,7 @@
       "lokey": 105,
       "hikey": 105,
       "center": 105,
-      "sample": "Mf A6.flac",
+      "sample": "Mf_A6.flac",
       "release": 10,
       "offset": 0
     }
@@ -3235,7 +3235,7 @@
       "lokey": 106,
       "hikey": 106,
       "center": 106,
-      "sample": "PP A#6.flac",
+      "sample": "PP_As6.flac",
       "release": 10,
       "offset": 0
     },
@@ -3244,7 +3244,7 @@
       "lokey": 106,
       "hikey": 106,
       "center": 106,
-      "sample": "Mp A#6.flac",
+      "sample": "Mp_As6.flac",
       "release": 10,
       "offset": 0
     },
@@ -3253,7 +3253,7 @@
       "lokey": 106,
       "hikey": 106,
       "center": 106,
-      "sample": "Mf A#6.flac",
+      "sample": "Mf_As6.flac",
       "release": 10,
       "offset": 0
     },
@@ -3262,7 +3262,7 @@
       "lokey": 106,
       "hikey": 106,
       "center": 106,
-      "sample": "Mf A#6.flac",
+      "sample": "Mf_As6.flac",
       "release": 10,
       "offset": 0
     }
@@ -3273,7 +3273,7 @@
       "lokey": 107,
       "hikey": 107,
       "center": 107,
-      "sample": "PP B6.flac",
+      "sample": "PP_B6.flac",
       "release": 10,
       "offset": 0
     },
@@ -3282,7 +3282,7 @@
       "lokey": 107,
       "hikey": 107,
       "center": 107,
-      "sample": "PP B6.flac",
+      "sample": "PP_B6.flac",
       "release": 10,
       "offset": 0
     },
@@ -3291,7 +3291,7 @@
       "lokey": 107,
       "hikey": 107,
       "center": 107,
-      "sample": "Mf B6.flac",
+      "sample": "Mf_B6.flac",
       "release": 10,
       "offset": 0
     },
@@ -3300,7 +3300,7 @@
       "lokey": 107,
       "hikey": 107,
       "center": 107,
-      "sample": "Mf B6.flac",
+      "sample": "Mf_B6.flac",
       "release": 10,
       "offset": 0
     }
@@ -3311,7 +3311,7 @@
       "lokey": 108,
       "hikey": 108,
       "center": 108,
-      "sample": "PP C7.flac",
+      "sample": "PP_C7.flac",
       "release": 10,
       "offset": 0
     },
@@ -3320,7 +3320,7 @@
       "lokey": 108,
       "hikey": 108,
       "center": 108,
-      "sample": "PP C7.flac",
+      "sample": "PP_C7.flac",
       "release": 10,
       "offset": 0
     },
@@ -3329,7 +3329,7 @@
       "lokey": 108,
       "hikey": 108,
       "center": 108,
-      "sample": "Mf C7.flac",
+      "sample": "Mf_C7.flac",
       "release": 10,
       "offset": 0
     },
@@ -3338,7 +3338,7 @@
       "lokey": 108,
       "hikey": 108,
       "center": 108,
-      "sample": "Mf C7.flac",
+      "sample": "Mf_C7.flac",
       "release": 10,
       "offset": 0
     }
