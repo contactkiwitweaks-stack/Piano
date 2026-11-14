@@ -24,6 +24,19 @@ interface ActiveVoice {
   pedaled: boolean
 }
 
+export interface EngineTelemetry {
+  engineName: string
+  sampleFormat: string
+  loadedSamples: number
+  totalSamples: number
+  isMainEngineActive: boolean
+  isIrLoaded: boolean
+  reverbName: string
+  audioContextState: string
+  sampleRate: number
+  lastTriggeredNote: string
+}
+
 export type ReverbMode = 'off' | 'studio' | 'hall' | 'cathedral'
 export type VelocityCurveType = 'light' | 'normal' | 'heavy'
 
@@ -56,13 +69,16 @@ export class PianoAudioEngine {
   private sampleBuffers: Map<string, AudioBuffer> = new Map()
   private pendingDownloads: Map<string, Promise<AudioBuffer | null>> = new Map()
   private isLoadingSamples: boolean = false
-  private samplesLoaded: boolean = false
   private isIrLoaded: boolean = false
+  private lastTriggeredNote: string = 'Engine Ready • Press any key'
 
   // sfizz Polyphony & Voice Stealing
   private readonly MAX_VOICES: number = 48
   private voiceIdCounter: number = 1
   private activeVoices: Map<number, ActiveVoice> = new Map()
+
+  // Telemetry Subscribers
+  private telemetryListeners: Set<(t: EngineTelemetry) => void> = new Set()
 
   private constructor() {}
 
@@ -71,6 +87,34 @@ export class PianoAudioEngine {
       PianoAudioEngine.instance = new PianoAudioEngine()
     }
     return PianoAudioEngine.instance
+  }
+
+  public subscribeTelemetry(listener: (t: EngineTelemetry) => void): () => void {
+    this.telemetryListeners.add(listener)
+    listener(this.getTelemetry())
+    return () => this.telemetryListeners.delete(listener)
+  }
+
+  public getTelemetry(): EngineTelemetry {
+    return {
+      engineName: 'Steinway Model B (Splendid Grand Piano)',
+      sampleFormat: '16-bit 44.1kHz FLAC / 192k MP3',
+      loadedSamples: this.sampleBuffers.size,
+      totalSamples: 226,
+      isMainEngineActive: this.sampleBuffers.size > 0,
+      isIrLoaded: this.isIrLoaded,
+      reverbName: 'Vienna Musikverein Concert Hall (Goldener Saal)',
+      audioContextState: this.ctx ? this.ctx.state : 'uninitialized',
+      sampleRate: this.ctx ? this.ctx.sampleRate : 44100,
+      lastTriggeredNote: this.lastTriggeredNote,
+    }
+  }
+
+  private notifyTelemetry() {
+    const t = this.getTelemetry()
+    this.telemetryListeners.forEach((fn) => {
+      try { fn(t) } catch {}
+    })
   }
 
   public init() {
@@ -141,16 +185,74 @@ export class PianoAudioEngine {
       window.addEventListener('click', unlockHandler, { once: true, passive: true })
     }
 
-    // Trigger high-priority preloading of core Steinway Grand samples
-    this.preloadCoreSamples()
+    this.notifyTelemetry()
+  }
+
+  public isAudioSuspended(): boolean {
+    return !this.ctx || this.ctx.state !== 'running'
+  }
+
+  /**
+   * Complete iOS Background / Foreground Recovery:
+   * Resumes AudioContext or recreates audio graph cleanly if iOS WebKit invalidated it
+   */
+  public async handleAppResume(): Promise<boolean> {
+    if (!this.ctx) {
+      this.init()
+      return true
+    }
+
+    try {
+      this.stopAllVoices()
+
+      // In iOS WebKit, state can be 'suspended' or 'interrupted'
+      if (this.ctx.state === 'suspended' || (this.ctx.state as string) === 'interrupted') {
+        await this.ctx.resume()
+      }
+
+      // If still not running after resume, recreate audio graph
+      if (this.ctx.state !== 'running') {
+        await this.recreateAudioGraph()
+      } else {
+        // Play silent 1-sample buffer to unlock CoreAudio
+        const silentBuf = this.ctx.createBuffer(1, 1, 22050)
+        const src = this.ctx.createBufferSource()
+        src.buffer = silentBuf
+        src.connect(this.ctx.destination)
+        src.start(0)
+      }
+    } catch {
+      await this.recreateAudioGraph()
+    }
+
+    this.notifyTelemetry()
+    return this.ctx?.state === 'running'
+  }
+
+  private async recreateAudioGraph() {
+    try {
+      if (this.ctx) {
+        this.ctx.close().catch(() => {})
+      }
+    } catch {}
+    this.ctx = null
+    this.soundboardBus = null
+    this.unaCordaFilter = null
+    this.unaCordaGain = null
+    this.dryGain = null
+    this.wetGain = null
+    this.convolver = null
+    this.masterGain = null
+    this.masterLimiter = null
+    this.isIrLoaded = false
+    this.init()
   }
 
   /**
    * Resilient binary asset loader supporting Capacitor custom schemes, file:// and HTTP
-   * Uses XMLHttpRequest with arraybuffer (most robust across all iOS WebKit builds) with fetch fallback
+   * Uses XMLHttpRequest with arraybuffer (most robust across all iOS WebKit builds) with fast timeout
    */
   private async loadAssetBytes(url: string): Promise<ArrayBuffer | null> {
-    // Attempt 1: XMLHttpRequest with responseType = 'arraybuffer'
     if (typeof XMLHttpRequest !== 'undefined') {
       try {
         const xhrResult = await new Promise<ArrayBuffer | null>((resolve) => {
@@ -166,14 +268,13 @@ export class PianoAudioEngine {
           }
           xhr.onerror = () => resolve(null)
           xhr.ontimeout = () => resolve(null)
-          xhr.timeout = 6000
+          xhr.timeout = 1500 // Fast 1.5s local flash storage timeout
           xhr.send()
         })
         if (xhrResult) return xhrResult
       } catch {}
     }
 
-    // Attempt 2: Fetch API
     try {
       const resp = await fetch(url)
       if (resp && (resp.ok || resp.status === 0 || resp.status === 200)) {
@@ -187,7 +288,6 @@ export class PianoAudioEngine {
 
   /**
    * Load real Vienna Musikverein Concert Hall .wav Impulse Response
-   * Only connects convolver to graph once the impulse buffer has been successfully decoded
    */
   private async loadConcertHallIr() {
     if (this.isIrLoaded || !this.ctx || !this.convolver || !this.unaCordaGain || !this.wetGain || !this.masterGain) return
@@ -196,7 +296,6 @@ export class PianoAudioEngine {
       '/samples/ir/musikvereinsaal.wav',
       'samples/ir/musikvereinsaal.wav',
       `capacitor://localhost/samples/ir/musikvereinsaal.wav`,
-      `http://localhost/samples/ir/musikvereinsaal.wav`,
     ]
 
     for (const p of irPaths) {
@@ -206,11 +305,11 @@ export class PianoAudioEngine {
           const irBuf = await this.decodeAudioBuffer(arrayBuf)
           if (irBuf && this.convolver && this.unaCordaGain && this.wetGain && this.masterGain) {
             this.convolver.buffer = irBuf
-            // Connect convolver only after buffer is set (prevents WebKit null-buffer bugs)
             this.unaCordaGain.connect(this.convolver)
             this.convolver.connect(this.wetGain)
             this.wetGain.connect(this.masterGain)
             this.isIrLoaded = true
+            this.notifyTelemetry()
             return
           }
         }
@@ -224,7 +323,6 @@ export class PianoAudioEngine {
   private async decodeAudioBuffer(arrayBuf: ArrayBuffer): Promise<AudioBuffer | null> {
     if (!this.ctx) this.init()
     if (!this.ctx) return null
-    // WebKit neuters the ArrayBuffer during decoding, so slice a fresh copy
     const slice = arrayBuf.slice(0)
     return new Promise<AudioBuffer | null>((resolve) => {
       let resolved = false
@@ -268,20 +366,12 @@ export class PianoAudioEngine {
       const flacName = `${baseName}.flac`
       const mp3Name = `${baseName}.mp3`
 
-      const origin = typeof window !== 'undefined' && window.location ? window.location.origin : ''
       const candidates = [
         `./samples/splendid/${flacName}`,
         `/samples/splendid/${flacName}`,
-        `samples/splendid/${flacName}`,
-        origin ? `${origin}/samples/splendid/${flacName}` : '',
-        `capacitor://localhost/samples/splendid/${flacName}`,
-        // MP3 Fallbacks
         `./samples/splendid/${mp3Name}`,
         `/samples/splendid/${mp3Name}`,
-        `samples/splendid/${mp3Name}`,
-        origin ? `${origin}/samples/splendid/${mp3Name}` : '',
-        `capacitor://localhost/samples/splendid/${mp3Name}`,
-      ].filter(Boolean) as string[]
+      ]
 
       for (const url of candidates) {
         try {
@@ -292,6 +382,7 @@ export class PianoAudioEngine {
               this.sampleBuffers.set(filename, audioBuf)
               this.sampleBuffers.set(flacName, audioBuf)
               this.sampleBuffers.set(mp3Name, audioBuf)
+              this.notifyTelemetry()
               return audioBuf
             }
           }
@@ -307,33 +398,72 @@ export class PianoAudioEngine {
   }
 
   /**
-   * Preload core Steinway grand playing octaves (MF layer C2 through C6)
-   * Decodes in ~150ms on startup, followed by background streaming of remaining layers
+   * Preload core Steinway grand playing octaves with real progress reporting
    */
-  public async preloadCoreSamples() {
-    if (this.isLoadingSamples || this.samplesLoaded || !this.ctx) return
+  public async preloadCoreSamples(
+    onProgress?: (progress: number, message: string, loaded: number, total: number) => void
+  ): Promise<boolean> {
+    this.init()
+    if (!this.ctx) return false
+
+    if (this.sampleBuffers.size >= 26) {
+      onProgress?.(100, 'Steinway Model B (Steinway & Sons) Concert Ready!', this.sampleBuffers.size, 26)
+      this.notifyTelemetry()
+      return true
+    }
+
+    onProgress?.(10, 'Connecting Steinway Model B Acoustic Engine...', this.sampleBuffers.size, 26)
+
+    // 1. Priority 1: Core Middle Register MF samples (C3 through C6)
+    const coreMidiKeys = [
+      60, 62, 64, 65, 67, 69, 71, 72, 57, 55, 53, 52, 50, 48, 74, 76, 77, 79, 81, 83, 84, 45, 43, 40, 36, 33, 88, 93,
+    ]
+    const priorityFiles = new Set<string>()
+    coreMidiKeys.forEach((k) => {
+      const item = SPLENDID_SFZ_MAP[k]
+      if (item?.MF?.sample) priorityFiles.add(item.MF.sample)
+    })
+
+    const priorityList = Array.from(priorityFiles)
+    const totalCore = priorityList.length
+    let loadedCore = 0
+
+    const batchSize = 4
+    for (let i = 0; i < priorityList.length; i += batchSize) {
+      const batch = priorityList.slice(i, i + batchSize)
+      await Promise.all(
+        batch.map(async (f) => {
+          await this.fetchAndDecodeSample(f)
+          loadedCore++
+          const pct = Math.min(85, Math.round(15 + (loadedCore / totalCore) * 70))
+          onProgress?.(
+            pct,
+            `Decoding Steinway Model B (${loadedCore}/${totalCore} core samples)...`,
+            loadedCore,
+            totalCore
+          )
+        })
+      )
+    }
+
+    // Load Vienna Musikverein IR
+    onProgress?.(88, 'Loading Vienna Musikverein Concert Hall IR (Goldener Saal)...', loadedCore, totalCore)
+    await this.loadConcertHallIr()
+
+    onProgress?.(100, 'Steinway Model B (Steinway & Sons) Concert Ready!', loadedCore, totalCore)
+    this.notifyTelemetry()
+
+    // 2. Stream remaining layers in idle frames
+    this.streamRemainingLayersInBackground()
+
+    return this.sampleBuffers.size > 0
+  }
+
+  private async streamRemainingLayersInBackground() {
+    if (this.isLoadingSamples) return
     this.isLoadingSamples = true
 
     try {
-      // 1. Priority 1: Core Middle Register MF samples (instant touch responsiveness)
-      const coreMidiKeys = [
-        60, 62, 64, 65, 67, 69, 71, 72, 57, 55, 53, 52, 50, 48, 74, 76, 77, 79, 81, 83, 84, 45, 43, 40, 36, 33, 88, 93,
-      ]
-      const priorityFiles = new Set<string>()
-      coreMidiKeys.forEach((k) => {
-        const item = SPLENDID_SFZ_MAP[k]
-        if (item?.MF?.sample) priorityFiles.add(item.MF.sample)
-      })
-
-      const priorityList = Array.from(priorityFiles)
-      const batchSize = 6
-      for (let i = 0; i < priorityList.length; i += batchSize) {
-        const batch = priorityList.slice(i, i + batchSize)
-        await Promise.all(batch.map((f) => this.fetchAndDecodeSample(f)))
-      }
-      this.samplesLoaded = this.sampleBuffers.size > 0
-
-      // 2. Priority 2: Stream remaining layers in idle frames
       const remainingFiles: string[] = []
       for (let m = 21; m <= 108; m++) {
         const item = SPLENDID_SFZ_MAP[m]
@@ -345,16 +475,15 @@ export class PianoAudioEngine {
         })
       }
 
-      // Throttled background loading
-      const bgBatchSize = 4
+      const bgBatchSize = 3
       for (let i = 0; i < remainingFiles.length; i += bgBatchSize) {
         const batch = remainingFiles.slice(i, i + bgBatchSize)
         await Promise.all(batch.map((f) => this.fetchAndDecodeSample(f)))
-        await new Promise((r) => setTimeout(r, 25))
+        await new Promise((r) => setTimeout(r, 20))
       }
     } catch {} finally {
       this.isLoadingSamples = false
-      this.samplesLoaded = this.sampleBuffers.size > 0
+      this.notifyTelemetry()
     }
   }
 
@@ -373,7 +502,7 @@ export class PianoAudioEngine {
         this.dryGain.gain.setValueAtTime(0.95, now)
         break
       case 'hall':
-        this.wetGain.gain.setValueAtTime(0.18, now) // Authentic Vienna Musikverein concert bloom
+        this.wetGain.gain.setValueAtTime(0.18, now)
         this.dryGain.gain.setValueAtTime(0.82, now)
         break
       case 'cathedral':
@@ -441,7 +570,7 @@ export class PianoAudioEngine {
     this.init()
     if (!this.ctx) return false
     try {
-      if (this.ctx.state === 'suspended') {
+      if (this.ctx.state === 'suspended' || (this.ctx.state as string) === 'interrupted') {
         await this.ctx.resume()
       }
       const silentBuf = this.ctx.createBuffer(1, 1, 22050)
@@ -452,8 +581,9 @@ export class PianoAudioEngine {
     } catch {}
 
     if (this.sampleBuffers.size === 0 && !this.isLoadingSamples) {
-      this.preloadCoreSamples()
+      this.preloadCoreSamples().catch(() => {})
     }
+    this.notifyTelemetry()
     return this.ctx.state === 'running'
   }
 
@@ -565,11 +695,6 @@ export class PianoAudioEngine {
     return this.currentPedalDepth
   }
 
-  /**
-   * Continuous CC64 Damper Pedal (0 to 127)
-   * True sfizz half-pedaling and acoustic felt damping:
-   * When pedal is released, all released notes sustained by pedal damp smoothly in 300ms!
-   */
   public setDamperPedal(depth: number) {
     if (this.currentPedalDepth === depth) return
     const wasPedalDown = this.isPedalDown
@@ -580,7 +705,6 @@ export class PianoAudioEngine {
       this.playDamperLiftNoise(depth)
     }
 
-    // When damper pedal is released: drop felt dampers on all released notes!
     if (wasPedalDown && !this.isPedalDown && this.ctx) {
       const now = this.ctx.currentTime
       this.activeVoices.forEach((voice, id) => {
@@ -588,7 +712,6 @@ export class PianoAudioEngine {
           try {
             voice.gainNode.gain.cancelScheduledValues(now)
             voice.gainNode.gain.setValueAtTime(Math.max(0.0001, voice.gainNode.gain.value), now)
-            // 320ms smooth acoustic felt damping (eliminates abrupt cuts and clicks)
             voice.gainNode.gain.setTargetAtTime(0.0001, now, 0.045)
 
             setTimeout(() => {
@@ -612,9 +735,6 @@ export class PianoAudioEngine {
     }
   }
 
-  /**
-   * sfizz Region Lookup for given MIDI key and velocity
-   */
   private findRegion(midi: number, velocity: number): SfzRegion {
     const clampedMidi = Math.max(21, Math.min(108, midi))
     const map = SPLENDID_SFZ_MAP[clampedMidi] || SPLENDID_SFZ_MAP[60]
@@ -625,30 +745,25 @@ export class PianoAudioEngine {
     return map.FF
   }
 
-  /**
-   * Find best available AudioBuffer with graceful fallback
-   */
-  private getBestBuffer(region: SfzRegion, midi: number): { buffer: AudioBuffer; center: number } | null {
-    // 1. Exact sample match
+  private getBestBuffer(region: SfzRegion, midi: number): { buffer: AudioBuffer; center: number; sample: string } | null {
     if (this.sampleBuffers.has(region.sample)) {
-      return { buffer: this.sampleBuffers.get(region.sample)!, center: region.center }
+      return { buffer: this.sampleBuffers.get(region.sample)!, center: region.center, sample: region.sample }
     }
 
-    // 2. Sibling velocity layer match for this exact note
     const clampedMidi = Math.max(21, Math.min(108, midi))
     const map = SPLENDID_SFZ_MAP[clampedMidi]
     if (map) {
       const candidates = [map.MF, map.MP, map.FF, map.PP]
       for (const cand of candidates) {
         if (this.sampleBuffers.has(cand.sample)) {
-          return { buffer: this.sampleBuffers.get(cand.sample)!, center: cand.center }
+          return { buffer: this.sampleBuffers.get(cand.sample)!, center: cand.center, sample: cand.sample }
         }
       }
     }
 
-    // 3. Closest loaded sample across all notes
     let minDistance = 999
     let chosenCenter = 60
+    let chosenSample = ''
     let chosenBuf: AudioBuffer | null = null
 
     for (let m = 21; m <= 108; m++) {
@@ -660,41 +775,38 @@ export class PianoAudioEngine {
         if (dist < minDistance) {
           minDistance = dist
           chosenCenter = cand.center
+          chosenSample = cand.sample
           chosenBuf = this.sampleBuffers.get(cand.sample)!
         }
       }
     }
 
     if (chosenBuf) {
-      return { buffer: chosenBuf, center: chosenCenter }
+      return { buffer: chosenBuf, center: chosenCenter, sample: chosenSample }
     }
     return null
   }
 
-  /**
-   * Play Acoustic Steinway Grand Note immediately (live keyboard / MIDI touch)
-   */
   public noteOn(midi: number, velocity: number = 80): number {
     if (this.isMuted) return 0
     this.init()
     if (!this.ctx || !this.soundboardBus) return 0
-    if (this.ctx.state === 'suspended') {
-      this.ctx.resume()
+    if (this.ctx.state === 'suspended' || (this.ctx.state as string) === 'interrupted') {
+      this.ctx.resume().catch(() => {})
     }
 
     const now = this.ctx.currentTime
     const normVel = Math.max(0.05, Math.min(1.0, velocity / 127))
-    // Natural acoustic grand dynamic curve: wide expressive headroom
     const dynamicVolume = Math.pow(normVel, 1.25) * 0.9
 
-    // 1. sfizz Note Choking: crossfade out previous strike of the identical note
+    // Note Choking
     this.activeVoices.forEach((v, vId) => {
       if (v.midi === midi && !v.released) {
         v.released = true
         try {
           v.gainNode.gain.cancelScheduledValues(now)
           v.gainNode.gain.setValueAtTime(Math.max(0.0001, v.gainNode.gain.value), now)
-          v.gainNode.gain.setTargetAtTime(0.0001, now, 0.008) // 25ms clean anti-click crossfade
+          v.gainNode.gain.setTargetAtTime(0.0001, now, 0.008)
           setTimeout(() => {
             if (v.sourceNode) {
               try { v.sourceNode.stop() } catch {}
@@ -710,7 +822,7 @@ export class PianoAudioEngine {
       }
     })
 
-    // 2. sfizz Polyphony Limiter & Voice Stealing (max 48 voices)
+    // Polyphony Limiter (48 voices)
     if (this.activeVoices.size >= this.MAX_VOICES) {
       let oldestId = -1
       let oldestTime = Infinity
@@ -743,7 +855,6 @@ export class PianoAudioEngine {
     const region = this.findRegion(midi, velocity)
     const match = this.getBestBuffer(region, midi)
 
-    // Trigger asynchronous download for this note's exact region if not in memory
     if (!this.sampleBuffers.has(region.sample)) {
       this.fetchAndDecodeSample(region.sample).catch(() => {})
     }
@@ -753,9 +864,11 @@ export class PianoAudioEngine {
     voiceGain.connect(this.soundboardBus)
 
     const voiceId = this.voiceIdCounter++
+    const noteNames = ['C', 'C#', 'D', 'D#', 'E', 'F', 'F#', 'G', 'G#', 'A', 'A#', 'B']
+    const noteName = `${noteNames[midi % 12]}${Math.floor(midi / 12) - 1}`
 
     if (match) {
-      // True Steinway Model B Acoustic Sample Voice
+      // STEINWAY MODEL B ACOUSTIC SAMPLE
       const source = this.ctx.createBufferSource()
       source.buffer = match.buffer
       const semitoneShift = midi - match.center
@@ -765,6 +878,8 @@ export class PianoAudioEngine {
 
       const startOffset = region.offset ? region.offset / 44100 : 0
       source.start(now, startOffset)
+
+      this.lastTriggeredNote = `${noteName} (MIDI ${midi}) -> ${match.sample} [Steinway Sample]`
 
       this.activeVoices.set(voiceId, {
         id: voiceId,
@@ -778,8 +893,7 @@ export class PianoAudioEngine {
         pedaled: this.isPedalDown,
       })
     } else {
-      // High-grade acoustic physical synthesis fallback:
-      // Guarantees zero silence even before samples decode
+      // ACOUSTIC PHYSICAL MODEL SYNTH FALLBACK
       const f0 = this.masterTuningHz * Math.pow(2, (midi - 69) / 12)
       const oscillators: OscillatorNode[] = []
       const baseDecay = Math.max(2.5, Math.min(8.0, 8.5 - (midi - 21) * 0.07))
@@ -807,6 +921,8 @@ export class PianoAudioEngine {
         oscillators.push(osc)
       })
 
+      this.lastTriggeredNote = `${noteName} (MIDI ${midi}) -> Physical Model Synth [Preloading Samples...]`
+
       this.activeVoices.set(voiceId, {
         id: voiceId,
         midi,
@@ -820,13 +936,10 @@ export class PianoAudioEngine {
       })
     }
 
+    this.notifyTelemetry()
     return voiceId
   }
 
-  /**
-   * Note Off: If damper pedal is active, voice continues singing naturally!
-   * Otherwise, felt damper drops onto string with authentic 350ms acoustic dissipation.
-   */
   public noteOff(midi: number) {
     if (!this.ctx) return
     const now = this.ctx.currentTime
@@ -835,7 +948,6 @@ export class PianoAudioEngine {
       if (voice.midi === midi && !voice.released) {
         voice.released = true
 
-        // If damper pedal is down, string keeps ringing!
         if (this.isPedalDown) {
           voice.pedaled = true
           return
@@ -865,13 +977,13 @@ export class PianoAudioEngine {
     })
   }
 
-  /**
-   * Schedule note for piece playback with sub-millisecond timeline precision
-   */
   public scheduleNote(midi: number, velocity: number, durationSec: number, delaySec: number = 0) {
     if (this.isMuted) return
     this.init()
     if (!this.ctx || !this.soundboardBus) return
+    if (this.ctx.state === 'suspended' || (this.ctx.state as string) === 'interrupted') {
+      this.ctx.resume().catch(() => {})
+    }
 
     const now = this.ctx.currentTime
     const startTime = now + Math.max(0, delaySec)
@@ -915,7 +1027,6 @@ export class PianoAudioEngine {
       }
       this.activeVoices.set(voiceId, voice)
 
-      // Schedule key release at (startTime + durationSec)
       const releaseTimeMs = Math.max(40, (delaySec + durationSec) * 1000)
       setTimeout(() => {
         voice.released = true
@@ -940,7 +1051,6 @@ export class PianoAudioEngine {
         }
       }, releaseTimeMs)
     } else {
-      // Synthesis playback fallback
       this.noteOn(midi, velocity)
       setTimeout(() => {
         this.noteOff(midi)
@@ -948,9 +1058,6 @@ export class PianoAudioEngine {
     }
   }
 
-  /**
-   * Stop all active voices immediately
-   */
   public stopAllVoices() {
     if (!this.ctx) return
     const now = this.ctx.currentTime

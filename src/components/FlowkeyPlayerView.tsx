@@ -5,6 +5,7 @@ import type { LanguageCode } from '../i18n/translations'
 import { FallingKeysCanvas, type VisualTheme } from './FallingKeysCanvas'
 import { SheetMusicView } from './SheetMusicView'
 import { AcousticNoteRecognizer } from '../engine/AcousticNoteRecognizer'
+import { PianoAudioEngine, type EngineTelemetry } from '../audio/PianoAudioEngine'
 import {
   Play,
   Pause,
@@ -154,6 +155,15 @@ export const FlowkeyPlayerView: React.FC<FlowkeyPlayerViewProps> = ({
   // Acoustic Microphone Piano Recognition State
   const [isMicActive, setIsMicActive] = useState<boolean>(() => AcousticNoteRecognizer.getInstance().isListening)
   const [micLevel, setMicLevel] = useState<number>(0)
+
+  // Real-Time Steinway Model B Audio Engine Telemetry
+  const [engineTelemetry, setEngineTelemetry] = useState<EngineTelemetry>(() =>
+    PianoAudioEngine.getInstance().getTelemetry()
+  )
+
+  useEffect(() => {
+    return PianoAudioEngine.getInstance().subscribeTelemetry((t) => setEngineTelemetry(t))
+  }, [])
 
   useEffect(() => {
     let animId: number
@@ -479,14 +489,32 @@ export const FlowkeyPlayerView: React.FC<FlowkeyPlayerViewProps> = ({
             )}
           </div>
 
-          {/* Audio & Acoustics Settings (Desktop) */}
+          {/* Steinway Model B Audio Engine Live Telemetry Badge (Visible on all devices) */}
           {onOpenAudioSettings && (
             <button
               onClick={onOpenAudioSettings}
-              className="hidden lg:flex w-8 h-8 rounded-xl bg-zinc-900 hover:bg-zinc-800 border border-white/10 items-center justify-center text-zinc-400 hover:text-white transition-colors"
-              title="Acoustic Reverb & Touch Velocity"
+              className={`flex items-center gap-1.5 px-2.5 py-1.5 rounded-xl border text-[11px] font-mono transition-all active:scale-95 shadow-sm ${
+                engineTelemetry.isMainEngineActive
+                  ? 'bg-zinc-900/90 border-emerald-500/40 text-emerald-300 hover:border-emerald-500/70'
+                  : 'bg-zinc-900/90 border-amber-500/40 text-amber-300 animate-pulse hover:border-amber-500/70'
+              }`}
+              title="Steinway Model B Engine Telemetry (Tap for Acoustics & Soundboard Settings)"
             >
-              <Sliders className="w-3.5 h-3.5 text-orange-400" />
+              <span
+                className={`w-2 h-2 rounded-full ${
+                  engineTelemetry.isMainEngineActive
+                    ? 'bg-emerald-400 shadow-[0_0_8px_rgba(52,211,153,0.9)]'
+                    : 'bg-amber-400'
+                }`}
+              />
+              <span className="font-semibold hidden sm:inline">
+                {engineTelemetry.isMainEngineActive ? 'Steinway Grand' : 'Loading Engine'}
+              </span>
+              <span className="text-[10px] text-zinc-400 font-mono">
+                {engineTelemetry.isMainEngineActive
+                  ? `${engineTelemetry.loadedSamples}L`
+                  : `${engineTelemetry.loadedSamples}/${engineTelemetry.totalSamples}`}
+              </span>
             </button>
           )}
 

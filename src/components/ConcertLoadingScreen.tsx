@@ -1,6 +1,7 @@
 import React, { useEffect, useState } from 'react'
 import type { LibraryPieceSummary } from '../types/edition'
-import { Sparkles, Clock, ArrowRight } from 'lucide-react'
+import { PianoAudioEngine } from '../audio/PianoAudioEngine'
+import { Sparkles, Clock, ArrowRight, Music, CheckCircle2 } from 'lucide-react'
 
 interface ConcertLoadingScreenProps {
   pieceSummary: LibraryPieceSummary
@@ -12,33 +13,49 @@ export const ConcertLoadingScreen: React.FC<ConcertLoadingScreenProps> = ({
   onReady,
 }) => {
   const [progress, setProgress] = useState(15)
-  const [statusMessage, setStatusMessage] = useState('Initializing Concert Grand Bösendorfer Acoustics...')
+  const [statusMessage, setStatusMessage] = useState('Initializing Steinway Model B Acoustic Engine...')
+  const [sampleCounts, setSampleCounts] = useState<{ loaded: number; total: number }>({ loaded: 0, total: 26 })
+  const [isReady, setIsReady] = useState(false)
 
   useEffect(() => {
-    const timer1 = setTimeout(() => {
-      setProgress(45)
-      setStatusMessage('Analyzing measure voicings & sheet layout...')
-    }, 250)
+    let isCancelled = false
+    const engine = PianoAudioEngine.getInstance()
 
-    const timer2 = setTimeout(() => {
-      setProgress(80)
-      setStatusMessage('Calibrating Flowkey microphone note recognition...')
-    }, 550)
+    // Unlock audio context eagerly on user entry
+    engine.unlockAudio().catch(() => {})
 
-    const timer3 = setTimeout(() => {
+    engine.preloadCoreSamples((pct, msg, loaded, total) => {
+      if (isCancelled) return
+      setProgress(pct)
+      setStatusMessage(msg)
+      setSampleCounts({ loaded, total })
+    }).then(() => {
+      if (isCancelled) return
       setProgress(100)
-      setStatusMessage('Stage ready. Let the music flow!')
-    }, 850)
+      setStatusMessage('Steinway Model B Concert Ready!')
+      setIsReady(true)
 
-    const timer4 = setTimeout(() => {
-      onReady()
-    }, 1100)
+      const timer = setTimeout(() => {
+        if (!isCancelled) {
+          onReady()
+        }
+      }, 700)
+      return () => clearTimeout(timer)
+    }).catch(() => {
+      if (isCancelled) return
+      setProgress(100)
+      setStatusMessage('Stage Ready')
+      setIsReady(true)
+      const timer = setTimeout(() => {
+        if (!isCancelled) {
+          onReady()
+        }
+      }, 400)
+      return () => clearTimeout(timer)
+    })
 
     return () => {
-      clearTimeout(timer1)
-      clearTimeout(timer2)
-      clearTimeout(timer3)
-      clearTimeout(timer4)
+      isCancelled = true
     }
   }, [onReady])
 
@@ -106,14 +123,18 @@ export const ConcertLoadingScreen: React.FC<ConcertLoadingScreenProps> = ({
           </div>
         )}
 
-        {/* Animated Loading Bar & Status */}
-        <div className="w-full space-y-2 pt-2">
+        {/* Real Audio Engine Loading Bar & Live Status */}
+        <div className="w-full space-y-2.5 pt-2">
           <div className="flex items-center justify-between text-xs font-mono text-zinc-400">
             <span className="truncate max-w-[80%] text-zinc-300 flex items-center gap-1.5">
-              <Sparkles className="w-3.5 h-3.5 text-amber-400 animate-spin" />
-              {statusMessage}
+              {isReady ? (
+                <CheckCircle2 className="w-3.5 h-3.5 text-emerald-400 flex-shrink-0" />
+              ) : (
+                <Sparkles className="w-3.5 h-3.5 text-amber-400 animate-spin flex-shrink-0" />
+              )}
+              <span className="truncate">{statusMessage}</span>
             </span>
-            <span className="font-bold text-amber-400">{progress}%</span>
+            <span className="font-bold text-amber-400 flex-shrink-0">{progress}%</span>
           </div>
 
           <div className="w-full h-2 rounded-full bg-zinc-800 overflow-hidden relative border border-white/5">
@@ -122,6 +143,17 @@ export const ConcertLoadingScreen: React.FC<ConcertLoadingScreenProps> = ({
               style={{ width: `${progress}%` }}
             />
           </div>
+
+          {/* Engine Sub-indicator */}
+          <div className="flex items-center justify-between text-[10px] font-mono text-zinc-400 px-1 pt-0.5">
+            <span className="flex items-center gap-1">
+              <Music className="w-3 h-3 text-orange-400" />
+              <span>Steinway Model B (Vienna Musikverein IR)</span>
+            </span>
+            <span className="text-amber-300 font-semibold">
+              {sampleCounts.loaded > 0 ? `${sampleCounts.loaded}/${sampleCounts.total} samples` : 'Acoustic FLAC'}
+            </span>
+          </div>
         </div>
 
         {/* Instant Skip / Start Button */}
@@ -129,7 +161,7 @@ export const ConcertLoadingScreen: React.FC<ConcertLoadingScreenProps> = ({
           onClick={onReady}
           className="mt-2 px-6 py-2.5 rounded-xl bg-white/10 hover:bg-orange-500 text-white hover:text-zinc-950 font-bold text-xs flex items-center gap-2 transition-all active:scale-95 border border-white/10 hover:border-orange-400 shadow-md"
         >
-          <span>Start Playing Now</span>
+          <span>{isReady ? 'Start Concert' : 'Skip & Start Playing'}</span>
           <ArrowRight className="w-3.5 h-3.5" />
         </button>
       </div>

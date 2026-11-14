@@ -45,7 +45,13 @@ export function App() {
 
   // Dynamic piece data loaded from LibraryRepository / ScoreEngine
   const [piece, setPiece] = useState<Piece | null>(null)
-  const [loadingPieceSummary, setLoadingPieceSummary] = useState<LibraryPieceSummary | null>(null)
+  const [loadingPieceSummary, setLoadingPieceSummary] = useState<LibraryPieceSummary | null>(() => {
+    return (
+      LibraryRepository.getCatalog().find((p) => p.id === 'beethoven-fur-elise') ||
+      LibraryRepository.getCatalog()[0] ||
+      null
+    )
+  })
 
   // Practice, Competition & Playback states
   const [practiceVariant, setPracticeVariant] = useState<PracticeVariant>('original')
@@ -400,18 +406,40 @@ export function App() {
     setIsCompetitionReportOpen(true)
   }, [])
 
-  // Global iOS Safari Web Audio unlocker (resumes suspended AudioContext on first touch/click)
+  // iOS Safari & WKWebView Audio Lifecycle Recovery (handles app exit, backgrounding, re-entry & touch unlocks)
   useEffect(() => {
-    const unlockAudio = () => {
-      PianoAudioEngine.getInstance().unlockAudio().catch(() => {})
+    const handleResume = () => {
+      PianoAudioEngine.getInstance().handleAppResume().catch(() => {})
     }
-    window.addEventListener('touchstart', unlockAudio, { once: true, passive: true })
-    window.addEventListener('pointerdown', unlockAudio, { once: true, passive: true })
-    window.addEventListener('click', unlockAudio, { once: true, passive: true })
+
+    const onVisibilityChange = () => {
+      if (document.visibilityState === 'visible') {
+        handleResume()
+      }
+    }
+
+    document.addEventListener('visibilitychange', onVisibilityChange)
+    window.addEventListener('pageshow', handleResume)
+    window.addEventListener('focus', handleResume)
+
+    // Touch / gesture recovery: If user touches screen after app was backgrounded/suspended, revive context
+    const onUserTouch = () => {
+      const engine = PianoAudioEngine.getInstance()
+      if (engine.isAudioSuspended()) {
+        engine.handleAppResume().catch(() => {})
+      }
+    }
+    window.addEventListener('touchstart', onUserTouch, { passive: true })
+    window.addEventListener('pointerdown', onUserTouch, { passive: true })
+    window.addEventListener('click', onUserTouch, { passive: true })
+
     return () => {
-      window.removeEventListener('touchstart', unlockAudio)
-      window.removeEventListener('pointerdown', unlockAudio)
-      window.removeEventListener('click', unlockAudio)
+      document.removeEventListener('visibilitychange', onVisibilityChange)
+      window.removeEventListener('pageshow', handleResume)
+      window.removeEventListener('focus', handleResume)
+      window.removeEventListener('touchstart', onUserTouch)
+      window.removeEventListener('pointerdown', onUserTouch)
+      window.removeEventListener('click', onUserTouch)
     }
   }, [])
 

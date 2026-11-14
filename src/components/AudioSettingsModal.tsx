@@ -1,8 +1,9 @@
-import React, { useState } from 'react'
+import React, { useState, useEffect } from 'react'
 import {
   PianoAudioEngine,
   type ReverbMode,
   type VelocityCurveType,
+  type EngineTelemetry,
 } from '../audio/PianoAudioEngine'
 import type { LanguageCode } from '../i18n/translations'
 import {
@@ -13,6 +14,7 @@ import {
   Music,
   Activity,
   Check,
+  Cpu,
 } from 'lucide-react'
 
 interface AudioSettingsModalProps {
@@ -40,6 +42,12 @@ export const AudioSettingsModal: React.FC<AudioSettingsModalProps> = ({
   const [tuningHz, setTuningHz] = useState<number>(
     engine.getMasterTuning()
   )
+  const [telemetry, setTelemetry] = useState<EngineTelemetry>(() => engine.getTelemetry())
+
+  useEffect(() => {
+    if (!isOpen) return
+    return engine.subscribeTelemetry((t) => setTelemetry(t))
+  }, [isOpen, engine])
 
   if (!isOpen) return null
 
@@ -81,10 +89,10 @@ export const AudioSettingsModal: React.FC<AudioSettingsModalProps> = ({
 
   const handleTestNote = (midi: number) => {
     engine.unlockAudio()
-    engine.noteOn(midi, 88)
+    engine.noteOn(midi, 90)
     setTimeout(() => {
       engine.noteOff(midi)
-    }, 450)
+    }, 500)
   }
 
   const titles = {
@@ -161,22 +169,22 @@ export const AudioSettingsModal: React.FC<AudioSettingsModalProps> = ({
     },
     {
       id: 'heavy',
-      label: 'Heavy (Concert Action)',
-      desc: language === 'de' ? 'Echte schwere Hammermechanik (Roland LX-9 / Steinway)' : 'Demands genuine arm weight for full dynamic range (Roland LX-9)',
+      label: 'Heavy (Concert Grand Weight)',
+      desc: language === 'de' ? 'Schwerer Anschlag für gewichtete Hammerklaviere (Roland PHA-50 / Hybrid Grand)' : 'Max dynamic range for hammer action keyboards (Roland PHA-50 / Hybrid Grand)',
     },
   ]
 
   return (
-    <div className="fixed inset-0 z-50 bg-black/85 backdrop-blur-md flex items-center justify-center p-3 sm:p-5">
-      <div className="w-full max-w-2xl bg-zinc-900 border border-zinc-700/80 rounded-3xl shadow-2xl overflow-hidden flex flex-col text-zinc-100 max-h-[90vh] animate-in fade-in zoom-in-95 duration-200">
+    <div className="fixed inset-0 z-50 bg-black/80 backdrop-blur-md flex items-center justify-center p-4 select-none animate-in fade-in duration-200">
+      <div className="bg-zinc-900 border border-white/10 rounded-3xl w-full max-w-xl overflow-hidden shadow-2xl flex flex-col max-h-[90vh]">
         {/* Header */}
-        <div className="flex items-center justify-between px-6 py-4 bg-zinc-950 border-b border-zinc-800">
+        <div className="px-6 py-4 bg-zinc-950/80 border-b border-zinc-800 flex items-center justify-between">
           <div className="flex items-center gap-3">
-            <div className="w-9 h-9 rounded-2xl bg-orange-500/20 border border-orange-500/40 flex items-center justify-center text-orange-400">
-              <Sliders className="w-4 h-4" />
+            <div className="w-10 h-10 rounded-2xl bg-orange-500/20 border border-orange-500/40 flex items-center justify-center text-orange-400">
+              <Sliders className="w-5 h-5" />
             </div>
             <div>
-              <h3 className="text-sm font-bold text-zinc-100">
+              <h3 className="text-base font-bold text-white">
                 {titles.title[language] || titles.title.en}
               </h3>
               <p className="text-[11px] text-zinc-400">
@@ -194,6 +202,75 @@ export const AudioSettingsModal: React.FC<AudioSettingsModalProps> = ({
 
         {/* Settings Body */}
         <div className="p-6 overflow-y-auto space-y-6 scrollbar-thin scrollbar-thumb-zinc-800">
+          {/* REAL ENGINE TELEMETRY CARD */}
+          <div className="p-4 rounded-2xl bg-zinc-950/80 border border-white/10 space-y-3">
+            <div className="flex items-center justify-between">
+              <div className="flex items-center gap-2">
+                <Cpu className="w-4 h-4 text-emerald-400" />
+                <span className="text-xs font-bold uppercase tracking-wider text-zinc-200">
+                  {language === 'de' ? 'Klang-Engine Live-Status' : 'Audio Engine Live Status'}
+                </span>
+              </div>
+              <div className="flex items-center gap-2">
+                <span
+                  className={`inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-[10px] font-bold font-mono ${
+                    telemetry.isMainEngineActive
+                      ? 'bg-emerald-500/20 text-emerald-300 border border-emerald-500/40'
+                      : 'bg-amber-500/20 text-amber-300 border border-amber-500/40 animate-pulse'
+                  }`}
+                >
+                  <span
+                    className={`w-1.5 h-1.5 rounded-full ${
+                      telemetry.isMainEngineActive ? 'bg-emerald-400' : 'bg-amber-400'
+                    }`}
+                  />
+                  {telemetry.isMainEngineActive ? 'Steinway Sample Active' : 'Loading Engine...'}
+                </span>
+                <button
+                  onClick={() => handleTestNote(60)}
+                  className="text-[11px] text-amber-300 hover:text-amber-200 font-semibold flex items-center gap-1 bg-amber-500/20 hover:bg-amber-500/30 px-2.5 py-1 rounded-lg border border-amber-500/40 transition-colors"
+                  title="Test Middle C4 Steinway Sample"
+                >
+                  <Music className="w-3 h-3 text-amber-400" />
+                  <span>Test C4</span>
+                </button>
+              </div>
+            </div>
+
+            <div className="grid grid-cols-2 gap-2 text-[11px] font-mono">
+              <div className="p-2.5 rounded-xl bg-zinc-900/60 border border-white/5 space-y-1">
+                <div className="text-zinc-500 text-[10px] uppercase">Engine Model</div>
+                <div className="font-semibold text-zinc-200 truncate">{telemetry.engineName}</div>
+              </div>
+              <div className="p-2.5 rounded-xl bg-zinc-900/60 border border-white/5 space-y-1">
+                <div className="text-zinc-500 text-[10px] uppercase">Decoded Samples</div>
+                <div className="font-semibold text-amber-400">
+                  {telemetry.loadedSamples} / {telemetry.totalSamples} layers in RAM
+                </div>
+              </div>
+              <div className="p-2.5 rounded-xl bg-zinc-900/60 border border-white/5 space-y-1">
+                <div className="text-zinc-500 text-[10px] uppercase">Impulse Response</div>
+                <div className="font-semibold text-zinc-300 truncate">
+                  {telemetry.isIrLoaded ? 'Vienna Musikverein Active' : 'Loading IR...'}
+                </div>
+              </div>
+              <div className="p-2.5 rounded-xl bg-zinc-900/60 border border-white/5 space-y-1">
+                <div className="text-zinc-500 text-[10px] uppercase">AudioContext / DAC</div>
+                <div className="font-semibold text-emerald-400 truncate">
+                  {telemetry.audioContextState.toUpperCase()} • {telemetry.sampleRate} Hz
+                </div>
+              </div>
+            </div>
+
+            {/* Live Key Strike Telemetry */}
+            <div className="p-2 rounded-xl bg-zinc-900/80 border border-white/5 flex items-center justify-between text-[11px] font-mono">
+              <span className="text-zinc-500">Live Strike:</span>
+              <span className="text-amber-300 truncate max-w-[70%] font-semibold text-right">
+                {telemetry.lastTriggeredNote}
+              </span>
+            </div>
+          </div>
+
           {/* 1. Reverb Ambience */}
           <div className="space-y-3">
             <div className="flex items-center justify-between">
@@ -201,13 +278,6 @@ export const AudioSettingsModal: React.FC<AudioSettingsModalProps> = ({
                 <Sparkles className="w-3.5 h-3.5 text-amber-400" />
                 <span>{titles.reverb[language] || titles.reverb.en}</span>
               </label>
-              <button
-                onClick={() => handleTestNote(60)}
-                className="text-[11px] text-amber-400 hover:text-amber-300 font-semibold flex items-center gap-1 bg-zinc-800/80 px-2.5 py-1 rounded-lg border border-white/5"
-              >
-                <Music className="w-3 h-3" />
-                <span>Test C4</span>
-              </button>
             </div>
 
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-2.5">
@@ -243,34 +313,34 @@ export const AudioSettingsModal: React.FC<AudioSettingsModalProps> = ({
               <span>{titles.velocity[language] || titles.velocity.en}</span>
             </label>
 
-            <div className="space-y-2">
+            <div className="grid grid-cols-1 sm:grid-cols-3 gap-2.5">
               {velocityOptions.map((opt) => {
                 const isSelected = velocityCurve === opt.id
                 return (
                   <div
                     key={opt.id}
                     onClick={() => handleVelocityCurveChange(opt.id)}
-                    className={`p-3 rounded-2xl border cursor-pointer transition-all flex items-center justify-between gap-3 ${
+                    className={`p-3 rounded-2xl border cursor-pointer transition-all flex flex-col justify-between gap-1 ${
                       isSelected
                         ? 'bg-orange-500/15 border-orange-500/60 shadow-[0_0_12px_rgba(249,115,22,0.2)]'
                         : 'bg-zinc-950/60 hover:bg-zinc-800/60 border-white/5'
                     }`}
                   >
-                    <div className="space-y-0.5">
+                    <div className="flex items-center justify-between">
                       <span className={`text-xs font-bold ${isSelected ? 'text-orange-300' : 'text-zinc-200'}`}>
                         {opt.label}
                       </span>
-                      <p className="text-[10px] text-zinc-400">{opt.desc}</p>
+                      {isSelected && <Check className="w-3.5 h-3.5 text-orange-400" />}
                     </div>
-                    {isSelected && <Check className="w-4 h-4 text-orange-400 flex-shrink-0" />}
+                    <p className="text-[10px] text-zinc-400 line-clamp-2">{opt.desc}</p>
                   </div>
                 )
               })}
             </div>
           </div>
 
-          {/* 3. Metronome Click Volume */}
-          <div className="space-y-3">
+          {/* 3. Metronome Volume Slider */}
+          <div className="space-y-3 pt-1 border-t border-zinc-800/80">
             <div className="flex items-center justify-between">
               <label className="text-xs font-bold uppercase tracking-wider text-zinc-300 flex items-center gap-2">
                 <Volume2 className="w-3.5 h-3.5 text-emerald-400" />
