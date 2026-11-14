@@ -96,11 +96,11 @@ export const AudioSettingsModal: React.FC<AudioSettingsModalProps> = ({
       zh: '声学与音板设置',
     },
     subtitle: {
-      en: 'Yamaha C5 multi-sampled concert grand with procedural impulse reverb.',
-      de: 'Yamaha C5 Konzertflügel mit Raumakustik-Simulation.',
-      fr: 'Grand piano de concert Yamaha C5 avec réverbération acoustique.',
-      ja: 'Yamaha C5 コンサートグランドと空間リバーブ設定。',
-      zh: '雅马哈 C5 音乐会大三角钢琴空间声学仿真。',
+      en: 'Steinway Model B (Splendid Grand Piano) with Vienna Musikverein Concert Hall IR Reverb.',
+      de: 'Steinway Model B Flügel mit Wiener Musikvereinssaal-Faltungshall.',
+      fr: 'Piano à queue Steinway Model B avec réverbération à convolution Musikverein.',
+      ja: 'Steinway Model B グランドピアノ & ウィーン楽友協会ホール音響インパルス応答。',
+      zh: '施坦威 B 型大三角钢琴与维也纳金色大厅真实脉冲响应卷积混响。',
     },
     reverb: {
       en: 'Concert Hall Reverb Ambience',

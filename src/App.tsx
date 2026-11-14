@@ -444,10 +444,13 @@ export function App() {
     screenActiveNotesRef.current.add(midi)
     handlePerformanceNoteInput(midi, 85)
 
-    // Safety timeout in case pointerup is lost
+    // Safety timeout in case pointerup is lost on mobile touch gestures
     setTimeout(() => {
-      screenActiveNotesRef.current.delete(midi)
-    }, 350)
+      if (screenActiveNotesRef.current.has(midi)) {
+        screenActiveNotesRef.current.delete(midi)
+        PianoAudioEngine.getInstance().noteOff(midi)
+      }
+    }, 450)
   }, [handlePerformanceNoteInput])
 
   const handleScreenKeyRelease = useCallback((midi: number) => {
@@ -698,8 +701,11 @@ export function App() {
         }
 
         // Continuous Damper Pedal Handling: blends recorded Urtext score pedals with live user pedal
+        // Incorporates 60ms acoustic clearing window at end of pedal stroke for clean harmonic pedal changes
         const activePedal = activePiece.pedalEvents.find(
-          (pedal) => nextTime >= pedal.startTime && nextTime <= pedal.startTime + pedal.duration
+          (pedal) =>
+            nextTime >= pedal.startTime &&
+            nextTime < pedal.startTime + Math.max(0.1, pedal.duration - 0.06)
         )
         const scorePedalDepth = activePedal ? activePedal.depth : 0
         const effectivePedal = Math.max(manualPedalDepthRef.current, scorePedalDepth)
