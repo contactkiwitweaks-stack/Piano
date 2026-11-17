@@ -19,9 +19,32 @@ import djOkawariFlowerDanceScore from '../data/scores/dj-okawari-flower-dance.js
 import montiCzardasScore from '../data/scores/monti-czardas.json'
 import mozartTwinkleScore from '../data/scores/mozart-twinkle-twinkle.json'
 import chopinLisztSorrowScore from '../data/scores/chopin-liszt-sorrow.json'
+import queenBohemianScore from '../data/scores/queen-bohemian-rhapsody.json'
 
 export class LibraryRepository {
   private static catalog: LibraryPieceSummary[] = [
+    {
+      id: 'queen-bohemian-rhapsody',
+      title: 'Bohemian Rhapsody',
+      composer: 'Freddie Mercury (Queen)',
+      opus: 'A Night at the Opera (1975)',
+      difficulty: 6,
+      key: 'Bb major',
+      period: 'Contemporary',
+      durationSeconds: 107,
+      coverColor: 'from-purple-900 via-indigo-950 to-zinc-950',
+      coverImage: '/images/covers/queen-bohemian-rhapsody.svg',
+      badge: 'Freddie Mercury Masterpiece',
+      quote: 'The immortal rock ballad piano opening: iconic flowing Bb-Gm-Cm-F arpeggios, expressive "Mama" melody, and soaring operatic storytelling.',
+      availableEditions: [
+        {
+          id: 'urtext',
+          name: 'Concert Piano Ballad Edition',
+          year: '1975 / Arr. Virtuoso Piano',
+          description: 'Authentic 664-note concert solo transcription: Freddie Mercury piano accompaniment, resonant bass octaves, and soaring vocal cantabile melody across 33 measures.',
+        },
+      ],
+    },
     {
       id: 'chopin-liszt-sorrow',
       title: 'Sorrow (Concert Rhapsody in G Minor)',
@@ -800,6 +823,9 @@ export class LibraryRepository {
     }
     if (pieceId === 'mozart-twinkle-twinkle') {
       return mozartTwinkleScore as unknown as Piece
+    }
+    if (pieceId === 'queen-bohemian-rhapsody') {
+      return queenBohemianScore as unknown as Piece
     }
 
     // 1. Try loading complete pre-parsed canonical JSON score

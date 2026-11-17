@@ -1,7 +1,8 @@
 // High-Definition Acoustic Piano Note & Chord Recognition Engine
-// Flowkey-grade multi-pitch estimation, McLeod Pitch Method (NSDF),
-// Harmonic Energy Summation with inharmonicity compensation,
-// Subharmonic overtone demixing, and Target-Informed Bayesian Prior Matching.
+// Flowkey-grade multi-pitch estimation, Global Peak McLeod Pitch Method (NSDF),
+// Local Spectral Peak Verification, Dynamic Headroom Gating,
+// Harmonic Energy Summation with Inharmonicity Compensation,
+// Multi-Frame Temporal Debouncing, and Target-Informed Bayesian Prior Matching.
 
 import { MidiManager } from '../midi/MidiManager'
 import { PianoAudioEngine } from '../audio/PianoAudioEngine'
@@ -18,6 +19,9 @@ export class AcousticNoteRecognizer {
   private _inputLevel: number = 0 // 0.0 to 1.0 for UI visualizer
   private activeMidis: Set<number> = new Set()
   private noteHoldTimers: Map<number, number> = new Map()
+
+  // Multi-frame temporal debounce map to eliminate random 1-frame acoustic spikes
+  private candidateDetectionFrames: Map<number, number> = new Map()
 
   // Target-Informed Prior (Flowkey Engine Pattern Matching)
   // When the app is waiting for specific chord/melody notes, matching these notes has high prior confidence
@@ -113,7 +117,7 @@ export class AcousticNoteRecognizer {
       this.analyser = this.audioCtx.createAnalyser()
       // 4096 FFT size gives ~10.7 Hz frequency bin resolution at 44.1kHz (essential for piano bass and mid-range)
       this.analyser.fftSize = 4096
-      this.analyser.smoothingTimeConstant = 0.25 // Fast responsiveness to piano hammer strikes
+      this.analyser.smoothingTimeConstant = 0.20 // Fast responsiveness to piano hammer strikes
       this.sourceNode.connect(this.analyser)
 
       this._isListening = true
@@ -157,7 +161,7 @@ export class AcousticNoteRecognizer {
       this.micStream = null
     }
 
-    // Never close the shared PianoAudioEngine context! Only close if we had to create a standalone fallback context
+    // Never close shared AudioContext
     const sharedCtx = PianoAudioEngine.getInstance().getAudioContext()
     if (this.audioCtx && this.audioCtx !== sharedCtx) {
       this.audioCtx.close().catch(() => {})
@@ -170,6 +174,7 @@ export class AcousticNoteRecognizer {
     })
     this.activeMidis.clear()
     this.noteHoldTimers.clear()
+    this.candidateDetectionFrames.clear()
     this.targetNotes.clear()
   }
 
@@ -193,33 +198,59 @@ export class AcousticNoteRecognizer {
 
     const now = Date.now()
 
-    // Silence gating threshold: ignore ambient room whisper
-    if (rms > 0.007) {
+    // Silence gating threshold: ignore ambient room whisper and background noise
+    if (rms > 0.008) {
       const sampleRate = this.audioCtx.sampleRate
-      const detectedMidis = this.detectChordsAndNotes(freqData, timeData, sampleRate)
+      const rawDetectedMidis = this.detectChordsAndNotes(freqData, timeData, sampleRate)
+      const confirmedMidis = new Set<number>()
 
-      // Sync detected notes into MidiManager
-      detectedMidis.forEach((midi) => {
+      // Multi-Frame Temporal Debounce & Confirmation
+      // Eliminates erratic single-frame acoustic spikes & hammer click transients
+      for (const midi of rawDetectedMidis) {
+        const count = (this.candidateDetectionFrames.get(midi) || 0) + 1
+        this.candidateDetectionFrames.set(midi, count)
+
+        // Confirmed if persisted across >= 2 consecutive frames (~30-40ms),
+        // OR immediately confirmed if matching an active target note in wait mode!
+        if (count >= 2 || (this.targetNotes.has(midi) && count >= 1)) {
+          confirmedMidis.add(midi)
+        }
+      }
+
+      // Decay counts for notes no longer detected
+      for (const [midi, count] of this.candidateDetectionFrames.entries()) {
+        if (!rawDetectedMidis.has(midi)) {
+          if (count <= 1) {
+            this.candidateDetectionFrames.delete(midi)
+          } else {
+            this.candidateDetectionFrames.set(midi, count - 1)
+          }
+        }
+      }
+
+      // Sync confirmed notes into MidiManager
+      confirmedMidis.forEach((midi) => {
         if (!this.activeMidis.has(midi)) {
           this.activeMidis.add(midi)
           const velocity = Math.min(118, Math.max(70, Math.round(rms * 260)))
           MidiManager.getInstance().simulateNoteOn(midi, velocity)
         }
-        // Sustained note hold window: 320ms hold prevents jittery re-triggers
-        this.noteHoldTimers.set(midi, now + 320)
+        // Sustained note hold window: 280ms hold prevents jittery note cut-offs
+        this.noteHoldTimers.set(midi, now + 280)
       })
 
       // Expire released notes
       this.activeMidis.forEach((midi) => {
         const expireTime = this.noteHoldTimers.get(midi) || 0
-        if (now > expireTime && !detectedMidis.has(midi)) {
+        if (now > expireTime && !confirmedMidis.has(midi)) {
           this.activeMidis.delete(midi)
           this.noteHoldTimers.delete(midi)
           MidiManager.getInstance().simulateNoteOff(midi)
         }
       })
     } else {
-      // Below threshold: release active notes when hold time expires
+      // Below audio threshold: decay candidate detection counts and expire active notes
+      this.candidateDetectionFrames.clear()
       this.activeMidis.forEach((midi) => {
         const expireTime = this.noteHoldTimers.get(midi) || 0
         if (now > expireTime) {
@@ -234,9 +265,10 @@ export class AcousticNoteRecognizer {
   }
 
   /**
-   * Flowkey-Grade Polyphonic & Monophonic Piano Recognition
-   * Combines Target-Informed Bayesian Prior Matching, McLeod NSDF for single notes,
-   * and Harmonic Energy Summation with Spectral Peeling for polyphonic chords.
+   * Flowkey-Grade Multi-Pitch Estimation & Noise Rejection:
+   * 1. Monophonic Global-Peak McLeod Pitch Method (NSDF) with Subharmonic & Octave Resolution
+   * 2. Target-Informed Bayesian Prior Matching
+   * 3. Local Spectral Peak Verification + Dynamic Headroom Gating + Systematic Overtone Cancellation
    */
   private detectChordsAndNotes(
     freqData: Float32Array,
@@ -259,6 +291,19 @@ export class AcousticNoteRecognizer {
       }
     }
     const avgNoiseFloor = noiseCount > 0 ? noiseFloorSum / noiseCount : -75
+
+    // Helper: Verify that target frequency corresponds to an authentic local spectral peak (not a flat slope or noise)
+    const isLocalSpectralPeak = (targetFreq: number): boolean => {
+      const b0 = Math.round(targetFreq / binSize)
+      if (b0 <= 2 || b0 >= freqData.length - 3) return false
+      const c = freqData[b0]
+      const l1 = freqData[b0 - 1]
+      const r1 = freqData[b0 + 1]
+      const l2 = freqData[b0 - 2]
+      const r2 = freqData[b0 + 2]
+      // Must be local maximum and at least 2.5 dB above surrounding background
+      return c >= l1 && c >= r1 && c > Math.min(l2, r2) + 2.5
+    }
 
     // Helper: interpolate peak energy around a given frequency with inharmonicity
     const getFrequencyEnergy = (targetFreq: number): number => {
@@ -289,49 +334,56 @@ export class AcousticNoteRecognizer {
       const e5 = getFrequencyEnergy(f5)
 
       // Weighted harmonic energy profile: fundamental is primary, harmonics confirm pitch
-      const score = e1 * 0.45 + e2 * 0.25 + e3 * 0.15 + e4 * 0.10 + e5 * 0.05
+      const score = e1 * 0.48 + e2 * 0.24 + e3 * 0.14 + e4 * 0.09 + e5 * 0.05
       return { fundamental: e1, score }
     }
 
     // -------------------------------------------------------------
-    // STAGE 1: MONOPHONIC MCLEOD PITCH METHOD (NSDF) FOR SINGLE KEYS
+    // STAGE 1: GLOBAL-PEAK MCLEOD PITCH METHOD (NSDF) FOR SINGLE KEYS
     // -------------------------------------------------------------
-    // If only one key is played, McLeod NSDF provides mathematically exact fundamental pitch,
-    // completely immune to overtone false-positives (octaves and fifths).
+    // Evaluates all peaks in time-domain NSDF to find true fundamental without octave traps
     const monoResult = this.detectMcLeodPitch(timeData, sampleRate)
-    if (monoResult.clarity > 0.70 && monoResult.freq > 60 && monoResult.freq < 2500) {
+    if (monoResult.clarity > 0.72 && monoResult.freq > 55 && monoResult.freq < 2500) {
       const closestMidi = Math.round(69 + 12 * Math.log2(monoResult.freq / 440))
       if (closestMidi >= 21 && closestMidi <= 108) {
         const standardFreq = 440 * Math.pow(2, (closestMidi - 69) / 12)
         const centDiff = Math.abs(1200 * Math.log2(monoResult.freq / standardFreq))
-        if (centDiff <= 42) {
-          results.add(closestMidi)
-          // Clean single note detected: return immediately without triggering overtone accumulation!
-          return results
+        if (centDiff <= 40) {
+          // Verify fundamental is physically active in spectrum
+          if (isLocalSpectralPeak(standardFreq)) {
+            results.add(closestMidi)
+            // Clean, unambiguous single key strike: return immediately without triggering overtone accumulation!
+            return results
+          }
         }
       }
     }
 
     // -------------------------------------------------------------
-    // STAGE 2: TARGET-INFORMED PRIOR MATCHING (Flowkey Core Feature)
+    // STAGE 2: TARGET-INFORMED BAYESIAN PRIOR MATCHING (Flowkey Core Feature)
     // -------------------------------------------------------------
-    // If the song is waiting for specific target chord notes, verify if their fundamental is active
+    // If practicing a piece and waiting for specific notes, verify target notes first
     if (this.targetNotes.size > 0) {
+      let matchedTargets = 0
       this.targetNotes.forEach((targetMidi) => {
         const p = this.pianoFrequencies.find((item) => item.midi === targetMidi)
         if (!p) return
 
-        const { fundamental, score } = computeHarmonicScore(p.freq)
-        const snr = score - avgNoiseFloor
-        const fundamentalSnr = fundamental - avgNoiseFloor
+        if (isLocalSpectralPeak(p.freq)) {
+          const { fundamental, score } = computeHarmonicScore(p.freq)
+          const snr = score - avgNoiseFloor
+          const fundamentalSnr = fundamental - avgNoiseFloor
 
-        // Target note requires both overall harmonic score and prominent fundamental
-        if (snr > 8 && fundamentalSnr > 7) {
-          results.add(targetMidi)
+          // Robust threshold for target note confirmation
+          if (snr > 14 && fundamentalSnr > 11) {
+            results.add(targetMidi)
+            matchedTargets++
+          }
         }
       })
 
-      if (results.size >= this.targetNotes.size && results.size > 0) {
+      // If all expected target notes are matched, return directly
+      if (matchedTargets > 0 && matchedTargets >= this.targetNotes.size) {
         return results
       }
     }
@@ -339,54 +391,82 @@ export class AcousticNoteRecognizer {
     // -------------------------------------------------------------
     // STAGE 3: POLYPHONIC SPECTRAL PEELING & HARMONIC CANCELLATION
     // -------------------------------------------------------------
-    // For simultaneous piano chords: evaluate candidates from lowest pitch to highest
-    // and suppress integer overtones (2f0, 3f0, 4f0, 5f0) to prevent false octave/fifth doubles.
+    // Evaluates local peaks only, sorts by descending energy, gates within 15 dB dynamic range,
+    // and suppresses all integer harmonic multiples to prevent random false notes across octaves.
     const candidateNotes: Array<{ midi: number; score: number; fundamental: number; freq: number }> = []
+    let maxCandidateFundamental = -120
 
     for (const p of this.pianoFrequencies) {
       if (p.freq < 65 || p.freq > 2600) continue
+      // Note must be a physical local spectral peak
+      if (!isLocalSpectralPeak(p.freq)) continue
 
       const { fundamental, score } = computeHarmonicScore(p.freq)
       const snr = score - avgNoiseFloor
       const fundamentalSnr = fundamental - avgNoiseFloor
 
-      if (snr > 13 && fundamentalSnr > 9) {
+      // Strict SNR threshold (prevents distant random room noise notes)
+      if (snr > 16 && fundamentalSnr > 13) {
         candidateNotes.push({ midi: p.midi, score, fundamental, freq: p.freq })
+        if (fundamental > maxCandidateFundamental) {
+          maxCandidateFundamental = fundamental
+        }
       }
     }
 
-    // Sort candidates by pitch ascending (lowest fundamental first for bottom-up overtone suppression)
-    candidateNotes.sort((a, b) => a.midi - b.midi)
+    // GATING: Keep only candidates within 15 dB of the loudest note
+    // In genuine piano chords, hands strike keys at comparable dynamic levels.
+    // Anything 16+ dB weaker is resonance, bleed, or room noise!
+    const viableCandidates = candidateNotes.filter(
+      (c) => c.fundamental >= maxCandidateFundamental - 15
+    )
 
-    const acceptedCandidates: Array<{ midi: number; score: number; freq: number }> = []
+    // Sort descending by fundamental loudness (loudest acoustic note first for spectral peeling)
+    viableCandidates.sort((a, b) => b.fundamental - a.fundamental)
 
-    for (const cand of candidateNotes) {
-      let isOvertoneOfAccepted = false
+    const acceptedCandidates: Array<{ midi: number; score: number; fundamental: number; freq: number }> = []
+
+    for (const cand of viableCandidates) {
+      let isHarmonicOfAccepted = false
 
       for (const accepted of acceptedCandidates) {
-        const semitoneDiff = cand.midi - accepted.midi
-        // Common harmonic intervals: Octave (12), Octave+Fifth (19), Double Octave (24), 2 Octaves + Major 3rd (28)
-        const isHarmonicInterval =
-          semitoneDiff === 12 ||
-          semitoneDiff === 19 ||
-          semitoneDiff === 24 ||
-          semitoneDiff === 28 ||
-          semitoneDiff === 31 ||
-          semitoneDiff === 36
+        // Frequency ratio test: check if candidate is near any integer harmonic multiple (2x, 3x, 4x, 5x, 6x)
+        const ratio = cand.freq / accepted.freq
+        const nearestHarmonic = Math.round(ratio)
 
-        if (isHarmonicInterval) {
-          // A higher note is only accepted if its fundamental is significantly louder (+8 dB)
-          // than what the lower note naturally produces as an overtone
-          if (cand.fundamental < accepted.score + 8) {
-            isOvertoneOfAccepted = true
-            break
+        if (nearestHarmonic >= 2 && nearestHarmonic <= 6) {
+          const expectedFreq = accepted.freq * nearestHarmonic
+          const centDiff = Math.abs(1200 * Math.log2(cand.freq / expectedFreq))
+
+          // Within harmonic tolerance window (45 cents)
+          if (centDiff <= 45) {
+            // Only accept if candidate fundamental is significantly louder than expected from harmonic decay
+            if (cand.fundamental < accepted.fundamental - 4) {
+              isHarmonicOfAccepted = true
+              break
+            }
+          }
+        }
+
+        // Sub-harmonic check (e.g. phantom lower octave / third)
+        const subRatio = accepted.freq / cand.freq
+        const nearestSub = Math.round(subRatio)
+        if (nearestSub >= 2 && nearestSub <= 4) {
+          const expectedSub = cand.freq * nearestSub
+          const centDiff = Math.abs(1200 * Math.log2(accepted.freq / expectedSub))
+          if (centDiff <= 45) {
+            if (cand.fundamental < accepted.fundamental - 8) {
+              isHarmonicOfAccepted = true
+              break
+            }
           }
         }
       }
 
-      if (!isOvertoneOfAccepted) {
+      if (!isHarmonicOfAccepted) {
         acceptedCandidates.push(cand)
         results.add(cand.midi)
+        // Acoustic piano chord polyphony cap per hand strike (max 4 concurrent notes)
         if (acceptedCandidates.length >= 4) break
       }
     }
@@ -395,9 +475,8 @@ export class AcousticNoteRecognizer {
   }
 
   /**
-   * McLeod Pitch Method (Normalized Square Difference Function - NSDF)
-   * The gold standard time-domain pitch algorithm with parabolic interpolation.
-   * Completely immune to octave-jumping and amplitude fluctuations.
+   * Complete McLeod Pitch Method (NSDF) with Global Peak Search & Subharmonic Protection:
+   * Prevents octave-jumping and high-harmonic false positive locks.
    */
   private detectMcLeodPitch(
     timeData: Float32Array,
@@ -406,8 +485,8 @@ export class AcousticNoteRecognizer {
     const size = 2048
     if (timeData.length < size) return { freq: -1, clarity: 0 }
 
-    const maxLag = Math.floor(sampleRate / 65) // 65 Hz (approx C2)
-    const minLag = Math.floor(sampleRate / 2400) // 2400 Hz (approx D7)
+    const maxLag = Math.floor(sampleRate / 60) // 60 Hz (~B1)
+    const minLag = Math.floor(sampleRate / 2400) // 2400 Hz (~D7)
 
     const nsdf = new Float32Array(maxLag + 1)
 
@@ -422,37 +501,57 @@ export class AcousticNoteRecognizer {
       nsdf[lag] = den > 0.0001 ? (2 * num) / den : 0
     }
 
-    // Find the dominant peak
-    let bestLag = -1
-    let bestClarity = 0
-    const clarityThreshold = 0.68
+    // Find all positive local maxima (peaks)
+    interface NsdfPeak {
+      lag: number
+      clarity: number
+    }
+    const peaks: NsdfPeak[] = []
+    let maxClarity = 0
 
     for (let lag = minLag + 1; lag < maxLag - 1; lag++) {
       if (
-        nsdf[lag] > clarityThreshold &&
+        nsdf[lag] > 0.35 &&
         nsdf[lag] >= nsdf[lag - 1] &&
         nsdf[lag] >= nsdf[lag + 1]
       ) {
-        // High-precision parabolic interpolation across (lag-1, lag, lag+1)
+        // Parabolic 3-point interpolation around the peak
         const alpha = nsdf[lag - 1]
         const beta = nsdf[lag]
         const gamma = nsdf[lag + 1]
         const denominator = alpha - 2 * beta + gamma
-
+        let refinedLag = lag
         if (Math.abs(denominator) > 0.00001) {
-          const delta = (0.5 * (alpha - gamma)) / denominator
-          bestLag = lag + delta
-        } else {
-          bestLag = lag
+          refinedLag = lag + (0.5 * (alpha - gamma)) / denominator
         }
-        bestClarity = beta
+
+        peaks.push({ lag: refinedLag, clarity: beta })
+        if (beta > maxClarity) maxClarity = beta
+      }
+    }
+
+    if (peaks.length === 0 || maxClarity < 0.65) {
+      return { freq: -1, clarity: 0 }
+    }
+
+    // Select the fundamental period: find the largest lag (lowest pitch)
+    // whose clarity is within 85% of the absolute maximum peak (McLeod rule)
+    const cutoff = Math.max(0.65, maxClarity * 0.85)
+    let chosenPeak: NsdfPeak | null = null
+
+    // Iterate backwards from lowest frequency (largest lag)
+    for (let i = peaks.length - 1; i >= 0; i--) {
+      if (peaks[i].clarity >= cutoff) {
+        chosenPeak = peaks[i]
         break
       }
     }
 
-    if (bestLag > 0) {
-      return { freq: sampleRate / bestLag, clarity: bestClarity }
+    if (!chosenPeak) {
+      chosenPeak = peaks.reduce((best, p) => (p.clarity > best.clarity ? p : best), peaks[0])
     }
-    return { freq: -1, clarity: 0 }
+
+    const freq = sampleRate / chosenPeak.lag
+    return { freq, clarity: chosenPeak.clarity }
   }
 }

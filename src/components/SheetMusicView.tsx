@@ -80,6 +80,8 @@ export const SheetMusicView: React.FC<SheetMusicViewProps> = ({
   expectedNotes = [],
   isWaitMode = false,
   onSeek,
+  isLooping = false,
+  loopRange,
 }) => {
   const scrollContainerRef = useRef<HTMLDivElement>(null)
   const [containerWidth, setContainerWidth] = useState<number>(800)
@@ -309,6 +311,12 @@ export const SheetMusicView: React.FC<SheetMusicViewProps> = ({
             <span className="text-xs font-mono font-medium text-stone-500 dark:text-zinc-500">
               Takt {currentMeasure} / {maxMeasure}
             </span>
+            {isLooping && loopRange && (
+              <span className="px-2 py-0.5 rounded-full text-[10px] font-mono font-bold bg-blue-500/15 text-blue-600 dark:text-blue-400 border border-blue-500/30 flex items-center gap-1 shadow-sm">
+                <span>⟲</span>
+                <span>Loop M.{loopRange[0]}–{loopRange[1]}</span>
+              </span>
+            )}
           </div>
 
           <div className="flex items-center gap-2">
@@ -584,6 +592,48 @@ export const SheetMusicView: React.FC<SheetMusicViewProps> = ({
                         if (sortedNotes[0]) onSeek(sortedNotes[0].startTime)
                       }}
                     >
+                      {/* Loop Range Highlight & Bracket */}
+                      {isLooping && loopRange && mNum >= loopRange[0] && mNum <= loopRange[1] && (
+                        <g>
+                          <rect
+                            x={mStartX}
+                            y={TREBLE_TOP_Y - 12}
+                            width={measureWidth}
+                            height={BASS_BOTTOM_Y - TREBLE_TOP_Y + 20}
+                            fill={isDark ? 'rgba(59, 130, 246, 0.08)' : 'rgba(59, 130, 246, 0.05)'}
+                            stroke={isDark ? 'rgba(59, 130, 246, 0.3)' : 'rgba(59, 130, 246, 0.25)'}
+                            strokeWidth="1"
+                            strokeDasharray="4 2"
+                            rx="4"
+                          />
+                          {mNum === loopRange[0] && (
+                            <text
+                              x={mStartX + 4}
+                              y={TREBLE_TOP_Y - 14}
+                              fill="#3b82f6"
+                              fontFamily="monospace"
+                              fontSize="8"
+                              fontWeight="bold"
+                            >
+                              ⟲ LOOP START
+                            </text>
+                          )}
+                          {mNum === loopRange[1] && (
+                            <text
+                              x={mEndX - 4}
+                              y={TREBLE_TOP_Y - 14}
+                              fill="#3b82f6"
+                              fontFamily="monospace"
+                              fontSize="8"
+                              fontWeight="bold"
+                              textAnchor="end"
+                            >
+                              LOOP END ⟲
+                            </text>
+                          )}
+                        </g>
+                      )}
+
                       {/* Active Measure Background Wash */}
                       {isCurrent && (
                         <rect

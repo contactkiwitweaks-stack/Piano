@@ -1,0 +1,80 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 600 600" width="100%" height="100%">
+  <defs>
+    <radialGradient id="bgQueen" cx="50%" cy="38%" r="75%">
+      <stop offset="0%" stop-color="#1e1233" />
+      <stop offset="50%" stop-color="#0e0a1a" />
+      <stop offset="100%" stop-color="#040208" />
+    </radialGradient>
+    <radialGradient id="queenGlow" cx="50%" cy="36%" r="50%">
+      <stop offset="0%" stop-color="#8b5cf6" stop-opacity="0.45" />
+      <stop offset="50%" stop-color="#3b82f6" stop-opacity="0.2" />
+      <stop offset="100%" stop-color="#0e0a1a" stop-opacity="0" />
+    </radialGradient>
+    <linearGradient id="goldCrown" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="#ffffff" />
+      <stop offset="30%" stop-color="#fde047" />
+      <stop offset="70%" stop-color="#f59e0b" />
+      <stop offset="100%" stop-color="#d97706" />
+    </linearGradient>
+    <linearGradient id="operaAura" x1="0%" y1="0%" x2="100%" y2="0%">
+      <stop offset="0%" stop-color="#ec4899" stop-opacity="0.1" />
+      <stop offset="50%" stop-color="#a855f7" stop-opacity="0.75" />
+      <stop offset="100%" stop-color="#3b82f6" stop-opacity="0.1" />
+    </linearGradient>
+  </defs>
+
+  <!-- Deep Obsidian Velvet Royal Blue Ground -->
+  <rect width="600" height="600" fill="url(#bgQueen)" />
+  <circle cx="300" cy="225" r="230" fill="url(#queenGlow)" />
+
+  <!-- Iconic 4-Silhouette Dramatic Cross Lights (Bohemian Rhapsody Music Video) -->
+  <g opacity="0.85">
+    <!-- Top Singer (Freddie Mercury) Spotlight -->
+    <circle cx="300" cy="140" r="42" fill="#fde047" fill-opacity="0.15" stroke="url(#goldCrown)" stroke-width="2" />
+    <!-- Left Singer (Brian May) Spotlight -->
+    <circle cx="210" cy="210" r="36" fill="#a855f7" fill-opacity="0.12" stroke="#c084fc" stroke-width="1.5" />
+    <!-- Right Singer (John Deacon) Spotlight -->
+    <circle cx="390" cy="210" r="36" fill="#3b82f6" fill-opacity="0.12" stroke="#60a5fa" stroke-width="1.5" />
+    <!-- Bottom Singer (Roger Taylor) Spotlight -->
+    <circle cx="300" cy="270" r="38" fill="#f59e0b" fill-opacity="0.12" stroke="#fcd34d" stroke-width="1.5" />
+
+    <!-- Connecting Operatic Harmonies -->
+    <line x1="300" y1="182" x2="300" y2="232" stroke="url(#operaAura)" stroke-width="2" stroke-dasharray="4,4" />
+    <line x1="246" y1="210" x2="354" y2="210" stroke="url(#operaAura)" stroke-width="2" stroke-dasharray="4,4" />
+  </g>
+
+  <!-- Stylized Royal Crest Crown & Grand Piano Harp in Gold -->
+  <g transform="translate(300, 310) scale(0.9)" opacity="0.95">
+    <!-- Grand Piano Rim Silhouette -->
+    <path d="M -90,-20 C -70,-60 30,-70 80,-30 C 100,-10 95,40 70,70 C 40,90 -40,90 -80,50 Z" fill="none" stroke="url(#goldCrown)" stroke-width="3" />
+    <!-- 88 Keys Arc in Perspective -->
+    <path d="M -80,20 Q 0,45 80,20" fill="none" stroke="#ffffff" stroke-width="2" opacity="0.85" />
+    <!-- Concert Soundboard Ribs -->
+    <line x1="-50" y1="-30" x2="-30" y2="30" stroke="#fef08a" stroke-width="1.2" opacity="0.6" />
+    <line x1="-20" y1="-45" x2="0" y2="35" stroke="#fef08a" stroke-width="1.2" opacity="0.6" />
+    <line x1="10" y1="-50" x2="30" y2="32" stroke="#fef08a" stroke-width="1.2" opacity="0.6" />
+    <line x1="40" y1="-45" x2="60" y2="25" stroke="#fef08a" stroke-width="1.2" opacity="0.6" />
+  </g>
+
+  <!-- Glowing Starlight & Operatic Chandelier Particles -->
+  <g fill="#fde047">
+    <circle cx="150" cy="120" r="2.5" opacity="0.8" />
+    <circle cx="450" cy="120" r="2.5" opacity="0.8" />
+    <circle cx="120" cy="270" r="2" opacity="0.6" />
+    <circle cx="480" cy="270" r="2" opacity="0.6" />
+    <circle cx="270" cy="80" r="2.2" opacity="0.8" />
+    <circle cx="330" cy="80" r="2.2" opacity="0.8" />
+  </g>
+
+  <!-- Typography Plaque -->
+  <rect x="45" y="440" width="510" height="115" rx="18" fill="#090514" fill-opacity="0.9" stroke="#8b5cf6" stroke-width="1.5" stroke-opacity="0.5" />
+  <text x="300" y="482" text-anchor="middle" font-family="'Cinzel', 'Playfair Display', Georgia, serif" font-weight="900" font-size="27" fill="url(#goldCrown)" letter-spacing="3">
+    BOHEMIAN RHAPSODY
+  </text>
+  <text x="300" y="512" text-anchor="middle" font-family="'Inter', sans-serif" font-weight="700" font-size="12" fill="#c084fc" letter-spacing="4">
+    QUEEN • FREDDIE MERCURY
+  </text>
+  <text x="300" y="534" text-anchor="middle" font-family="'Inter', monospace" font-weight="500" font-size="10.5" fill="#a1a1aa" letter-spacing="1.5">
+    Bb MAJOR • VIRTUOSO PIANO BALLAD
+  </text>
+</svg>

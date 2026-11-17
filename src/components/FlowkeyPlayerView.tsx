@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useCallback } from 'react'
+import React, { useState, useEffect, useCallback, useMemo } from 'react'
 import type { Piece } from '../types/music'
 import type { MasterEditionId } from '../types/edition'
 import type { LanguageCode } from '../i18n/translations'
@@ -165,6 +165,72 @@ export const FlowkeyPlayerView: React.FC<FlowkeyPlayerViewProps> = ({
     return PianoAudioEngine.getInstance().subscribeTelemetry((t) => setEngineTelemetry(t))
   }, [])
 
+  // Custom Measure Range Practice State
+  const maxMeasure = useMemo(() => {
+    if (!piece || !piece.notes || piece.notes.length === 0) return 1
+    return Math.max(1, ...piece.notes.map((n) => n.measure))
+  }, [piece])
+
+  const [customStartMeasure, setCustomStartMeasure] = useState<number>(loopRange[0] || 1)
+  const [customEndMeasure, setCustomEndMeasure] = useState<number>(loopRange[1] || 4)
+
+  useEffect(() => {
+    setCustomStartMeasure(loopRange[0])
+    setCustomEndMeasure(loopRange[1])
+  }, [loopRange])
+
+  const handleListenInLoop = useCallback(
+    (start: number, end: number) => {
+      const clampedStart = Math.max(1, Math.min(start, maxMeasure))
+      const clampedEnd = Math.max(clampedStart, Math.min(end, maxMeasure))
+      onLoopRangeChange([clampedStart, clampedEnd])
+      if (!isLooping) onToggleLoop()
+
+      const startNote = piece.notes.find((n) => n.measure >= clampedStart)
+      const startTime = startNote ? startNote.startTime : 0
+      onSeek(startTime)
+      if (!isPlaying) onTogglePlay()
+      setSectionsMenuOpen(false)
+    },
+    [maxMeasure, onLoopRangeChange, isLooping, onToggleLoop, piece.notes, onSeek, isPlaying, onTogglePlay]
+  )
+
+  const handlePracticePart = useCallback(
+    (start: number, end: number) => {
+      const clampedStart = Math.max(1, Math.min(start, maxMeasure))
+      const clampedEnd = Math.max(clampedStart, Math.min(end, maxMeasure))
+      onLoopRangeChange([clampedStart, clampedEnd])
+      if (!isLooping) onToggleLoop()
+      if (onChangePlayMode) {
+        onChangePlayMode('practice')
+      } else if (!_isWaitMode) {
+        onToggleWaitMode()
+      }
+
+      const startNote = piece.notes.find((n) => n.measure >= clampedStart)
+      const startTime = startNote ? startNote.startTime : 0
+      onSeek(startTime)
+      setSectionsMenuOpen(false)
+    },
+    [maxMeasure, onLoopRangeChange, isLooping, onToggleLoop, onChangePlayMode, _isWaitMode, onToggleWaitMode, piece.notes, onSeek]
+  )
+
+  const handleDisplaySheet = useCallback(
+    (start: number, end: number) => {
+      const clampedStart = Math.max(1, Math.min(start, maxMeasure))
+      const clampedEnd = Math.max(clampedStart, Math.min(end, maxMeasure))
+      onLoopRangeChange([clampedStart, clampedEnd])
+      if (!isLooping) onToggleLoop()
+      setViewLayout('sheet')
+
+      const startNote = piece.notes.find((n) => n.measure >= clampedStart)
+      const startTime = startNote ? startNote.startTime : 0
+      onSeek(startTime)
+      setSectionsMenuOpen(false)
+    },
+    [maxMeasure, onLoopRangeChange, isLooping, onToggleLoop, setViewLayout, piece.notes, onSeek]
+  )
+
   useEffect(() => {
     let animId: number
     const pollLevel = () => {
@@ -323,58 +389,17 @@ export const FlowkeyPlayerView: React.FC<FlowkeyPlayerViewProps> = ({
 
         {/* Right: Section Selector & Status Tools */}
         <div className="flex items-center gap-1.5 sm:gap-2 flex-shrink-0">
-          {/* Section Selector (Desktop & Tablet) */}
-          <div className="relative hidden lg:block">
-            <button
-              onClick={() => setSectionsMenuOpen(!sectionsMenuOpen)}
-              className="flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-zinc-900 hover:bg-zinc-800 border border-white/10 text-xs font-semibold text-zinc-200 transition-colors shadow-sm"
-            >
-              <Layers className="w-3.5 h-3.5 text-amber-400" />
-              <span className="truncate max-w-[120px] sm:max-w-[160px]">
-                {currentSection?.title || 'Section'}
-              </span>
-            </button>
-
-            {sectionsMenuOpen && (
-              <div className="absolute top-full mt-2 right-0 w-72 sm:w-80 bg-zinc-900/95 backdrop-blur-2xl border border-white/15 rounded-2xl shadow-2xl p-2 z-50 flex flex-col gap-1.5">
-                <div className="px-3 py-1 text-[11px] font-bold text-zinc-400 uppercase tracking-wider flex items-center justify-between">
-                  <span>{language === 'de' ? 'Abschnitt wählen' : 'Select Section'}</span>
-                  <span className="text-amber-400 font-mono">{piece.sections.length}</span>
-                </div>
-                <div className="max-h-60 overflow-y-auto space-y-1 pr-1">
-                  {piece.sections.map((sec) => {
-                    const isActive = currentSection?.id === sec.id
-                    return (
-                      <div
-                        key={sec.id}
-                        onClick={() => {
-                          onSeek(sec.startTime)
-                          onLoopRangeChange([sec.startMeasure, sec.endMeasure])
-                          setSectionsMenuOpen(false)
-                          setIsMasterclassOpen(true)
-                        }}
-                        className={`p-2.5 rounded-xl cursor-pointer transition-all border ${
-                          isActive
-                            ? 'bg-amber-500/20 border-amber-500/50 text-white'
-                            : 'bg-zinc-800/50 hover:bg-zinc-800 border-white/5 text-zinc-300'
-                        }`}
-                      >
-                        <div className="flex items-center justify-between text-xs font-bold">
-                          <span>{sec.title}</span>
-                          <span className="font-mono text-[10px] text-amber-400">
-                            M. {sec.startMeasure}–{sec.endMeasure}
-                          </span>
-                        </div>
-                        {sec.tempoSuggestion && (
-                          <div className="text-[10px] text-zinc-400 mt-0.5">{sec.tempoSuggestion}</div>
-                        )}
-                      </div>
-                    )
-                  })}
-                </div>
-              </div>
-            )}
-          </div>
+          {/* Section & Part Selector (Desktop & Tablet) */}
+          <button
+            onClick={() => setSectionsMenuOpen(true)}
+            className="hidden lg:flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-zinc-900 hover:bg-zinc-800 border border-white/10 text-xs font-semibold text-zinc-200 transition-colors shadow-sm active:scale-95"
+            title="Choose Part to Practice, Loop or View on Sheet"
+          >
+            <Layers className="w-3.5 h-3.5 text-amber-400" />
+            <span className="truncate max-w-[120px] sm:max-w-[160px]">
+              {currentSection?.title ? currentSection.title.split('–')[0].trim() : 'Part Practice'}
+            </span>
+          </button>
 
           {/* Real-Time Performance Accuracy Badge */}
           {accuracyPercent !== undefined && (
@@ -1162,21 +1187,28 @@ export const FlowkeyPlayerView: React.FC<FlowkeyPlayerViewProps> = ({
 
         {/* Right on Desktop / Landscape: Auxiliary Toggles (Loop & Metro) */}
         <div className="hidden sm:flex items-center gap-1.5 flex-shrink-0">
-          {/* Loop Mode Toggle */}
-          <button
-            onClick={onToggleLoop}
-            className={`flex items-center gap-1 px-2.5 py-1.5 rounded-xl border text-xs font-bold transition-all shadow-sm active:scale-95 ${
-              isLooping
-                ? 'bg-blue-500/20 border-blue-500/60 text-blue-300 shadow-[0_0_12px_rgba(59,130,246,0.4)]'
-                : 'bg-zinc-900 hover:bg-zinc-800 border-white/10 text-zinc-400 hover:text-zinc-200'
-            }`}
-            title="Loop Active Measures"
-          >
-            <Repeat className="w-3.5 h-3.5" />
-            <span className="font-mono text-[11px]">
+          {/* Loop Mode & Part Practice Selector */}
+          <div className="flex items-center rounded-xl border border-white/10 bg-zinc-900 overflow-hidden shadow-sm">
+            <button
+              onClick={onToggleLoop}
+              className={`flex items-center gap-1 px-2.5 py-1.5 text-xs font-bold transition-all active:scale-95 ${
+                isLooping
+                  ? 'bg-blue-500/25 text-blue-300 font-extrabold shadow-[0_0_12px_rgba(59,130,246,0.4)]'
+                  : 'text-zinc-400 hover:text-zinc-200'
+              }`}
+              title="Toggle Loop On/Off"
+            >
+              <Repeat className={`w-3.5 h-3.5 ${isLooping ? 'text-blue-400' : ''}`} />
+              <span>Loop</span>
+            </button>
+            <button
+              onClick={() => setSectionsMenuOpen(true)}
+              className="px-2 py-1.5 font-mono text-[11px] text-amber-400 hover:text-amber-300 border-l border-white/10 hover:bg-zinc-800 transition-colors"
+              title="Select Part to Practice, Loop or View on Sheet"
+            >
               M.{loopRange[0]}–{loopRange[1]}
-            </span>
-          </button>
+            </button>
+          </div>
 
           {/* Speed Ramp */}
           {isLooping && onToggleSpeedRamp && (
@@ -1272,73 +1304,216 @@ export const FlowkeyPlayerView: React.FC<FlowkeyPlayerViewProps> = ({
 
       {/* Universal Section & Part Practice Modal (Mobile & Desktop) */}
       {sectionsMenuOpen && (
-        <div className="fixed inset-0 z-50 bg-black/80 backdrop-blur-md flex items-center justify-center p-4">
-          <div className="bg-zinc-900 border border-white/15 rounded-3xl w-full max-w-lg shadow-2xl overflow-hidden flex flex-col max-h-[85vh]">
-            <div className="px-5 py-4 border-b border-white/10 flex items-center justify-between">
+        <div className="fixed inset-0 z-50 bg-black/80 backdrop-blur-md flex items-center justify-center p-4 select-none animate-in fade-in duration-200">
+          <div className="bg-zinc-900 border border-white/15 rounded-3xl w-full max-w-lg shadow-2xl overflow-hidden flex flex-col max-h-[90vh]">
+            {/* Header */}
+            <div className="px-5 py-4 border-b border-white/10 flex items-center justify-between bg-zinc-950/80">
               <div className="flex items-center gap-2.5">
-                <div className="p-2 rounded-xl bg-amber-500/15 text-amber-400">
+                <div className="p-2 rounded-xl bg-amber-500/15 text-amber-400 border border-amber-500/30">
                   <Layers className="w-5 h-5" />
                 </div>
                 <div>
                   <h3 className="text-sm font-bold text-white">
-                    {language === 'de' ? 'Abschnitt zum Üben wählen' : 'Select Part to Practice'}
+                    {language === 'de' ? 'Abschnitt & Takte üben' : 'Part & Measure Practice'}
                   </h3>
                   <p className="text-[11px] text-zinc-400">
-                    {language === 'de' ? 'Wähle einen Teil oder Taktbereich zum Wiederholen' : 'Select a part or measure range to loop'}
+                    {language === 'de'
+                      ? 'Wähle den Taktbereich zum Anhören, Üben oder Noten anzeigen'
+                      : 'Choose measure range to loop, practice in wait mode, or display on sheet'}
                   </p>
                 </div>
               </div>
               <button
                 onClick={() => setSectionsMenuOpen(false)}
-                className="p-2 rounded-xl bg-zinc-800 text-zinc-400 hover:text-white"
+                className="p-2 rounded-xl bg-zinc-800 text-zinc-400 hover:text-white transition-colors"
               >
                 <X className="w-4 h-4" />
               </button>
             </div>
 
-            <div className="p-4 overflow-y-auto space-y-2 flex-1">
-              {piece.sections.map((sec) => {
-                const isActive = currentSection?.id === sec.id
-                return (
-                  <div
-                    key={sec.id}
-                    onClick={() => {
-                      onSeek(sec.startTime)
-                      onLoopRangeChange([sec.startMeasure, sec.endMeasure])
-                      if (!isLooping) onToggleLoop()
-                      setSectionsMenuOpen(false)
-                    }}
-                    className={`p-3.5 rounded-2xl cursor-pointer transition-all border flex items-center justify-between ${
-                      isActive
-                        ? 'bg-amber-500/20 border-amber-500/60 text-white'
-                        : 'bg-zinc-800/60 hover:bg-zinc-800 border-white/5 text-zinc-200'
-                    }`}
-                  >
-                    <div className="flex-1 pr-3">
-                      <div className="text-xs font-bold text-white flex items-center gap-2">
-                        <span>{sec.title}</span>
-                        {isActive && (
-                          <span className="px-1.5 py-0.5 rounded text-[9px] bg-amber-500 text-zinc-950 font-black">
-                            ACTIVE
-                          </span>
-                        )}
-                      </div>
-                      <div className="text-[11px] text-zinc-400 mt-0.5">{sec.character}</div>
-                      {sec.tempoSuggestion && (
-                        <div className="text-[10px] text-amber-400/90 font-mono mt-0.5">{sec.tempoSuggestion}</div>
-                      )}
-                    </div>
-                    <div className="text-right flex flex-col items-end gap-1">
-                      <span className="font-mono text-xs font-bold text-amber-400 bg-amber-500/10 px-2 py-0.5 rounded-lg border border-amber-500/20">
-                        M. {sec.startMeasure}–{sec.endMeasure}
+            <div className="p-5 overflow-y-auto space-y-5 flex-1 scrollbar-thin scrollbar-thumb-zinc-800">
+              {/* 1. Custom Measure Range Chooser */}
+              <div className="p-4 bg-zinc-950/80 rounded-2xl border border-white/10 space-y-4">
+                <div className="flex items-center justify-between">
+                  <span className="text-xs font-bold uppercase tracking-wider text-amber-400 flex items-center gap-1.5">
+                    <Sliders className="w-3.5 h-3.5" />
+                    <span>{language === 'de' ? 'Taktbereich wählen' : 'Choose Range (From – To)'}</span>
+                  </span>
+                  <span className="text-[11px] font-mono text-zinc-400 bg-zinc-900 px-2.5 py-0.5 rounded-lg border border-white/5">
+                    {customEndMeasure - customStartMeasure + 1} {language === 'de' ? 'Takte' : 'Measures'}
+                  </span>
+                </div>
+
+                {/* Range Steppers */}
+                <div className="grid grid-cols-2 gap-3">
+                  {/* From Measure */}
+                  <div className="bg-zinc-900/90 border border-white/10 rounded-2xl p-3 flex flex-col gap-2">
+                    <label className="text-[10px] uppercase font-bold text-zinc-400">
+                      {language === 'de' ? 'Von Takt (Start)' : 'From Measure (Start)'}
+                    </label>
+                    <div className="flex items-center justify-between">
+                      <button
+                        onClick={() => setCustomStartMeasure((m) => Math.max(1, m - 1))}
+                        className="w-8 h-8 rounded-xl bg-zinc-800 hover:bg-zinc-700 text-white font-bold flex items-center justify-center text-sm active:scale-95 transition-all"
+                      >
+                        -
+                      </button>
+                      <span className="font-mono text-base font-extrabold text-amber-300">
+                        M. {customStartMeasure}
                       </span>
-                      <span className="text-[10px] text-zinc-400">
-                        {Math.round(sec.endTime - sec.startTime)}s
-                      </span>
+                      <button
+                        onClick={() => setCustomStartMeasure((m) => Math.min(customEndMeasure, m + 1))}
+                        className="w-8 h-8 rounded-xl bg-zinc-800 hover:bg-zinc-700 text-white font-bold flex items-center justify-center text-sm active:scale-95 transition-all"
+                      >
+                        +
+                      </button>
                     </div>
                   </div>
-                )
-              })}
+
+                  {/* To Measure */}
+                  <div className="bg-zinc-900/90 border border-white/10 rounded-2xl p-3 flex flex-col gap-2">
+                    <label className="text-[10px] uppercase font-bold text-zinc-400">
+                      {language === 'de' ? 'Bis Takt (Ende)' : 'To Measure (End)'}
+                    </label>
+                    <div className="flex items-center justify-between">
+                      <button
+                        onClick={() => setCustomEndMeasure((m) => Math.max(customStartMeasure, m - 1))}
+                        className="w-8 h-8 rounded-xl bg-zinc-800 hover:bg-zinc-700 text-white font-bold flex items-center justify-center text-sm active:scale-95 transition-all"
+                      >
+                        -
+                      </button>
+                      <span className="font-mono text-base font-extrabold text-amber-300">
+                        M. {customEndMeasure}
+                      </span>
+                      <button
+                        onClick={() => setCustomEndMeasure((m) => Math.min(maxMeasure, m + 1))}
+                        className="w-8 h-8 rounded-xl bg-zinc-800 hover:bg-zinc-700 text-white font-bold flex items-center justify-center text-sm active:scale-95 transition-all"
+                      >
+                        +
+                      </button>
+                    </div>
+                  </div>
+                </div>
+
+                {/* Progress bar visualizer */}
+                <div className="space-y-1">
+                  <div className="w-full h-2.5 bg-zinc-800 rounded-full overflow-hidden relative border border-white/5">
+                    <div
+                      className="absolute top-0 bottom-0 bg-gradient-to-r from-amber-500 via-orange-500 to-blue-500 rounded-full transition-all"
+                      style={{
+                        left: `${((customStartMeasure - 1) / maxMeasure) * 100}%`,
+                        width: `${Math.max(4, ((customEndMeasure - customStartMeasure + 1) / maxMeasure) * 100)}%`,
+                      }}
+                    />
+                  </div>
+                  <div className="flex items-center justify-between text-[10px] font-mono text-zinc-500 px-0.5">
+                    <span>M. 1</span>
+                    <span className="text-amber-400/90 font-bold">M. {customStartMeasure} – {customEndMeasure}</span>
+                    <span>M. {maxMeasure}</span>
+                  </div>
+                </div>
+
+                {/* 3 Main Action Buttons */}
+                <div className="grid grid-cols-1 sm:grid-cols-3 gap-2.5 pt-1">
+                  {/* 1. Listen in Loop */}
+                  <button
+                    onClick={() => handleListenInLoop(customStartMeasure, customEndMeasure)}
+                    className="p-3 rounded-2xl bg-blue-600 hover:bg-blue-500 text-white font-bold text-xs flex items-center justify-center gap-1.5 shadow-md shadow-blue-500/25 active:scale-95 transition-all"
+                  >
+                    <Repeat className="w-4 h-4" />
+                    <span>{language === 'de' ? 'Im Loop anhören' : 'Listen in Loop'}</span>
+                  </button>
+
+                  {/* 2. Practice Part */}
+                  <button
+                    onClick={() => handlePracticePart(customStartMeasure, customEndMeasure)}
+                    className="p-3 rounded-2xl bg-amber-500 hover:bg-amber-400 text-zinc-950 font-bold text-xs flex items-center justify-center gap-1.5 shadow-md shadow-amber-500/25 active:scale-95 transition-all"
+                  >
+                    <Target className="w-4 h-4" />
+                    <span>{language === 'de' ? 'Abschnitt üben' : 'Practice Part'}</span>
+                  </button>
+
+                  {/* 3. Display Sheet */}
+                  <button
+                    onClick={() => handleDisplaySheet(customStartMeasure, customEndMeasure)}
+                    className="p-3 rounded-2xl bg-emerald-600 hover:bg-emerald-500 text-white font-bold text-xs flex items-center justify-center gap-1.5 shadow-md shadow-emerald-500/25 active:scale-95 transition-all"
+                  >
+                    <FileText className="w-4 h-4" />
+                    <span>{language === 'de' ? 'Noten anzeigen' : 'Display Sheet'}</span>
+                  </button>
+                </div>
+              </div>
+
+              {/* 2. Song Section Presets */}
+              <div className="space-y-2">
+                <div className="text-xs font-bold uppercase tracking-wider text-zinc-400 px-1">
+                  {language === 'de' ? 'Abschnitts-Voreinstellungen' : 'Song Section Presets'}
+                </div>
+                <div className="space-y-2">
+                  {piece.sections.map((sec) => {
+                    const isSelected =
+                      customStartMeasure === sec.startMeasure && customEndMeasure === sec.endMeasure
+                    return (
+                      <div
+                        key={sec.id}
+                        onClick={() => {
+                          setCustomStartMeasure(sec.startMeasure)
+                          setCustomEndMeasure(sec.endMeasure)
+                        }}
+                        className={`p-3.5 rounded-2xl cursor-pointer transition-all border flex items-center justify-between ${
+                          isSelected
+                            ? 'bg-amber-500/20 border-amber-500/60 text-white'
+                            : 'bg-zinc-800/60 hover:bg-zinc-800 border-white/5 text-zinc-200'
+                        }`}
+                      >
+                        <div className="flex-1 pr-3">
+                          <div className="text-xs font-bold text-white flex items-center gap-2">
+                            <span>{sec.title}</span>
+                            {isSelected && (
+                              <span className="px-1.5 py-0.5 rounded text-[9px] bg-amber-500 text-zinc-950 font-black">
+                                SELECTED
+                              </span>
+                            )}
+                          </div>
+                          <div className="text-[11px] text-zinc-400 mt-0.5">{sec.character}</div>
+                          {sec.tempoSuggestion && (
+                            <div className="text-[10px] text-amber-400/90 font-mono mt-0.5">
+                              {sec.tempoSuggestion}
+                            </div>
+                          )}
+                        </div>
+                        <div className="text-right flex flex-col items-end gap-1.5">
+                          <span className="font-mono text-xs font-bold text-amber-400 bg-amber-500/10 px-2 py-0.5 rounded-lg border border-amber-500/20">
+                            M. {sec.startMeasure}–{sec.endMeasure}
+                          </span>
+                          <div className="flex items-center gap-1.5">
+                            <button
+                              onClick={(e) => {
+                                e.stopPropagation()
+                                handleListenInLoop(sec.startMeasure, sec.endMeasure)
+                              }}
+                              className="px-2.5 py-1 rounded-lg bg-blue-500/20 hover:bg-blue-500/40 text-blue-300 text-[10px] font-bold transition-colors"
+                              title="Loop this section"
+                            >
+                              Loop
+                            </button>
+                            <button
+                              onClick={(e) => {
+                                e.stopPropagation()
+                                handleDisplaySheet(sec.startMeasure, sec.endMeasure)
+                              }}
+                              className="px-2.5 py-1 rounded-lg bg-emerald-500/20 hover:bg-emerald-500/40 text-emerald-300 text-[10px] font-bold transition-colors"
+                              title="Display sheet for this section"
+                            >
+                              Sheet
+                            </button>
+                          </div>
+                        </div>
+                      </div>
+                    )
+                  })}
+                </div>
+              </div>
             </div>
           </div>
         </div>
