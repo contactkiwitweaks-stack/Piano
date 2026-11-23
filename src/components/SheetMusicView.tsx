@@ -15,6 +15,8 @@ interface SheetMusicViewProps {
   onSeek: (time: number) => void
   isLooping?: boolean
   loopRange?: [number, number]
+  startMeasure?: number
+  onStartMeasureChange?: (measure: number) => void
   onLoopRangeChange?: (range: [number, number]) => void
   onToggleLoop?: () => void
   language?: LanguageCode
@@ -82,6 +84,8 @@ export const SheetMusicView: React.FC<SheetMusicViewProps> = ({
   onSeek,
   isLooping = false,
   loopRange,
+  startMeasure = 1,
+  onStartMeasureChange,
 }) => {
   const scrollContainerRef = useRef<HTMLDivElement>(null)
   const [containerWidth, setContainerWidth] = useState<number>(800)
@@ -311,6 +315,12 @@ export const SheetMusicView: React.FC<SheetMusicViewProps> = ({
             <span className="text-xs font-mono font-medium text-stone-500 dark:text-zinc-500">
               Takt {currentMeasure} / {maxMeasure}
             </span>
+            {startMeasure > 1 && (
+              <span className="px-2 py-0.5 rounded-full text-[10px] font-mono font-bold bg-amber-500/15 text-amber-600 dark:text-amber-400 border border-amber-500/30 flex items-center gap-1 shadow-sm">
+                <span>★</span>
+                <span>Start M.{startMeasure}</span>
+              </span>
+            )}
             {isLooping && loopRange && (
               <span className="px-2 py-0.5 rounded-full text-[10px] font-mono font-bold bg-blue-500/15 text-blue-600 dark:text-blue-400 border border-blue-500/30 flex items-center gap-1 shadow-sm">
                 <span>⟲</span>
@@ -329,11 +339,15 @@ export const SheetMusicView: React.FC<SheetMusicViewProps> = ({
               {isDark ? <Sun className="w-3.5 h-3.5" /> : <Moon className="w-3.5 h-3.5" />}
             </button>
 
-            {/* Jump to Beginning */}
+            {/* Jump to Start Measure */}
             <button
-              onClick={() => onSeek(0)}
+              onClick={() => {
+                const targetMeas = isLooping && loopRange ? loopRange[0] : startMeasure
+                const note = piece.notes.find((n) => n.measure >= targetMeas)
+                onSeek(note ? note.startTime : 0)
+              }}
               className="p-1.5 rounded-lg border border-stone-300 dark:border-zinc-700 bg-stone-100/70 dark:bg-zinc-800/80 text-stone-700 dark:text-zinc-300 hover:text-amber-500 transition-colors"
-              title="Seek to measure 1"
+              title={`Seek to start measure (M. ${isLooping && loopRange ? loopRange[0] : startMeasure})`}
             >
               <RotateCcw className="w-3.5 h-3.5" />
             </button>
@@ -634,6 +648,31 @@ export const SheetMusicView: React.FC<SheetMusicViewProps> = ({
                         </g>
                       )}
 
+                      {/* Designated Start Measure Badge */}
+                      {mNum === startMeasure && (
+                        <g>
+                          <rect
+                            x={mStartX + 2}
+                            y={TREBLE_TOP_Y - 24}
+                            width={58}
+                            height={12}
+                            rx={3}
+                            fill="#f59e0b"
+                          />
+                          <text
+                            x={mStartX + 31}
+                            y={TREBLE_TOP_Y - 15}
+                            fill="#09090b"
+                            fontFamily="monospace"
+                            fontSize="8"
+                            fontWeight="900"
+                            textAnchor="middle"
+                          >
+                            ★ START M.{mNum}
+                          </text>
+                        </g>
+                      )}
+
                       {/* Active Measure Background Wash */}
                       {isCurrent && (
                         <rect
@@ -646,17 +685,26 @@ export const SheetMusicView: React.FC<SheetMusicViewProps> = ({
                         />
                       )}
 
-                      {/* Measure Number at top-left */}
-                      <text
-                        x={mStartX + 4}
-                        y={TREBLE_TOP_Y - 6}
-                        fill={dimInkColor}
-                        fontFamily="monospace"
-                        fontSize="9.5"
-                        fontWeight="bold"
+                      {/* Measure Number at top-left with Click-to-Set-Start */}
+                      <g
+                        onClick={(e) => {
+                          e.stopPropagation()
+                          onStartMeasureChange?.(mNum)
+                          if (sortedNotes[0]) onSeek(sortedNotes[0].startTime)
+                        }}
+                        className="cursor-pointer"
                       >
-                        {mNum}
-                      </text>
+                        <text
+                          x={mStartX + 4}
+                          y={TREBLE_TOP_Y - 6}
+                          fill={mNum === startMeasure ? '#f59e0b' : dimInkColor}
+                          fontFamily="monospace"
+                          fontSize="9.5"
+                          fontWeight={mNum === startMeasure ? '900' : 'bold'}
+                        >
+                          {mNum}
+                        </text>
+                      </g>
 
                       {/* Measure Barline at right edge */}
                       {isLastOfPiece ? (

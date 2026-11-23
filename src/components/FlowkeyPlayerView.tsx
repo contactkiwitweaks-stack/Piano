@@ -44,6 +44,8 @@ interface FlowkeyPlayerViewProps {
   showHands: boolean
   isLooping: boolean
   loopRange: [number, number]
+  startMeasure?: number
+  onStartMeasureChange?: (measure: number) => void
   activeNotes: Map<number, { velocity: number; timestamp: number }>
   damperPedal: number
   edition: MasterEditionId
@@ -93,6 +95,8 @@ export const FlowkeyPlayerView: React.FC<FlowkeyPlayerViewProps> = ({
   showHands: _showHands,
   isLooping,
   loopRange,
+  startMeasure = 1,
+  onStartMeasureChange,
   activeNotes,
   damperPedal,
   edition,
@@ -170,6 +174,17 @@ export const FlowkeyPlayerView: React.FC<FlowkeyPlayerViewProps> = ({
     if (!piece || !piece.notes || piece.notes.length === 0) return 1
     return Math.max(1, ...piece.notes.map((n) => n.measure))
   }, [piece])
+
+  // Current active measure based on currentTime
+  const currentMeasure = useMemo(() => {
+    if (!piece || !piece.notes || piece.notes.length === 0) return 1
+    for (let i = piece.notes.length - 1; i >= 0; i--) {
+      if (currentTime >= piece.notes[i].startTime) {
+        return Math.max(1, piece.notes[i].measure)
+      }
+    }
+    return 1
+  }, [piece, currentTime])
 
   const [customStartMeasure, setCustomStartMeasure] = useState<number>(loopRange[0] || 1)
   const [customEndMeasure, setCustomEndMeasure] = useState<number>(loopRange[1] || 4)
@@ -1074,10 +1089,37 @@ export const FlowkeyPlayerView: React.FC<FlowkeyPlayerViewProps> = ({
           <button
             onClick={onRewind}
             className="w-8 h-8 sm:w-10 sm:h-10 landscape:w-8 landscape:h-8 rounded-full bg-zinc-900 hover:bg-zinc-800 border border-white/10 flex items-center justify-center text-zinc-400 hover:text-white transition-all active:scale-95 shadow-md flex-shrink-0"
-            title="Rewind to Beginning"
+            title={language === 'de' ? `Zurückspulen zu Takt ${isLooping ? loopRange[0] : startMeasure}` : `Rewind to measure ${isLooping ? loopRange[0] : startMeasure}`}
           >
             <RotateCcw className="w-3.5 h-3.5 sm:w-4 sm:h-4" />
           </button>
+
+          {/* Start Measure Selector Pill */}
+          {onStartMeasureChange && (
+            <div className="flex items-center rounded-xl bg-zinc-900 border border-amber-500/30 overflow-hidden shadow-sm flex-shrink-0">
+              <button
+                onClick={() => onStartMeasureChange(Math.max(1, startMeasure - 1))}
+                className="px-1.5 sm:px-2 py-1 text-zinc-400 hover:text-white text-xs font-bold transition-colors active:scale-95"
+                title={language === 'de' ? 'Vorheriger Start-Takt (-)' : 'Previous Start Measure (-)'}
+              >
+                -
+              </button>
+              <button
+                onClick={() => setSectionsMenuOpen(true)}
+                className="px-1.5 sm:px-2 py-1 font-mono text-[10px] sm:text-xs font-bold text-amber-400 hover:text-amber-300 border-x border-white/10 transition-colors"
+                title={language === 'de' ? 'Start-Takt (Jedes Mal ab hier) - Klicken zum Konfigurieren' : 'Start Measure (Click to configure)'}
+              >
+                Start: M.{startMeasure}
+              </button>
+              <button
+                onClick={() => onStartMeasureChange(Math.min(maxMeasure, startMeasure + 1))}
+                className="px-1.5 sm:px-2 py-1 text-zinc-400 hover:text-white text-xs font-bold transition-colors active:scale-95"
+                title={language === 'de' ? 'Nächster Start-Takt (+)' : 'Next Start Measure (+)'}
+              >
+                +
+              </button>
+            </div>
+          )}
 
           {/* Central Vibrantly Glowing Play/Pause Button */}
           <button
@@ -1276,6 +1318,8 @@ export const FlowkeyPlayerView: React.FC<FlowkeyPlayerViewProps> = ({
             onSeek={onSeek}
             isLooping={isLooping}
             loopRange={loopRange}
+            startMeasure={startMeasure}
+            onStartMeasureChange={onStartMeasureChange}
             onLoopRangeChange={onLoopRangeChange}
             onToggleLoop={onToggleLoop}
             language={language}
@@ -1332,6 +1376,67 @@ export const FlowkeyPlayerView: React.FC<FlowkeyPlayerViewProps> = ({
             </div>
 
             <div className="p-5 overflow-y-auto space-y-5 flex-1 scrollbar-thin scrollbar-thumb-zinc-800">
+              {/* Start-Takt Chooser (Start every time from here) */}
+              {onStartMeasureChange && (
+                <div className="p-4 bg-gradient-to-br from-amber-500/10 via-zinc-950/80 to-zinc-950/90 rounded-2xl border border-amber-500/30 space-y-3 shadow-lg">
+                  <div className="flex items-center justify-between">
+                    <span className="text-xs font-bold uppercase tracking-wider text-amber-400 flex items-center gap-1.5">
+                      <Target className="w-3.5 h-3.5 text-amber-400" />
+                      <span>{language === 'de' ? 'Start-Takt wählen (Jedes Mal ab hier)' : 'Default Start Measure'}</span>
+                    </span>
+                    <span className="text-[11px] font-mono font-bold text-amber-400 bg-amber-500/20 px-2.5 py-0.5 rounded-lg border border-amber-500/40">
+                      Takt {startMeasure}
+                    </span>
+                  </div>
+                  <p className="text-[11px] text-zinc-300 leading-snug">
+                    {language === 'de'
+                      ? 'Wähle den Takt, an dem das Stück und jede Übungseinheit standardmäßig startet.'
+                      : 'Choose the measure where playback and practice start every time.'}
+                  </p>
+
+                  <div className="flex items-center gap-2">
+                    <div className="flex items-center bg-zinc-900 border border-white/10 rounded-xl p-1 flex-1 justify-between">
+                      <button
+                        onClick={() => onStartMeasureChange(Math.max(1, startMeasure - 1))}
+                        className="w-8 h-8 rounded-lg bg-zinc-800 hover:bg-zinc-700 text-white font-bold flex items-center justify-center text-sm active:scale-95 transition-all"
+                      >
+                        -
+                      </button>
+                      <span className="font-mono text-sm font-extrabold text-amber-300">
+                        M. {startMeasure}
+                      </span>
+                      <button
+                        onClick={() => onStartMeasureChange(Math.min(maxMeasure, startMeasure + 1))}
+                        className="w-8 h-8 rounded-lg bg-zinc-800 hover:bg-zinc-700 text-white font-bold flex items-center justify-center text-sm active:scale-95 transition-all"
+                      >
+                        +
+                      </button>
+                    </div>
+
+                    <button
+                      onClick={() => onStartMeasureChange(1)}
+                      className={`px-3 py-2 rounded-xl text-xs font-bold transition-all border active:scale-95 ${
+                        startMeasure === 1
+                          ? 'bg-amber-500/20 border-amber-500/50 text-amber-300 font-extrabold'
+                          : 'bg-zinc-800 hover:bg-zinc-700 text-zinc-300 border-white/5'
+                      }`}
+                    >
+                      M. 1
+                    </button>
+                    <button
+                      onClick={() => onStartMeasureChange(currentMeasure)}
+                      className={`px-3 py-2 rounded-xl text-xs font-bold transition-all border active:scale-95 ${
+                        startMeasure === currentMeasure
+                          ? 'bg-amber-500/20 border-amber-500/50 text-amber-300 font-extrabold'
+                          : 'bg-zinc-800 hover:bg-zinc-700 text-zinc-300 border-white/5'
+                      }`}
+                    >
+                      M. {currentMeasure} ({language === 'de' ? 'Aktuell' : 'Now'})
+                    </button>
+                  </div>
+                </div>
+              )}
+
               {/* 1. Custom Measure Range Chooser */}
               <div className="p-4 bg-zinc-950/80 rounded-2xl border border-white/10 space-y-4">
                 <div className="flex items-center justify-between">
@@ -1487,6 +1592,22 @@ export const FlowkeyPlayerView: React.FC<FlowkeyPlayerViewProps> = ({
                             M. {sec.startMeasure}–{sec.endMeasure}
                           </span>
                           <div className="flex items-center gap-1.5">
+                            {onStartMeasureChange && (
+                              <button
+                                onClick={(e) => {
+                                  e.stopPropagation()
+                                  onStartMeasureChange(sec.startMeasure)
+                                }}
+                                className={`px-2 py-1 rounded-lg text-[10px] font-bold transition-colors ${
+                                  startMeasure === sec.startMeasure
+                                    ? 'bg-amber-500 text-zinc-950 font-black shadow-sm'
+                                    : 'bg-zinc-700/60 hover:bg-zinc-700 text-zinc-300'
+                                }`}
+                                title={language === 'de' ? `Start-Takt auf M. ${sec.startMeasure} setzen` : `Set Start Measure to M. ${sec.startMeasure}`}
+                              >
+                                {startMeasure === sec.startMeasure ? '★ Start' : 'Start'}
+                              </button>
+                            )}
                             <button
                               onClick={(e) => {
                                 e.stopPropagation()

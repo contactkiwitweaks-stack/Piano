@@ -87,6 +87,12 @@ export function App() {
   const [isLooping, setIsLooping] = useState<boolean>(false)
   const [loopRange, setLoopRange] = useState<[number, number]>([1, 4])
 
+  // User-chosen Start Takt / Measure (starts practice every time from here)
+  const [startMeasure, setStartMeasure] = useState<number>(() => {
+    const saved = localStorage.getItem(`virtuoso_start_measure_${currentPieceId}`)
+    return saved ? Math.max(1, parseInt(saved, 10)) : 1
+  })
+
   // Hardware MIDI State
   const [midiState, setMidiState] = useState<MidiInputState>(MidiManager.getInstance().getState())
   const [wrongNoteMidi, setWrongNoteMidi] = useState<number | null>(null)
@@ -493,13 +499,39 @@ export function App() {
     PianoAudioEngine.getInstance().setDamperPedal(newDepth)
   }, [])
 
+  // Helper to find exact start time of a measure
+  const getMeasureStartTime = useCallback(
+    (meas: number): number => {
+      if (!activePiece) return 0
+      const note = activePiece.notes.find((n) => n.measure >= meas)
+      return note ? note.startTime : 0
+    },
+    [activePiece]
+  )
+
+  const handleStartMeasureChange = useCallback(
+    (meas: number) => {
+      const clamped = Math.max(1, meas)
+      setStartMeasure(clamped)
+      localStorage.setItem(`virtuoso_start_measure_${currentPieceId}`, clamped.toString())
+      if (activePiece) {
+        const note = activePiece.notes.find((n) => n.measure >= clamped)
+        const targetTime = note ? note.startTime : 0
+        resetPlaybackToIndex(targetTime, activePiece.notes)
+        setCurrentTime(targetTime)
+      }
+    },
+    [currentPieceId, activePiece, resetPlaybackToIndex]
+  )
+
   // Calculate loop time bounds in seconds
   const loopTimeBounds = useMemo<[number, number]>(() => {
     if (!isLooping || !activePiece) return [0, activePiece?.duration || 12]
     const notesInStart = activePiece.notes.filter((n) => n.measure >= loopRange[0])
     const notesInEnd = activePiece.notes.filter((n) => n.measure <= loopRange[1])
     const startSec = notesInStart[0]?.startTime || 0
-    const endSec = notesInEnd.length > 0 ? notesInEnd[notesInEnd.length - 1].startTime + 1.8 : activePiece.duration
+    const lastNote = notesInEnd.length > 0 ? notesInEnd[notesInEnd.length - 1] : null
+    const endSec = lastNote ? lastNote.startTime + Math.max(1.0, lastNote.duration) : activePiece.duration
     return [startSec, endSec]
   }, [isLooping, loopRange, activePiece])
 
@@ -521,6 +553,20 @@ export function App() {
           while (keepCheckingChords && nextNoteIndexRef.current < activePiece.notes.length) {
             const upcomingLeader = activePiece.notes[nextNoteIndexRef.current]
             if (!upcomingLeader) break
+
+            // Section / Loop boundary enforcement in Practice Mode:
+            // If practicing within loopRange and we've reached a measure beyond loopRange[1], loop back!
+            if (isLooping && upcomingLeader.measure > loopRange[1]) {
+              const loopStart = loopTimeBounds[0]
+              resetPlaybackToIndex(loopStart, activePiece.notes)
+              setCurrentTime(loopStart)
+
+              if (isSpeedRamp) {
+                setPlaybackRate((prevRate) => Math.min(1.25, Math.round((prevRate + 0.05) * 100) / 100))
+              }
+              animId = requestAnimationFrame(tick)
+              return
+            }
 
             // Collect all simultaneous notes in this chord cluster (within 85ms for expressive rolled arpeggios)
             const chordNotes: NoteEvent[] = []
@@ -632,6 +678,28 @@ export function App() {
               nextNoteIndexRef.current = cIdx
             }
           }
+
+          // If practice mode reached the end of the piece:
+          if (nextNoteIndexRef.current >= activePiece.notes.length) {
+            if (isLooping) {
+              const loopStart = loopTimeBounds[0]
+              resetPlaybackToIndex(loopStart, activePiece.notes)
+              setCurrentTime(loopStart)
+              if (isSpeedRamp) {
+                setPlaybackRate((prevRate) => Math.min(1.25, Math.round((prevRate + 0.05) * 100) / 100))
+              }
+              animId = requestAnimationFrame(tick)
+              return
+            } else {
+              setIsPlaying(false)
+              const targetMeas = startMeasure > 1 ? startMeasure : 1
+              const startTarget = getMeasureStartTime(targetMeas)
+              resetPlaybackToIndex(startTarget, activePiece.notes)
+              setCurrentTime(startTarget)
+              animId = requestAnimationFrame(tick)
+              return
+            }
+          }
         }
 
         // 2. COMPETITION MODE (Real-time Examination: checks missed notes)
@@ -698,8 +766,10 @@ export function App() {
             finishCompetition()
           } else {
             setIsPlaying(false)
-            resetPlaybackToIndex(0, activePiece.notes)
-            setCurrentTime(0)
+            const targetMeas = isLooping ? loopRange[0] : (startMeasure > 1 ? startMeasure : 1)
+            const startTarget = getMeasureStartTime(targetMeas)
+            resetPlaybackToIndex(startTarget, activePiece.notes)
+            setCurrentTime(startTarget)
           }
           animId = requestAnimationFrame(tick)
           return
@@ -779,7 +849,8 @@ export function App() {
     }
 
     if (currentTimeRef.current >= activePiece.duration - 0.5) {
-      const startTime = isLooping ? loopTimeBounds[0] : 0
+      const targetMeas = isLooping ? loopRange[0] : (startMeasure > 1 ? startMeasure : 1)
+      const startTime = getMeasureStartTime(targetMeas)
       resetPlaybackToIndex(startTime, activePiece.notes)
       setCurrentTime(startTime)
     }
@@ -820,7 +891,8 @@ export function App() {
   const handleRewind = () => {
     cancelCountIn()
     if (!activePiece) return
-    const target = isLooping ? loopTimeBounds[0] : 0
+    const targetMeas = isLooping ? loopRange[0] : (startMeasure > 1 ? startMeasure : 1)
+    const target = getMeasureStartTime(targetMeas)
     resetPlaybackToIndex(target, activePiece.notes)
     setCurrentTime(target)
   }
@@ -881,9 +953,18 @@ export function App() {
       } else {
         setIsLooping(false)
       }
-      setCurrentTime(0)
+
+      const savedStart = localStorage.getItem(`virtuoso_start_measure_${pieceId}`)
+      const parsedStart = savedStart ? Math.max(1, parseInt(savedStart, 10)) : 1
+      setStartMeasure(parsedStart)
+
+      const targetStartMeas = loopRangeCustom ? loopRangeCustom[0] : parsedStart
+      const startNote = loadedPiece.notes.find((n) => n.measure >= targetStartMeas)
+      const initTime = startNote ? startNote.startTime : 0
+
+      setCurrentTime(initTime)
       setIsPlaying(false)
-      resetPlaybackToIndex(0, loadedPiece.notes)
+      resetPlaybackToIndex(initTime, loadedPiece.notes)
       setActiveTab('player')
     })
   }
@@ -893,9 +974,17 @@ export function App() {
     setPiece(customPiece)
     setCurrentPieceId(customPiece.id)
     setEdition('urtext')
-    setCurrentTime(0)
+
+    const savedStart = localStorage.getItem(`virtuoso_start_measure_${customPiece.id}`)
+    const parsedStart = savedStart ? Math.max(1, parseInt(savedStart, 10)) : 1
+    setStartMeasure(parsedStart)
+
+    const startNote = customPiece.notes.find((n) => n.measure >= parsedStart)
+    const initTime = startNote ? startNote.startTime : 0
+
+    setCurrentTime(initTime)
     setIsPlaying(false)
-    resetPlaybackToIndex(0, customPiece.notes)
+    resetPlaybackToIndex(initTime, customPiece.notes)
     setActiveTab('player')
   }
 
@@ -1019,6 +1108,8 @@ export function App() {
             showHands={showHands}
             isLooping={isLooping}
             loopRange={loopRange}
+            startMeasure={startMeasure}
+            onStartMeasureChange={handleStartMeasureChange}
             activeNotes={midiState.activeNotes}
             damperPedal={PianoAudioEngine.getInstance().getPedalDepth() || midiState.damperPedal}
             edition={edition}
