@@ -1,6 +1,6 @@
 /* Native iOS & Mobile Performance Overrides */
 html, body {
-  background-color: #000000;
+  background-color: #09090d;
   overscroll-behavior: none;
-  touch-action: none;
+  -webkit-overflow-scrolling: touch;
 }

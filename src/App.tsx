@@ -32,14 +32,26 @@ import {
   Sliders,
   Flame,
   GraduationCap,
+  Globe,
+  ChevronDown,
 } from 'lucide-react'
 
 export function App() {
   // Navigation Tabs: 'songs' | 'search' | 'mySongs' | 'courses' | 'player'
   const [activeTab, setActiveTab] = useState<TabId>('songs')
 
-  // Localization & Piece State (Default to Beethoven: Für Elise matching Screenshot 1)
-  const [language, setLanguage] = useState<LanguageCode>('en')
+  // Localization & Piece State (persisted in localStorage)
+  const [language, setLanguageState] = useState<LanguageCode>(() => {
+    const saved = localStorage.getItem('virtuoso_language') as LanguageCode | null
+    if (saved && ['en', 'de', 'fr', 'ja', 'zh'].includes(saved)) return saved
+    return 'en'
+  })
+  const setLanguage = useCallback((lang: LanguageCode) => {
+    setLanguageState(lang)
+    localStorage.setItem('virtuoso_language', lang)
+  }, [])
+  const [langMenuOpen, setLangMenuOpen] = useState<boolean>(false)
+  const langMenuRef = useRef<HTMLDivElement>(null)
   const [currentPieceId, setCurrentPieceId] = useState<string>('beethoven-fur-elise')
   const [edition, setEdition] = useState<MasterEditionId>('urtext')
 
@@ -128,14 +140,62 @@ export function App() {
   const [isTutorialsOpen, setIsTutorialsOpen] = useState<boolean>(false)
 
   const t = translations[language]
+  const skipNextEffectLoadRef = useRef<boolean>(false)
 
-  // Load piece dynamically based on pieceId and edition
+  // Global Escape key + outside-click handler for language dropdown (immune to backdrop-filter containing blocks)
   useEffect(() => {
+    const onKeyDown = (e: KeyboardEvent) => {
+      if (e.key !== 'Escape') return
+      setLangMenuOpen(false)
+      setIsSightReadingOpen(false)
+      setIsTutorialsOpen(false)
+      setIsRolandModalOpen(false)
+      setIsImportModalOpen(false)
+      setIsLibraryModalOpen(false)
+      setIsWarmupsModalOpen(false)
+      setIsAudioSettingsOpen(false)
+      setIsCompetitionReportOpen(false)
+    }
+    const onPointerDown = (e: PointerEvent) => {
+      if (langMenuRef.current && !langMenuRef.current.contains(e.target as Node)) {
+        setLangMenuOpen(false)
+      }
+    }
+    window.addEventListener('keydown', onKeyDown)
+    document.addEventListener('pointerdown', onPointerDown)
+    return () => {
+      window.removeEventListener('keydown', onKeyDown)
+      document.removeEventListener('pointerdown', onPointerDown)
+    }
+  }, [])
+
+  // Load initial piece dynamically based on pieceId and edition (without clobbering direct selections)
+  useEffect(() => {
+    if (skipNextEffectLoadRef.current) {
+      skipNextEffectLoadRef.current = false
+      return
+    }
+    let cancelled = false
     LibraryRepository.loadPiece(currentPieceId, edition).then((loadedPiece) => {
+      if (cancelled) return
       setPiece(loadedPiece)
-      setCurrentTime(0)
+      const savedStart = localStorage.getItem(`virtuoso_start_measure_${currentPieceId}`)
+      const parsedStart = savedStart ? Math.max(1, parseInt(savedStart, 10)) : 1
+      setStartMeasure(parsedStart)
+      const startNote = loadedPiece.notes.find((n) => n.measure >= parsedStart)
+      const initTime = startNote ? startNote.startTime : 0
+      setCurrentTime(initTime)
+      currentTimeRef.current = initTime
+      let idx = 0
+      while (idx < loadedPiece.notes.length && loadedPiece.notes[idx].startTime < initTime) {
+        idx++
+      }
+      nextNoteIndexRef.current = idx
       setIsPlaying(false)
     })
+    return () => {
+      cancelled = true
+    }
   }, [currentPieceId, edition])
 
   // Transformed notes based on practice variant (e.g. right hand only, left hand only)
@@ -535,20 +595,38 @@ export function App() {
     return [startSec, endSec]
   }, [isLooping, loopRange, activePiece])
 
+  // Fast live refs so 120fps tick loop never reads stale closures when toggling settings mid-song
+  const isMetronomeOnRef = useRef<boolean>(isMetronomeOn)
+  isMetronomeOnRef.current = isMetronomeOn
+  const isSpeedRampRef = useRef<boolean>(isSpeedRamp)
+  isSpeedRampRef.current = isSpeedRamp
+  const startMeasureRef = useRef<number>(startMeasure)
+  startMeasureRef.current = startMeasure
+  const loopRangeRef = useRef<[number, number]>(loopRange)
+  loopRangeRef.current = loopRange
+  const getMeasureStartTimeRef = useRef(getMeasureStartTime)
+  getMeasureStartTimeRef.current = getMeasureStartTime
+  const finishCompetitionRef = useRef(finishCompetition)
+  finishCompetitionRef.current = finishCompetition
+
   // Main playback tick loop with hardware-accurate audio timeline scheduling & Wait-for-Note Mode
   useEffect(() => {
     let animId: number
 
     const tick = (now: number) => {
-      const deltaSec = (now - lastTimeRef.current) / 1000
+      const deltaSec = Math.min(0.1, (now - lastTimeRef.current) / 1000)
       lastTimeRef.current = now
 
-      if (isPlaying && activePiece && activeTab === 'player') {
+      if (isPlaying && activePiece) {
+        const isInPlayer = activeTab === 'player'
+        const currentPlayMode = isInPlayer ? playModeRef.current : 'flow'
+        const curLoopRange = loopRangeRef.current
+        const curStartMeasure = startMeasureRef.current
         const prevTime = currentTimeRef.current
         let nextTime = prevTime + deltaSec * playbackRate
 
         // 1. PRACTICE MODE (Adaptive Elastic Performance Follower - leaps forward when playing faster!)
-        if (playMode === 'practice') {
+        if (currentPlayMode === 'practice') {
           let keepCheckingChords = true
           while (keepCheckingChords && nextNoteIndexRef.current < activePiece.notes.length) {
             const upcomingLeader = activePiece.notes[nextNoteIndexRef.current]
@@ -556,12 +634,12 @@ export function App() {
 
             // Section / Loop boundary enforcement in Practice Mode:
             // If practicing within loopRange and we've reached a measure beyond loopRange[1], loop back!
-            if (isLooping && upcomingLeader.measure > loopRange[1]) {
+            if (isLooping && upcomingLeader.measure > curLoopRange[1]) {
               const loopStart = loopTimeBounds[0]
               resetPlaybackToIndex(loopStart, activePiece.notes)
               setCurrentTime(loopStart)
 
-              if (isSpeedRamp) {
+              if (isSpeedRampRef.current) {
                 setPlaybackRate((prevRate) => Math.min(1.25, Math.round((prevRate + 0.05) * 100) / 100))
               }
               animId = requestAnimationFrame(tick)
@@ -685,15 +763,15 @@ export function App() {
               const loopStart = loopTimeBounds[0]
               resetPlaybackToIndex(loopStart, activePiece.notes)
               setCurrentTime(loopStart)
-              if (isSpeedRamp) {
+              if (isSpeedRampRef.current) {
                 setPlaybackRate((prevRate) => Math.min(1.25, Math.round((prevRate + 0.05) * 100) / 100))
               }
               animId = requestAnimationFrame(tick)
               return
             } else {
               setIsPlaying(false)
-              const targetMeas = startMeasure > 1 ? startMeasure : 1
-              const startTarget = getMeasureStartTime(targetMeas)
+              const targetMeas = curStartMeasure > 1 ? curStartMeasure : 1
+              const startTarget = getMeasureStartTimeRef.current(targetMeas)
               resetPlaybackToIndex(startTarget, activePiece.notes)
               setCurrentTime(startTarget)
               animId = requestAnimationFrame(tick)
@@ -703,7 +781,7 @@ export function App() {
         }
 
         // 2. COMPETITION MODE (Real-time Examination: checks missed notes)
-        if (playMode === 'competition') {
+        if (currentPlayMode === 'competition') {
           for (let i = 0; i < activePiece.notes.length; i++) {
             const note = activePiece.notes[i]
             if (note.startTime < nextTime - 0.22 && !processedNoteIdsRef.current.has(note.id)) {
@@ -733,7 +811,7 @@ export function App() {
         }
 
         // Metronome Click Timing
-        if (isMetronomeOn && activePiece) {
+        if (isMetronomeOnRef.current && activePiece && isInPlayer) {
           const beatsPerSec = (activePiece.tempoBpm * playbackRate) / 60
           const currentBeatExact = nextTime * beatsPerSec
           const currentBeatIndex = Math.floor(currentBeatExact)
@@ -747,12 +825,12 @@ export function App() {
         }
 
         // Loop handling with optional Speed Ramp (+5% on successful loop completion)
-        if (isLooping && nextTime >= loopTimeBounds[1]) {
+        if (isLooping && isInPlayer && nextTime >= loopTimeBounds[1]) {
           const loopStart = loopTimeBounds[0]
           resetPlaybackToIndex(loopStart, activePiece.notes)
           setCurrentTime(loopStart)
 
-          if (isSpeedRamp) {
+          if (isSpeedRampRef.current) {
             setPlaybackRate((prevRate) => Math.min(1.25, Math.round((prevRate + 0.05) * 100) / 100))
           }
 
@@ -762,12 +840,12 @@ export function App() {
 
         // End of piece handling
         if (nextTime >= activePiece.duration) {
-          if (playMode === 'competition') {
-            finishCompetition()
+          if (currentPlayMode === 'competition') {
+            finishCompetitionRef.current()
           } else {
             setIsPlaying(false)
-            const targetMeas = isLooping ? loopRange[0] : (startMeasure > 1 ? startMeasure : 1)
-            const startTarget = getMeasureStartTime(targetMeas)
+            const targetMeas = isLooping && isInPlayer ? curLoopRange[0] : (curStartMeasure > 1 ? curStartMeasure : 1)
+            const startTarget = getMeasureStartTimeRef.current(targetMeas)
             resetPlaybackToIndex(startTarget, activePiece.notes)
             setCurrentTime(startTarget)
           }
@@ -784,7 +862,7 @@ export function App() {
           const isAccompaniment =
             (handMode === 'right' && note.hand === 'left') ||
             (handMode === 'left' && note.hand === 'right')
-          const shouldPlayAudio = !isWaitMode || isAccompaniment
+          const shouldPlayAudio = currentPlayMode !== 'practice' || isAccompaniment
 
           if (shouldPlayAudio) {
             const leadTimeSec = Math.max(0, note.startTime - prevTime)
@@ -855,8 +933,8 @@ export function App() {
       setCurrentTime(startTime)
     }
 
-    // Trigger count-in pre-roll if enabled
-    if (isCountInEnabled) {
+    // Trigger count-in pre-roll only when inside the player view and enabled
+    if (isCountInEnabled && activeTab === 'player') {
       const beatsInMeasure = activePiece.timeSignature ? activePiece.timeSignature[0] : 4
       const bpm = activePiece.tempoBpm || 100
       const beatIntervalMs = Math.round((60 / bpm) * 1000)
@@ -932,6 +1010,7 @@ export function App() {
     }
 
     LibraryRepository.loadPiece(pieceId, editionId).then((loadedPiece) => {
+      skipNextEffectLoadRef.current = true
       setPiece(loadedPiece)
       setCurrentPieceId(pieceId)
       setEdition(editionId)
@@ -971,6 +1050,7 @@ export function App() {
 
   const handleSelectCustomPiece = (customPiece: Piece) => {
     SongStorageManager.savePiece(customPiece)
+    skipNextEffectLoadRef.current = true
     setPiece(customPiece)
     setCurrentPieceId(customPiece.id)
     setEdition('urtext')
@@ -1000,89 +1080,148 @@ export function App() {
     <div className="w-full h-full min-h-[100dvh] max-h-[100dvh] flex flex-col bg-[#09090d] text-zinc-100 overflow-hidden font-sans select-none relative">
       {/* Top Header Bar (Only visible outside the Player view) */}
       {activeTab !== 'player' && (
-        <header className="min-h-14 bg-zinc-950/90 backdrop-blur-xl border-b border-white/[0.08] px-4 sm:px-8 pl-[max(1rem,env(safe-area-inset-left),env(safe-area-inset-right))] pr-[max(1rem,env(safe-area-inset-left),env(safe-area-inset-right))] flex items-center justify-between z-30 select-none pt-[var(--sat)] shadow-md">
+        <header className="min-h-14 landscape:min-h-11 bg-zinc-950/90 backdrop-blur-xl border-b border-white/[0.08] px-2.5 sm:px-8 pl-[max(0.625rem,env(safe-area-inset-left))] pr-[max(0.625rem,env(safe-area-inset-right))] flex items-center justify-between gap-1.5 z-30 select-none pt-[var(--sat)] shadow-md flex-shrink-0">
           {/* Logo */}
-          <div
+          <button
+            type="button"
             onClick={() => setActiveTab('songs')}
-            className="flex items-center gap-2.5 cursor-pointer group"
+            className="flex items-center gap-1.5 sm:gap-2 cursor-pointer group flex-shrink-0"
           >
-            <div className="w-8 h-8 rounded-xl bg-gradient-to-tr from-orange-500 via-orange-400 to-amber-500 flex items-center justify-center text-white shadow-[0_0_15px_rgba(249,115,22,0.5)] group-hover:scale-105 transition-transform">
-              <Music2 className="w-5 h-5 fill-current" />
+            <div className="w-7 h-7 sm:w-8 sm:h-8 rounded-xl bg-gradient-to-tr from-orange-500 via-orange-400 to-amber-500 flex items-center justify-center text-white shadow-[0_0_15px_rgba(249,115,22,0.5)] group-hover:scale-105 transition-transform">
+              <Music2 className="w-4 h-4 fill-current" />
             </div>
-            <span className="font-bold text-base tracking-wide text-transparent bg-clip-text bg-gradient-to-r from-orange-400 to-amber-200">
+            <span className="font-bold text-xs sm:text-base tracking-wide text-transparent bg-clip-text bg-gradient-to-r from-orange-400 to-amber-200">
               VIRTUOSO
             </span>
-          </div>
+          </button>
 
-          {/* Right Action Controls */}
-          <div className="flex items-center gap-2">
-            {/* Language Switcher Pill */}
-            <div className="flex items-center bg-zinc-900 border border-white/10 rounded-xl p-0.5 text-[10px] font-bold">
-              {(['en', 'de', 'fr', 'ja', 'zh'] as LanguageCode[]).map((lang) => (
-                <button
-                  key={lang}
-                  onClick={() => setLanguage(lang)}
-                  className={`px-2 py-0.5 rounded-lg transition-colors uppercase font-mono ${
-                    language === lang
-                      ? 'bg-orange-500 text-white shadow-sm'
-                      : 'text-zinc-400 hover:text-zinc-200'
-                  }`}
-                >
-                  {lang}
-                </button>
-              ))}
+          {/* Right Action Controls (Guaranteed fit inside 360px+ iPhone portrait with zero clipping) */}
+          <div className="flex items-center gap-1 sm:gap-2 flex-shrink-0">
+            {/* Compact Language Dropdown Switcher (Mobile) & Inline Strip (Desktop) */}
+            <div ref={langMenuRef} className="relative">
+              <button
+                type="button"
+                onClick={() => setLangMenuOpen((prev) => !prev)}
+                className="flex md:hidden items-center gap-0.5 h-8 px-2 rounded-xl bg-zinc-900 hover:bg-zinc-800 border border-white/10 text-zinc-200 text-[10px] font-mono font-bold uppercase active:scale-95 transition-all"
+                aria-label={language === 'de' ? 'Sprache ändern' : 'Change language'}
+              >
+                <Globe className="w-3.5 h-3.5 text-orange-400" />
+                <span>{language}</span>
+                <ChevronDown className="w-2.5 h-2.5 text-zinc-500" />
+              </button>
+
+              {langMenuOpen && (
+                <div className="absolute right-0 top-full mt-2 w-40 bg-zinc-900/95 backdrop-blur-2xl border border-white/15 rounded-2xl shadow-2xl p-1.5 z-50 flex flex-col gap-1">
+                  {(
+                    [
+                      { code: 'en', label: 'English' },
+                      { code: 'de', label: 'Deutsch' },
+                      { code: 'fr', label: 'Français' },
+                      { code: 'ja', label: '日本語' },
+                      { code: 'zh', label: '中文' },
+                    ] as { code: LanguageCode; label: string }[]
+                  ).map((item) => (
+                    <button
+                      key={item.code}
+                      type="button"
+                      onClick={() => {
+                        setLanguage(item.code)
+                        setLangMenuOpen(false)
+                      }}
+                      className={`flex items-center justify-between px-3 py-2 rounded-xl text-xs font-semibold transition-colors ${
+                        language === item.code
+                          ? 'bg-orange-500 text-zinc-950 font-bold'
+                          : 'text-zinc-300 hover:bg-zinc-800'
+                      }`}
+                    >
+                      <span>{item.label}</span>
+                      <span className="font-mono text-[10px] uppercase opacity-75">{item.code}</span>
+                    </button>
+                  ))}
+                </div>
+              )}
+
+              {/* Desktop inline pills */}
+              <div className="hidden md:flex items-center bg-zinc-900 border border-white/10 rounded-xl p-0.5 text-[10px] font-bold">
+                {(['en', 'de', 'fr', 'ja', 'zh'] as LanguageCode[]).map((lang) => (
+                  <button
+                    key={lang}
+                    type="button"
+                    onClick={() => setLanguage(lang)}
+                    className={`px-2 py-1 rounded-lg transition-colors uppercase font-mono ${
+                      language === lang
+                        ? 'bg-orange-500 text-zinc-950 font-extrabold shadow-sm'
+                        : 'text-zinc-400 hover:text-zinc-200'
+                    }`}
+                  >
+                    {lang}
+                  </button>
+                ))}
+              </div>
             </div>
 
             {/* Library / Catalog */}
             <button
+              type="button"
               onClick={() => setIsLibraryModalOpen(true)}
-              className="flex items-center gap-1.5 px-3 py-1.5 rounded-xl border border-white/10 bg-zinc-900 text-zinc-300 hover:text-orange-400 text-xs font-semibold transition-colors"
+              className="flex items-center justify-center gap-1.5 w-8 h-8 sm:w-auto sm:h-9 sm:px-3 rounded-xl border border-white/10 bg-zinc-900 hover:bg-zinc-800 text-zinc-300 hover:text-orange-400 text-xs font-semibold transition-colors active:scale-95"
+              title={t.ui.library}
+              aria-label={t.ui.library}
             >
-              <BookOpen className="w-3.5 h-3.5 text-orange-400" />
-              <span className="hidden sm:inline">{t.ui.library}</span>
+              <BookOpen className="w-3.5 h-3.5 sm:w-4 sm:h-4 text-orange-400" />
+              <span className="hidden lg:inline">{t.ui.library}</span>
             </button>
 
             {/* Warm-Ups */}
             <button
+              type="button"
               onClick={() => setIsWarmupsModalOpen(true)}
-              className="flex items-center gap-1.5 px-3 py-1.5 rounded-xl border border-white/10 bg-zinc-900 text-zinc-300 hover:text-orange-400 text-xs font-semibold transition-colors"
+              className="flex items-center justify-center gap-1.5 w-8 h-8 sm:w-auto sm:h-9 sm:px-3 rounded-xl border border-white/10 bg-zinc-900 hover:bg-zinc-800 text-zinc-300 hover:text-orange-400 text-xs font-semibold transition-colors active:scale-95"
               title="Pianist Warm-Ups & Finger Drills"
+              aria-label="Warm-Ups"
             >
-              <Flame className="w-3.5 h-3.5 text-orange-400" />
-              <span className="hidden sm:inline">Warm-Ups</span>
+              <Flame className="w-3.5 h-3.5 sm:w-4 sm:h-4 text-orange-400" />
+              <span className="hidden lg:inline">Warm-Ups</span>
             </button>
 
             {/* Audio Acoustics */}
             <button
+              type="button"
               onClick={() => setIsAudioSettingsOpen(true)}
-              className="flex items-center gap-1.5 px-3 py-1.5 rounded-xl border border-white/10 bg-zinc-900 text-zinc-300 hover:text-orange-400 text-xs font-semibold transition-colors"
+              className="flex items-center justify-center gap-1.5 w-8 h-8 sm:w-auto sm:h-9 sm:px-3 rounded-xl border border-white/10 bg-zinc-900 hover:bg-zinc-800 text-zinc-300 hover:text-orange-400 text-xs font-semibold transition-colors active:scale-95"
               title="Concert Hall Reverb & Touch Settings"
+              aria-label="Acoustics"
             >
-              <Sliders className="w-3.5 h-3.5 text-amber-400" />
-              <span className="hidden sm:inline">Acoustics</span>
+              <Sliders className="w-3.5 h-3.5 sm:w-4 sm:h-4 text-amber-400" />
+              <span className="hidden lg:inline">Acoustics</span>
             </button>
 
             {/* Roland LX-9 Bluetooth Status */}
             <button
+              type="button"
               onClick={() => setIsRolandModalOpen(true)}
-              className={`flex items-center gap-1.5 px-3 py-1.5 rounded-xl border text-xs font-semibold transition-all ${
+              className={`flex items-center justify-center gap-1.5 w-8 h-8 sm:w-auto sm:h-9 sm:px-3 rounded-xl border text-xs font-semibold transition-all active:scale-95 ${
                 midiState.isConnected
                   ? 'bg-blue-500/15 border-blue-500/40 text-blue-300'
-                  : 'bg-zinc-900 border-white/10 text-zinc-400 hover:text-zinc-200'
+                  : 'bg-zinc-900 hover:bg-zinc-800 border-white/10 text-zinc-400 hover:text-zinc-200'
               }`}
+              title={t.pairPiano}
+              aria-label={t.pairPiano}
             >
-              <Bluetooth className={`w-3.5 h-3.5 ${midiState.isConnected ? 'text-blue-400 animate-pulse' : ''}`} />
-              <span className="hidden sm:inline">
+              <Bluetooth className={`w-3.5 h-3.5 sm:w-4 sm:h-4 ${midiState.isConnected ? 'text-blue-400 animate-pulse' : ''}`} />
+              <span className="hidden lg:inline">
                 {midiState.isConnected ? `Roland (${midiState.damperPedal})` : t.pairPiano}
               </span>
             </button>
 
             {/* Mute Toggle */}
             <button
+              type="button"
               onClick={handleToggleMute}
-              className="w-8 h-8 rounded-xl bg-zinc-900 border border-white/10 flex items-center justify-center text-zinc-400 hover:text-white"
+              className="w-8 h-8 sm:w-9 sm:h-9 rounded-xl bg-zinc-900 hover:bg-zinc-800 border border-white/10 flex items-center justify-center text-zinc-400 hover:text-white active:scale-95 transition-all"
+              aria-label={isMuted ? 'Unmute' : 'Mute'}
             >
-              {isMuted ? <VolumeX className="w-4 h-4 text-red-400" /> : <Volume2 className="w-4 h-4" />}
+              {isMuted ? <VolumeX className="w-3.5 h-3.5 sm:w-4 sm:h-4 text-red-400" /> : <Volume2 className="w-3.5 h-3.5 sm:w-4 sm:h-4" />}
             </button>
           </div>
         </header>
@@ -1134,7 +1273,13 @@ export function App() {
             onToggleLoop={() => setIsLooping(!isLooping)}
             onLoopRangeChange={setLoopRange}
             onOpenBluetoothModal={() => setIsRolandModalOpen(true)}
-            onBackToDiscovery={() => setActiveTab('songs')}
+            onOpenTutorials={() => setIsTutorialsOpen(true)}
+            onBackToDiscovery={() => {
+              cancelCountIn()
+              PianoAudioEngine.getInstance().stopAllVoices()
+              setIsPlaying(false)
+              setActiveTab('songs')
+            }}
             onScreenKeyPress={handleScreenKeyPress}
             onScreenKeyRelease={handleScreenKeyRelease}
             onTogglePedal={handleTogglePedal}
@@ -1173,6 +1318,7 @@ export function App() {
         }}
         currentPiece={activePiece}
         currentEdition={edition}
+        currentTime={currentTime}
         isPlaying={isPlaying}
         onTogglePlay={handleTogglePlay}
         damperPedal={midiState.damperPedal}
@@ -1181,21 +1327,24 @@ export function App() {
 
       {/* Interactive Sight Reading Note Trainer Modal */}
       {isSightReadingOpen && (
-        <div className="fixed inset-0 z-50 bg-black/80 backdrop-blur-xl flex flex-col p-4 sm:p-6 overflow-hidden">
-          <div className="flex justify-between items-center mb-4 max-w-4xl mx-auto w-full">
-            <h2 className="text-lg font-bold text-white flex items-center gap-2">
+        <div
+          className="fixed inset-0 z-50 bg-black/85 backdrop-blur-xl flex flex-col pt-[max(1rem,var(--sat))] pb-[max(1rem,var(--sab))] pl-[max(1rem,var(--sal))] pr-[max(1rem,var(--sar))] sm:p-6 overflow-hidden"
+        >
+          <div className="flex justify-between items-center mb-3 max-w-4xl mx-auto w-full flex-shrink-0">
+            <h2 className="text-base sm:text-lg font-bold text-white flex items-center gap-2">
               <Music2 className="w-5 h-5 text-orange-400" />
               <span>{t.sightReading.title}</span>
             </h2>
             <button
+              type="button"
               onClick={() => setIsSightReadingOpen(false)}
-              className="flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-zinc-900 hover:bg-zinc-800 text-zinc-300 hover:text-white font-bold text-xs transition-colors"
+              className="flex items-center gap-1.5 px-3.5 py-2 rounded-xl bg-zinc-900 hover:bg-zinc-800 border border-white/10 text-zinc-200 hover:text-white font-bold text-xs transition-colors active:scale-95"
             >
-              <X className="w-3.5 h-3.5" />
+              <X className="w-4 h-4" />
               <span>{t.ui.close}</span>
             </button>
           </div>
-          <div className="flex-1 max-w-4xl mx-auto w-full overflow-hidden">
+          <div className="flex-1 min-h-0 max-w-4xl mx-auto w-full overflow-hidden rounded-2xl border border-white/10">
             <NoteReadingTrainer
               language={language}
             />
@@ -1256,32 +1405,36 @@ export function App() {
 
       {/* Video Masterclasses / Tutorials Modal */}
       {isTutorialsOpen && activePiece && (
-        <div className="fixed inset-0 z-50 bg-black/85 backdrop-blur-xl flex flex-col p-4 sm:p-6 overflow-hidden">
-          <div className="flex justify-between items-center mb-3 max-w-5xl mx-auto w-full">
-            <h2 className="text-lg font-bold text-white flex items-center gap-2">
+        <div className="fixed inset-0 z-50 bg-black/85 backdrop-blur-xl flex flex-col pt-[max(1rem,var(--sat))] pb-[max(1rem,var(--sab))] pl-[max(1rem,var(--sal))] pr-[max(1rem,var(--sar))] sm:p-6 overflow-hidden">
+          <div className="flex justify-between items-center mb-3 max-w-5xl mx-auto w-full flex-shrink-0">
+            <h2 className="text-base sm:text-lg font-bold text-white flex items-center gap-2">
               <GraduationCap className="w-5 h-5 text-orange-400" />
-              <span>Masterclasses & Pedagogy</span>
+              <span>{language === 'de' ? 'Meisterkurse & Pädagogik' : 'Masterclasses & Pedagogy'}</span>
             </h2>
             <button
+              type="button"
               onClick={() => setIsTutorialsOpen(false)}
-              className="flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-zinc-900 hover:bg-zinc-800 text-zinc-300 hover:text-white font-bold text-xs transition-colors"
+              className="flex items-center gap-1.5 px-3.5 py-2 rounded-xl bg-zinc-900 hover:bg-zinc-800 border border-white/10 text-zinc-200 hover:text-white font-bold text-xs transition-colors active:scale-95"
             >
-              <X className="w-3.5 h-3.5" />
+              <X className="w-4 h-4" />
               <span>{t.ui.close}</span>
             </button>
           </div>
-          <div className="flex-1 max-w-5xl mx-auto w-full overflow-hidden">
+          <div className="flex-1 min-h-0 max-w-5xl mx-auto w-full overflow-hidden rounded-2xl border border-white/10">
             <TutorialsView
               piece={activePiece}
               language={language}
               onClose={() => setIsTutorialsOpen(false)}
-              onLaunchPracticePassage={(startMeasure, endMeasure, tempoRate) => {
+              onLaunchPracticePassage={(targetStartMeasure, targetEndMeasure, tempoRate) => {
                 setIsTutorialsOpen(false)
                 setActiveTab('player')
                 setIsLooping(true)
-                setLoopRange([startMeasure, endMeasure])
+                setLoopRange([targetStartMeasure, targetEndMeasure])
                 setPlaybackRate(tempoRate)
-                setCurrentTime(0)
+                const targetNote = activePiece.notes.find((n) => n.measure >= targetStartMeasure)
+                const targetSec = targetNote ? targetNote.startTime : 0
+                resetPlaybackToIndex(targetSec, activePiece.notes)
+                setCurrentTime(targetSec)
               }}
               onSwitchToSightReading={() => {
                 setIsTutorialsOpen(false)

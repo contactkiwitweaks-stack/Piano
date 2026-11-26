@@ -5,6 +5,13 @@ import { pipeline } from 'stream/promises';
 const repo = 'contactkiwitweaks-stack/Piano';
 
 function getGithubToken() {
+  if (process.env.GITHUB_TOKEN) return process.env.GITHUB_TOKEN;
+  if (fs.existsSync('scripts/github_token.json')) {
+    try {
+      const data = JSON.parse(fs.readFileSync('scripts/github_token.json', 'utf8'));
+      if (data.token) return data.token;
+    } catch {}
+  }
   try {
     const gcmOutput = execSync('git credential fill', {
       input: 'protocol=https\nhost=github.com\n\n',
@@ -26,13 +33,24 @@ async function waitAndDownload() {
   const headers = { 'User-Agent': 'Node-Virtuoso-Builder' };
   if (token) headers['Authorization'] = `Bearer ${token}`;
 
-  console.log('Fetching newest workflow runs...');
-  const listRes = await fetch(`https://api.github.com/repos/${repo}/actions/runs?per_page=3`, { headers });
-  const listData = await listRes.json();
-  const latestRun = listData.workflow_runs?.[0];
+  const targetSha = execSync('git rev-parse HEAD', { encoding: 'utf8' }).trim();
+  console.log(`Waiting for GitHub Actions workflow run for commit ${targetSha.slice(0, 7)}...`);
+
+  let latestRun = null;
+  for (let attempt = 0; attempt < 30; attempt++) {
+    const listRes = await fetch(`https://api.github.com/repos/${repo}/actions/runs?per_page=5`, { headers });
+    const listData = await listRes.json();
+    const matched = (listData.workflow_runs || []).find((r) => r.head_sha === targetSha);
+    if (matched) {
+      latestRun = matched;
+      break;
+    }
+    console.log(`[${new Date().toLocaleTimeString()}] Waiting for GitHub to register Run for ${targetSha.slice(0, 7)}...`);
+    await new Promise((r) => setTimeout(r, 4000));
+  }
 
   if (!latestRun) {
-    console.error('No workflow runs found.');
+    console.error(`Timed out waiting for workflow run matching commit ${targetSha}.`);
     process.exit(1);
   }
 

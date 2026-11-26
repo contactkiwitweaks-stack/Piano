@@ -36,29 +36,37 @@ export const WarmupsModal: React.FC<WarmupsModalProps> = ({
   if (!isOpen) return null
 
   return (
-    <div className="fixed inset-0 z-50 bg-black/85 backdrop-blur-md flex items-center justify-center p-3 sm:p-5">
-      <div className="w-full max-w-2xl bg-zinc-900 border border-zinc-700/80 rounded-2xl shadow-2xl overflow-hidden flex flex-col text-zinc-100 max-h-[85vh] animate-in fade-in zoom-in-95 duration-200">
+    <div
+      onClick={onClose}
+      className="fixed inset-0 z-50 bg-black/85 backdrop-blur-md flex items-end sm:items-center justify-center p-0 sm:p-5"
+    >
+      <div
+        onClick={(e) => e.stopPropagation()}
+        className="w-full max-w-2xl bg-zinc-900 border border-zinc-700/80 rounded-t-3xl sm:rounded-2xl shadow-2xl overflow-hidden flex flex-col text-zinc-100 max-h-[86dvh] animate-in fade-in zoom-in-95 duration-200"
+      >
         {/* Header */}
-        <div className="flex items-center justify-between px-5 py-3.5 bg-zinc-950 border-b border-zinc-800">
-          <div className="flex items-center gap-2.5">
-            <div className="w-8 h-8 rounded-xl bg-orange-500/20 border border-orange-500/40 flex items-center justify-center text-orange-400">
+        <div className="flex items-center justify-between px-5 py-3.5 bg-zinc-950 border-b border-zinc-800 flex-shrink-0">
+          <div className="flex items-center gap-2.5 min-w-0">
+            <div className="w-8 h-8 rounded-xl bg-orange-500/20 border border-orange-500/40 flex items-center justify-center text-orange-400 flex-shrink-0">
               <Flame className="w-4 h-4" />
             </div>
-            <div>
-              <h3 className="text-sm font-bold text-zinc-100">{t.title}</h3>
-              <p className="text-[10px] text-zinc-400">{t.subtitle}</p>
+            <div className="min-w-0">
+              <h3 className="text-sm font-bold text-zinc-100 truncate">{t.title}</h3>
+              <p className="text-[10px] text-zinc-400 truncate">{t.subtitle}</p>
             </div>
           </div>
           <button
+            type="button"
             onClick={onClose}
-            className="w-7 h-7 rounded-lg bg-zinc-800 hover:bg-zinc-700 flex items-center justify-center text-zinc-400 hover:text-zinc-200"
+            className="w-8 h-8 rounded-xl bg-zinc-800 hover:bg-zinc-700 flex items-center justify-center text-zinc-300 hover:text-white flex-shrink-0 ml-2"
+            aria-label="Close warmups"
           >
             <X className="w-4 h-4" />
           </button>
         </div>
 
         {/* Category Selector Pills */}
-        <div className="px-5 py-2.5 bg-zinc-950/60 border-b border-zinc-800/60 flex items-center gap-2 overflow-x-auto scrollbar-none">
+        <div className="px-5 py-2.5 bg-zinc-950/60 border-b border-zinc-800/60 flex items-center gap-2 overflow-x-auto touch-pan-x scrollbar-none flex-shrink-0">
           {[
             { id: 'all', label: language === 'de' ? 'Alle Übungen' : 'All Warmups' },
             { id: 'scales', label: language === 'de' ? 'Tonleitern' : 'Scales' },
@@ -67,6 +75,7 @@ export const WarmupsModal: React.FC<WarmupsModalProps> = ({
           ].map((cat) => (
             <button
               key={cat.id}
+              type="button"
               onClick={() => setSelectedCat(cat.id as typeof selectedCat)}
               className={`px-3 py-1.5 rounded-xl text-xs font-bold transition-all whitespace-nowrap ${
                 selectedCat === cat.id
@@ -80,7 +89,7 @@ export const WarmupsModal: React.FC<WarmupsModalProps> = ({
         </div>
 
         {/* Content List */}
-        <div className="p-4 overflow-y-auto space-y-3">
+        <div className="p-4 pb-[max(1.25rem,env(safe-area-inset-bottom))] overflow-y-auto touch-pan-y space-y-3 flex-1 min-h-0">
           {filteredWarmups.map((exercise) => (
             <div
               key={exercise.id}

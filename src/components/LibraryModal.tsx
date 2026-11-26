@@ -1,4 +1,4 @@
-import React, { useState } from 'react'
+import React, { useState, useEffect } from 'react'
 import type { Piece } from '../types/music'
 import type { MasterEditionId } from '../types/edition'
 import { LibraryRepository } from '../library/LibraryRepository'
@@ -33,7 +33,16 @@ export const LibraryModal: React.FC<LibraryModalProps> = ({
   const [searchQuery, setSearchQuery] = useState('')
   const [selectedPieceId, setSelectedPieceId] = useState<string>(currentPieceId)
   const [selectedEdition, setSelectedEdition] = useState<MasterEditionId>(currentEdition)
+  const [mobilePane, setMobilePane] = useState<'list' | 'details'>('list')
   const [isLoading, setIsLoading] = useState(false)
+
+  useEffect(() => {
+    if (isOpen) {
+      setSelectedPieceId(currentPieceId)
+      setSelectedEdition(currentEdition)
+      setMobilePane('list')
+    }
+  }, [isOpen, currentPieceId, currentEdition])
 
   const t = translations[language]
   const catalog = LibraryRepository.getCatalog()
@@ -62,10 +71,16 @@ export const LibraryModal: React.FC<LibraryModalProps> = ({
   }
 
   return (
-    <div className="fixed inset-0 z-50 bg-black/85 backdrop-blur-md flex items-center justify-center p-3 sm:p-5">
-      <div className="w-full max-w-3xl bg-zinc-900 border border-zinc-700/80 rounded-2xl shadow-2xl overflow-hidden flex flex-col text-zinc-100 max-h-[88vh] animate-in fade-in zoom-in-95 duration-200">
+    <div
+      onClick={onClose}
+      className="fixed inset-0 z-50 bg-black/85 backdrop-blur-md flex items-end sm:items-center justify-center p-0 sm:p-5"
+    >
+      <div
+        onClick={(e) => e.stopPropagation()}
+        className="w-full max-w-3xl bg-zinc-900 border border-zinc-700/80 rounded-t-3xl sm:rounded-2xl shadow-2xl overflow-hidden flex flex-col text-zinc-100 h-[88dvh] sm:h-auto sm:max-h-[88dvh] animate-in fade-in zoom-in-95 duration-200"
+      >
         {/* Header */}
-        <div className="flex items-center justify-between px-5 py-3.5 bg-zinc-950 border-b border-zinc-800">
+        <div className="flex items-center justify-between px-5 py-3.5 bg-zinc-950 border-b border-zinc-800 flex-shrink-0">
           <div className="flex items-center gap-2.5">
             <div className="w-8 h-8 rounded-xl bg-amber-500/20 border border-amber-500/40 flex items-center justify-center text-amber-400">
               <BookOpen className="w-4 h-4" />
@@ -76,29 +91,66 @@ export const LibraryModal: React.FC<LibraryModalProps> = ({
             </div>
           </div>
           <button
+            type="button"
             onClick={onClose}
-            className="w-7 h-7 rounded-lg bg-zinc-800 hover:bg-zinc-700 flex items-center justify-center text-zinc-400 hover:text-zinc-200"
+            className="w-8 h-8 rounded-xl bg-zinc-800 hover:bg-zinc-700 flex items-center justify-center text-zinc-300 hover:text-white active:scale-95"
+            aria-label="Close library"
           >
             <X className="w-4 h-4" />
           </button>
         </div>
 
+        {/* Mobile Pane Switcher (Pieces List vs Selected Piece Editions) */}
+        <div className="flex md:hidden items-center gap-1 p-2 bg-zinc-950/90 border-b border-zinc-800 flex-shrink-0">
+          <button
+            type="button"
+            onClick={() => setMobilePane('list')}
+            className={`flex-1 py-2 rounded-xl text-xs font-bold transition-all ${
+              mobilePane === 'list'
+                ? 'bg-amber-500 text-zinc-950 shadow-sm'
+                : 'bg-zinc-900 text-zinc-400'
+            }`}
+          >
+            {language === 'de' ? `Repertoire (${filteredCatalog.length})` : `Repertoire (${filteredCatalog.length})`}
+          </button>
+          <button
+            type="button"
+            onClick={() => setMobilePane('details')}
+            className={`flex-1 py-2 rounded-xl text-xs font-bold transition-all truncate px-2 ${
+              mobilePane === 'details'
+                ? 'bg-amber-500 text-zinc-950 shadow-sm'
+                : 'bg-zinc-900 text-zinc-400'
+            }`}
+          >
+            {language === 'de' ? 'Edition & Details' : 'Editions & Details'}
+          </button>
+        </div>
+
         {/* Search Bar */}
-        <div className="px-5 py-2.5 bg-zinc-950/60 border-b border-zinc-800 flex items-center gap-2 text-xs">
+        <div className={`${mobilePane === 'details' ? 'hidden md:flex' : 'flex'} px-5 py-2.5 bg-zinc-950/60 border-b border-zinc-800 items-center gap-2 text-xs flex-shrink-0`}>
           <Search className="w-4 h-4 text-zinc-400 flex-shrink-0" />
           <input
             type="text"
-            placeholder="Search Chopin, Beethoven, Liszt, Debussy..."
+            placeholder="Search Chopin, Beethoven, Liszt, Queen, Mozart..."
             value={searchQuery}
             onChange={(e) => setSearchQuery(e.target.value)}
             className="w-full bg-transparent border-none text-zinc-200 focus:outline-none placeholder-zinc-500 text-xs"
           />
+          {searchQuery && (
+            <button
+              type="button"
+              onClick={() => setSearchQuery('')}
+              className="p-1 text-zinc-400 hover:text-white"
+            >
+              <X className="w-3.5 h-3.5" />
+            </button>
+          )}
         </div>
 
         {/* Two-Column Browser: Pieces List (Left) & Edition Chooser (Right) */}
-        <div className="flex-1 flex flex-col md:flex-row overflow-hidden divide-y md:divide-y-0 md:divide-x divide-zinc-800">
+        <div className="flex-1 min-h-0 flex flex-col md:flex-row overflow-hidden md:divide-x divide-zinc-800">
           {/* Left Column: Piece List */}
-          <div className="w-full md:w-1/2 p-3 overflow-y-auto space-y-2 max-h-64 md:max-h-none">
+          <div className={`${mobilePane === 'list' ? 'block' : 'hidden md:block'} w-full md:w-1/2 p-3 overflow-y-auto touch-pan-y space-y-2 flex-1 min-h-0`}>
             {filteredCatalog.map((piece) => {
               const isSelected = piece.id === selectedPieceId
               return (
@@ -106,10 +158,10 @@ export const LibraryModal: React.FC<LibraryModalProps> = ({
                   key={piece.id}
                   onClick={() => {
                     setSelectedPieceId(piece.id)
-                    // Reset edition to first available if not supported
                     if (!piece.availableEditions.some((e) => e.id === selectedEdition)) {
                       setSelectedEdition(piece.availableEditions[0].id)
                     }
+                    setMobilePane('details')
                   }}
                   className={`p-3 rounded-xl border transition-all cursor-pointer flex items-center justify-between ${
                     isSelected
@@ -136,7 +188,7 @@ export const LibraryModal: React.FC<LibraryModalProps> = ({
                     </div>
                   </div>
 
-                  <div className="flex items-center gap-1.5 text-[10px] text-amber-400/90 font-mono">
+                  <div className="flex items-center gap-1.5 text-[10px] text-amber-400/90 font-mono flex-shrink-0 ml-2">
                     <Star className="w-3 h-3 fill-current" />
                     <span>Lvl {piece.difficulty}</span>
                   </div>
@@ -146,7 +198,7 @@ export const LibraryModal: React.FC<LibraryModalProps> = ({
           </div>
 
           {/* Right Column: Edition Selector & Detailed Notes */}
-          <div className="w-full md:w-1/2 p-4 overflow-y-auto space-y-4 bg-zinc-950/40">
+          <div className={`${mobilePane === 'details' ? 'block' : 'hidden md:block'} w-full md:w-1/2 p-4 overflow-y-auto touch-pan-y space-y-4 bg-zinc-950/40 flex-1 min-h-0`}>
             {/* Visual Cover Header */}
             <div className="relative h-28 w-full rounded-2xl overflow-hidden border border-white/10 shadow-lg bg-zinc-950">
               <img
@@ -217,7 +269,7 @@ export const LibraryModal: React.FC<LibraryModalProps> = ({
         </div>
 
         {/* Footer */}
-        <div className="px-5 py-3 bg-zinc-950 border-t border-zinc-800 flex items-center justify-between">
+        <div className="px-5 py-3 pb-[max(0.75rem,env(safe-area-inset-bottom))] bg-zinc-950 border-t border-zinc-800 flex items-center justify-between flex-shrink-0">
           <span className="text-[10px] text-zinc-500 font-mono">
             Edition: {selectedEdition.toUpperCase()}
           </span>

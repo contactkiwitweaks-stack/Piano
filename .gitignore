@@ -19,6 +19,8 @@ scripts/*.exe
 scripts/*.mp3
 scripts/*.pcm
 scripts/*.webm
+scripts/github_token.json
+scripts/github_auth_state.json
 .vscode/*
 !.vscode/extensions.json
 .idea

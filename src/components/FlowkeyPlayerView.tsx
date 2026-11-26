@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useCallback, useMemo } from 'react'
+import React, { useState, useEffect, useCallback, useMemo, useRef } from 'react'
 import type { Piece } from '../types/music'
 import type { MasterEditionId } from '../types/edition'
 import type { LanguageCode } from '../i18n/translations'
@@ -31,6 +31,7 @@ import {
   Trophy,
   Target,
   Flame,
+  BookOpen,
 } from 'lucide-react'
 
 interface FlowkeyPlayerViewProps {
@@ -75,6 +76,7 @@ interface FlowkeyPlayerViewProps {
   onOpenAudioSettings?: () => void
   onEditionChange?: (edition: MasterEditionId) => void
   onOpenBluetoothModal: () => void
+  onOpenTutorials?: () => void
   onBackToDiscovery: () => void
   onScreenKeyPress?: (midi: number) => void
   onScreenKeyRelease?: (midi: number) => void
@@ -82,6 +84,13 @@ interface FlowkeyPlayerViewProps {
   countInBeat?: number | null
   isCountInEnabled?: boolean
   onToggleCountIn?: () => void
+}
+
+const formatTimeShort = (sec: number) => {
+  const safe = Math.max(0, Math.floor(sec || 0))
+  const m = Math.floor(safe / 60)
+  const s = safe % 60
+  return `${m}:${s.toString().padStart(2, '0')}`
 }
 
 export const FlowkeyPlayerView: React.FC<FlowkeyPlayerViewProps> = ({
@@ -126,6 +135,7 @@ export const FlowkeyPlayerView: React.FC<FlowkeyPlayerViewProps> = ({
   onOpenAudioSettings,
   onEditionChange,
   onOpenBluetoothModal,
+  onOpenTutorials,
   onBackToDiscovery,
   onScreenKeyPress,
   onScreenKeyRelease,
@@ -156,9 +166,48 @@ export const FlowkeyPlayerView: React.FC<FlowkeyPlayerViewProps> = ({
     return localStorage.getItem('virtuoso_ylia_wallpaper') || '/images/ylia_bg.png'
   })
   const [mobileSettingsOpen, setMobileSettingsOpen] = useState(false)
-  // Acoustic Microphone Piano Recognition State
   const [isMicActive, setIsMicActive] = useState<boolean>(() => AcousticNoteRecognizer.getInstance().isListening)
   const [micLevel, setMicLevel] = useState<number>(0)
+  const isScrubbingRef = useRef(false)
+  const scrubberRef = useRef<HTMLDivElement>(null)
+  const speedMenuRef = useRef<HTMLDivElement>(null)
+  const editionMenuRef = useRef<HTMLDivElement>(null)
+  const themeMenuRef = useRef<HTMLDivElement>(null)
+  const masterclassRef = useRef<HTMLDivElement>(null)
+
+  // Close player popovers & drawers on Escape or clicking outside (immune to backdrop-filter containing blocks)
+  useEffect(() => {
+    const onKeyDown = (e: KeyboardEvent) => {
+      if (e.key !== 'Escape') return
+      setSpeedMenuOpen(false)
+      setSectionsMenuOpen(false)
+      setEditionMenuOpen(false)
+      setThemeMenuOpen(false)
+      setIsMasterclassOpen(false)
+      setMobileSettingsOpen(false)
+    }
+    const onPointerDown = (e: PointerEvent) => {
+      const target = e.target as Node
+      if (speedMenuRef.current && !speedMenuRef.current.contains(target)) {
+        setSpeedMenuOpen(false)
+      }
+      if (editionMenuRef.current && !editionMenuRef.current.contains(target)) {
+        setEditionMenuOpen(false)
+      }
+      if (themeMenuRef.current && !themeMenuRef.current.contains(target)) {
+        setThemeMenuOpen(false)
+      }
+      if (masterclassRef.current && !masterclassRef.current.contains(target)) {
+        setIsMasterclassOpen(false)
+      }
+    }
+    window.addEventListener('keydown', onKeyDown)
+    document.addEventListener('pointerdown', onPointerDown)
+    return () => {
+      window.removeEventListener('keydown', onKeyDown)
+      document.removeEventListener('pointerdown', onPointerDown)
+    }
+  }, [])
 
   // Real-Time Steinway Model B Audio Engine Telemetry
   const [engineTelemetry, setEngineTelemetry] = useState<EngineTelemetry>(() =>
@@ -190,9 +239,11 @@ export const FlowkeyPlayerView: React.FC<FlowkeyPlayerViewProps> = ({
   const [customEndMeasure, setCustomEndMeasure] = useState<number>(loopRange[1] || 4)
 
   useEffect(() => {
-    setCustomStartMeasure(loopRange[0])
-    setCustomEndMeasure(loopRange[1])
-  }, [loopRange])
+    setCustomStartMeasure(Math.min(loopRange[0], maxMeasure))
+    setCustomEndMeasure(Math.min(Math.max(loopRange[0], loopRange[1]), maxMeasure))
+  }, [loopRange, maxMeasure])
+
+  const clampMeasure = useCallback((m: number) => Math.max(1, Math.min(maxMeasure, Math.round(m) || 1)), [maxMeasure])
 
   const handleListenInLoop = useCallback(
     (start: number, end: number) => {
@@ -200,6 +251,9 @@ export const FlowkeyPlayerView: React.FC<FlowkeyPlayerViewProps> = ({
       const clampedEnd = Math.max(clampedStart, Math.min(end, maxMeasure))
       onLoopRangeChange([clampedStart, clampedEnd])
       if (!isLooping) onToggleLoop()
+      if (onChangePlayMode) {
+        onChangePlayMode('flow')
+      }
 
       const startNote = piece.notes.find((n) => n.measure >= clampedStart)
       const startTime = startNote ? startNote.startTime : 0
@@ -207,7 +261,7 @@ export const FlowkeyPlayerView: React.FC<FlowkeyPlayerViewProps> = ({
       if (!isPlaying) onTogglePlay()
       setSectionsMenuOpen(false)
     },
-    [maxMeasure, onLoopRangeChange, isLooping, onToggleLoop, piece.notes, onSeek, isPlaying, onTogglePlay]
+    [maxMeasure, onLoopRangeChange, isLooping, onToggleLoop, onChangePlayMode, piece.notes, onSeek, isPlaying, onTogglePlay]
   )
 
   const handlePracticePart = useCallback(
@@ -246,10 +300,25 @@ export const FlowkeyPlayerView: React.FC<FlowkeyPlayerViewProps> = ({
     [maxMeasure, onLoopRangeChange, isLooping, onToggleLoop, setViewLayout, piece.notes, onSeek]
   )
 
+  const handlePracticeFromStartMeasure = useCallback(
+    (meas: number) => {
+      const clamped = clampMeasure(meas)
+      if (onStartMeasureChange) onStartMeasureChange(clamped)
+      if (isLooping) onToggleLoop()
+      if (onChangePlayMode) {
+        onChangePlayMode('practice')
+      }
+      setSectionsMenuOpen(false)
+    },
+    [clampMeasure, onStartMeasureChange, isLooping, onToggleLoop, onChangePlayMode]
+  )
+
   useEffect(() => {
     let animId: number
     const pollLevel = () => {
-      if (AcousticNoteRecognizer.getInstance().isListening) {
+      const listening = AcousticNoteRecognizer.getInstance().isListening
+      setIsMicActive((prev) => (prev !== listening ? listening : prev))
+      if (listening) {
         setMicLevel(AcousticNoteRecognizer.getInstance().inputLevel)
       } else {
         setMicLevel(0)
@@ -275,12 +344,31 @@ export const FlowkeyPlayerView: React.FC<FlowkeyPlayerViewProps> = ({
     }
   }
 
+  // Interactive scrub handler (supports both tap and finger drag)
+  const seekAtClientX = useCallback(
+    (clientX: number) => {
+      if (!scrubberRef.current) return
+      const rect = scrubberRef.current.getBoundingClientRect()
+      if (!rect.width) return
+      const ratio = Math.max(0, Math.min(1, (clientX - rect.left) / rect.width))
+      onSeek(ratio * (piece.duration || 1))
+    },
+    [onSeek, piece.duration]
+  )
+
   // Active section based on currentTime
   const currentSection =
     piece.sections.find((s) => currentTime >= s.startTime && currentTime <= s.endTime) ||
     piece.sections[0]
 
-  const progressPercent = Math.min(100, (currentTime / (piece.duration || 1)) * 100)
+  const progressPercent = Math.min(100, Math.max(0, (currentTime / (piece.duration || 1)) * 100))
+
+  const editionOptions = [
+    { id: 'urtext' as MasterEditionId, name: 'Henle Urtext', subtitle: 'Canonical Notation (Pure)', year: 'Urtext' },
+    { id: 'zimerman' as MasterEditionId, name: 'Krystian Zimerman', subtitle: 'Aristocratic Cantabile & Half-Pedal', year: '1987' },
+    { id: 'horowitz' as MasterEditionId, name: 'Vladimir Horowitz', subtitle: 'Fiery Bravura & Electric Coda (+10%)', year: '1968' },
+    { id: 'lang-lang' as MasterEditionId, name: 'Lang Lang', subtitle: 'Passionate Rubato & Bold Contrasts', year: '2001' },
+  ]
 
   return (
     <div className="w-full h-full flex flex-col bg-[#07070b] text-zinc-100 select-none overflow-hidden relative font-sans">
@@ -297,13 +385,16 @@ export const FlowkeyPlayerView: React.FC<FlowkeyPlayerViewProps> = ({
           </div>
         </div>
       )}
-      {/* 1. TOP PREMIUM PLAYER HEADER BAR */}
-      <header className="h-[calc(3rem+var(--sat))] landscape:h-11 pt-[var(--sat)] landscape:pt-0 bg-zinc-950/90 backdrop-blur-xl border-b border-white/[0.08] px-3 sm:px-6 pl-[max(0.75rem,env(safe-area-inset-left),env(safe-area-inset-right))] pr-[max(0.75rem,env(safe-area-inset-left),env(safe-area-inset-right))] flex items-center justify-between z-30 flex-shrink-0 shadow-md">
-        {/* Left: Back Button & Piece Info */}
-        <div className="flex items-center gap-2 sm:gap-3 min-w-0 flex-1">
+
+      {/* 1. TOP PREMIUM PLAYER HEADER BAR (Zero-overflow on iPhone 375px+ & Desktop) */}
+      <header className="min-h-[calc(3.15rem+var(--sat))] landscape:min-h-[2.75rem] pt-[var(--sat)] landscape:pt-0 bg-zinc-950/95 backdrop-blur-xl border-b border-white/[0.08] px-2.5 sm:px-5 pl-[max(0.65rem,env(safe-area-inset-left))] pr-[max(0.65rem,env(safe-area-inset-right))] flex items-center justify-between gap-2 z-30 flex-shrink-0 shadow-md">
+        {/* Left: Back Button & Readable Piece Info */}
+        <div className="flex items-center gap-2 min-w-0 flex-1">
           <button
+            type="button"
             onClick={onBackToDiscovery}
-            className="flex items-center gap-1 px-2.5 py-1.5 rounded-xl bg-zinc-900 hover:bg-zinc-800 border border-white/10 text-xs font-bold text-zinc-300 hover:text-white transition-all shadow-sm active:scale-95 flex-shrink-0"
+            className="flex items-center justify-center gap-1 h-9 px-2 sm:px-2.5 rounded-xl bg-zinc-900 hover:bg-zinc-800 border border-white/10 text-xs font-bold text-zinc-300 hover:text-white transition-all shadow-sm active:scale-95 flex-shrink-0"
+            aria-label="Back to songs"
           >
             <ChevronLeft className="w-4 h-4 text-orange-500" />
             <span className="hidden sm:inline">
@@ -311,17 +402,27 @@ export const FlowkeyPlayerView: React.FC<FlowkeyPlayerViewProps> = ({
             </span>
           </button>
 
-          <div className="truncate min-w-0 flex items-center gap-2 flex-1">
-            <span className="text-xs sm:text-sm font-bold text-zinc-100 truncate">
-              <span className="hidden sm:inline text-zinc-400 font-normal">{piece.composer} • </span>
-              {piece.title}
-            </span>
+          <div className="min-w-0 flex items-center gap-2 flex-1">
+            <button
+              type="button"
+              onClick={() => setSectionsMenuOpen(true)}
+              className="text-left min-w-0 truncate group"
+              title={piece.title}
+            >
+              <div className="text-xs sm:text-sm font-bold text-zinc-100 group-hover:text-amber-300 truncate transition-colors">
+                {piece.title}
+              </div>
+              <div className="text-[10px] text-zinc-400 truncate hidden md:block">
+                {piece.composer}
+              </div>
+            </button>
 
-            {/* Interactive Master Edition Selector */}
-            <div className="relative">
+            {/* Interactive Master Edition Selector (Desktop / Tablet) */}
+            <div ref={editionMenuRef} className="relative hidden md:block flex-shrink-0">
               <button
+                type="button"
                 onClick={() => setEditionMenuOpen(!editionMenuOpen)}
-                className="hidden sm:flex items-center gap-1 text-[10px] uppercase font-mono px-2 py-0.5 rounded-full bg-amber-500/20 hover:bg-amber-500/35 text-amber-300 border border-amber-500/40 transition-all cursor-pointer shadow-sm active:scale-95"
+                className="flex items-center gap-1 text-[10px] uppercase font-mono px-2 py-0.5 rounded-full bg-amber-500/20 hover:bg-amber-500/35 text-amber-300 border border-amber-500/40 transition-all cursor-pointer shadow-sm active:scale-95"
                 title="Switch Master Edition / Pianist Interpretation"
               >
                 <span>{edition}</span>
@@ -335,26 +436,22 @@ export const FlowkeyPlayerView: React.FC<FlowkeyPlayerViewProps> = ({
                       <Sparkles className="w-3.5 h-3.5 text-amber-400" />
                       Master Edition
                     </span>
-                    <button onClick={() => setEditionMenuOpen(false)} className="text-zinc-500 hover:text-zinc-300">
+                    <button type="button" onClick={() => setEditionMenuOpen(false)} className="text-zinc-500 hover:text-zinc-300">
                       <X className="w-3.5 h-3.5" />
                     </button>
                   </div>
 
-                  {[
-                    { id: 'urtext' as MasterEditionId, name: 'Henle Urtext', subtitle: 'Canonical Chopin Notation (Pure)', year: '1836' },
-                    { id: 'zimerman' as MasterEditionId, name: 'Krystian Zimerman', subtitle: 'Aristocratic Cantabile & Subtle Half-Pedal', year: '1987 DG' },
-                    { id: 'horowitz' as MasterEditionId, name: 'Vladimir Horowitz', subtitle: 'Fiery Bravura & Electric Coda (+10%)', year: '1968' },
-                    { id: 'lang-lang' as MasterEditionId, name: 'Lang Lang', subtitle: 'Passionate Rubato & Volcanic Contrasts', year: '2001' },
-                  ].map((ed) => {
+                  {editionOptions.map((ed) => {
                     const isSelected = edition === ed.id
                     return (
-                      <div
+                      <button
                         key={ed.id}
+                        type="button"
                         onClick={() => {
                           if (onEditionChange) onEditionChange(ed.id)
                           setEditionMenuOpen(false)
                         }}
-                        className={`p-2 rounded-xl cursor-pointer transition-all border ${
+                        className={`p-2 rounded-xl text-left cursor-pointer transition-all border ${
                           isSelected
                             ? 'bg-amber-500/20 border-amber-500/50 text-white'
                             : 'bg-zinc-800/40 hover:bg-zinc-800 border-transparent text-zinc-300'
@@ -365,7 +462,7 @@ export const FlowkeyPlayerView: React.FC<FlowkeyPlayerViewProps> = ({
                           <span className="text-[10px] font-mono text-zinc-500">{ed.year}</span>
                         </div>
                         <div className="text-[10px] text-zinc-400 mt-0.5 leading-tight">{ed.subtitle}</div>
-                      </div>
+                      </button>
                     )
                   })}
                 </div>
@@ -374,52 +471,55 @@ export const FlowkeyPlayerView: React.FC<FlowkeyPlayerViewProps> = ({
           </div>
         </div>
 
-        {/* Center: View Layout Switcher (Keys vs Sheet on Mobile & Desktop - No Split) */}
+        {/* Center: View Layout Switcher (Keys vs Sheet) */}
         <div className="flex items-center bg-zinc-900/90 border border-white/10 rounded-xl p-0.5 shadow-inner flex-shrink-0">
           <button
+            type="button"
             onClick={() => setViewLayout('keyboard')}
-            className={`flex items-center gap-1 sm:gap-1.5 px-2.5 sm:px-3 py-1 rounded-lg text-[11px] sm:text-xs font-bold transition-all ${
+            className={`flex items-center gap-1 px-2.5 py-1.5 rounded-lg text-[11px] sm:text-xs font-bold transition-all ${
               viewLayout === 'keyboard'
                 ? 'bg-amber-500 text-zinc-950 shadow-sm'
                 : 'text-zinc-400 hover:text-zinc-200'
             }`}
             title="Falling Keys Highway"
           >
-            <Layers className="w-3 h-3 sm:w-3.5 sm:h-3.5" />
+            <Layers className="w-3.5 h-3.5" />
             <span>Keys</span>
           </button>
           <button
+            type="button"
             onClick={() => setViewLayout('sheet')}
-            className={`flex items-center gap-1 sm:gap-1.5 px-2.5 sm:px-3 py-1 rounded-lg text-[11px] sm:text-xs font-bold transition-all ${
+            className={`flex items-center gap-1 px-2.5 py-1.5 rounded-lg text-[11px] sm:text-xs font-bold transition-all ${
               viewLayout === 'sheet'
                 ? 'bg-amber-500 text-zinc-950 shadow-sm'
                 : 'text-zinc-400 hover:text-zinc-200'
             }`}
             title="Full Sheet Music Notation"
           >
-            <FileText className="w-3 h-3 sm:w-3.5 sm:h-3.5" />
+            <FileText className="w-3.5 h-3.5" />
             <span>Sheet</span>
           </button>
         </div>
 
-        {/* Right: Section Selector & Status Tools */}
-        <div className="flex items-center gap-1.5 sm:gap-2 flex-shrink-0">
-          {/* Section & Part Selector (Desktop & Tablet) */}
+        {/* Right: Clean Responsive Actions */}
+        <div className="flex items-center gap-1.5 flex-shrink-0">
+          {/* Section & Part Selector (Desktop) */}
           <button
+            type="button"
             onClick={() => setSectionsMenuOpen(true)}
-            className="hidden lg:flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-zinc-900 hover:bg-zinc-800 border border-white/10 text-xs font-semibold text-zinc-200 transition-colors shadow-sm active:scale-95"
+            className="hidden lg:flex items-center gap-1.5 h-9 px-3 rounded-xl bg-zinc-900 hover:bg-zinc-800 border border-white/10 text-xs font-semibold text-zinc-200 transition-colors shadow-sm active:scale-95"
             title="Choose Part to Practice, Loop or View on Sheet"
           >
             <Layers className="w-3.5 h-3.5 text-amber-400" />
-            <span className="truncate max-w-[120px] sm:max-w-[160px]">
+            <span className="truncate max-w-[140px]">
               {currentSection?.title ? currentSection.title.split('–')[0].trim() : 'Part Practice'}
             </span>
           </button>
 
-          {/* Real-Time Performance Accuracy Badge */}
+          {/* Real-Time Performance Accuracy Badge (Desktop) */}
           {accuracyPercent !== undefined && (
             <div
-              className="hidden lg:flex items-center gap-1.5 px-2.5 py-1.5 rounded-xl bg-zinc-900 border border-white/10 text-xs font-mono font-bold text-amber-400"
+              className="hidden xl:flex items-center gap-1.5 h-9 px-2.5 rounded-xl bg-zinc-900 border border-white/10 text-xs font-mono font-bold text-amber-400"
               title="Real-Time Note Strike Accuracy"
             >
               <Award className="w-3.5 h-3.5 text-amber-400" />
@@ -427,113 +527,119 @@ export const FlowkeyPlayerView: React.FC<FlowkeyPlayerViewProps> = ({
             </div>
           )}
 
-          {/* 2D Overhead vs 3D Perspective Waterfall Toggle (Desktop) */}
-          <button
-            onClick={() => setViewPerspective(viewPerspective === '2d' ? '3d' : '2d')}
-            className={`flex items-center gap-1 px-2 py-1 rounded-xl border text-xs font-bold transition-all active:scale-95 shadow-sm ${
-              viewPerspective === '3d'
-                ? 'bg-gradient-to-r from-amber-500 to-orange-500 text-zinc-950 font-black shadow-[0_0_12px_rgba(245,158,11,0.5)]'
-                : 'bg-zinc-900 hover:bg-zinc-800 border-white/10 text-zinc-300'
-            }`}
-            title="Toggle 2D Overhead vs 3D Synthesia Perspective"
-          >
-            <Box className="w-3 h-3" />
-            <span className="font-mono text-[10px] font-black">{viewPerspective.toUpperCase()}</span>
-          </button>
+          {/* 2D Overhead vs 3D Perspective Waterfall Toggle (Only shown in Keys view on md+) */}
+          {viewLayout === 'keyboard' && (
+            <button
+              type="button"
+              onClick={() => setViewPerspective(viewPerspective === '2d' ? '3d' : '2d')}
+              className={`hidden md:flex items-center gap-1 h-9 px-2.5 rounded-xl border text-xs font-bold transition-all active:scale-95 shadow-sm ${
+                viewPerspective === '3d'
+                  ? 'bg-gradient-to-r from-amber-500 to-orange-500 text-zinc-950 font-black shadow-[0_0_12px_rgba(245,158,11,0.5)]'
+                  : 'bg-zinc-900 hover:bg-zinc-800 border-white/10 text-zinc-300'
+              }`}
+              title="Toggle 2D Overhead vs 3D Synthesia Perspective"
+            >
+              <Box className="w-3.5 h-3.5" />
+              <span className="font-mono text-[10px] font-black">{viewPerspective.toUpperCase()}</span>
+            </button>
+          )}
 
           {/* Visual Theme Selector (Desktop) */}
-          <div className="relative hidden lg:block">
+          <div ref={themeMenuRef} className="relative hidden lg:block">
             <button
+              type="button"
               onClick={() => setThemeMenuOpen(!themeMenuOpen)}
-              className="flex items-center gap-1.5 px-2.5 py-1.5 rounded-xl bg-zinc-900 hover:bg-zinc-800 border border-white/10 text-xs font-bold text-sky-400 hover:text-sky-300 transition-all shadow-sm active:scale-95"
+              className="flex items-center gap-1.5 h-9 px-2.5 rounded-xl bg-zinc-900 hover:bg-zinc-800 border border-white/10 text-xs font-bold text-sky-400 hover:text-sky-300 transition-all shadow-sm active:scale-95"
               title="Visual Theme (Your Lie in April / Dark / Light)"
             >
               <Sparkles className="w-3.5 h-3.5 text-sky-400" />
-              <span className="hidden sm:inline font-mono text-[11px]">
+              <span className="font-mono text-[11px]">
                 {theme === 'ylia' ? 'YLIA' : theme === 'dark' ? 'Dark' : 'Light'}
               </span>
             </button>
 
             {themeMenuOpen && (
               <div className="absolute top-full mt-2 right-0 w-64 bg-zinc-900/95 backdrop-blur-2xl border border-white/15 rounded-2xl shadow-2xl p-2 z-50 flex flex-col gap-1.5 animate-in fade-in zoom-in-95">
-                <div className="px-2.5 py-1 text-[10px] font-bold text-zinc-400 uppercase tracking-wider flex items-center justify-between border-b border-white/10 pb-1">
-                  <span>Visual Themes</span>
-                  <button onClick={() => setThemeMenuOpen(false)} className="text-zinc-500 hover:text-zinc-300">
-                    <X className="w-3.5 h-3.5" />
-                  </button>
-                </div>
-
-                {[
-                  { id: 'ylia' as VisualTheme, name: 'Your Lie in April (YLIA)', desc: 'Starry anime artwork, pastel pink (LH) & cyan (RH)' },
-                  { id: 'dark' as VisualTheme, name: 'Concert Dark', desc: 'Midnight obsidian, pastel rose & sky blue' },
-                  { id: 'light' as VisualTheme, name: 'Ivory Studio', desc: 'Frosted light studio, pastel coral & teal' },
-                ].map((t) => {
-                  const isSel = theme === t.id
-                  return (
-                    <button
-                      key={t.id}
-                      onClick={() => {
-                        setTheme(t.id)
-                        localStorage.setItem('virtuoso_theme', t.id)
-                        setThemeMenuOpen(false)
-                      }}
-                      className={`p-2 rounded-xl text-left transition-all border ${
-                        isSel
-                          ? 'bg-sky-500/20 border-sky-500/50 text-white'
-                          : 'bg-zinc-800/40 hover:bg-zinc-800 border-transparent text-zinc-300'
-                      }`}
-                    >
-                      <div className="flex items-center justify-between text-xs font-bold">
-                        <span className={isSel ? 'text-sky-300' : 'text-zinc-200'}>{t.name}</span>
-                        {isSel && <Sparkles className="w-3 h-3 text-sky-400" />}
-                      </div>
-                      <div className="text-[10px] text-zinc-400 mt-0.5 leading-tight">{t.desc}</div>
+                  <div className="px-2.5 py-1 text-[10px] font-bold text-zinc-400 uppercase tracking-wider flex items-center justify-between border-b border-white/10 pb-1">
+                    <span>Visual Themes</span>
+                    <button type="button" onClick={() => setThemeMenuOpen(false)} className="text-zinc-500 hover:text-zinc-300">
+                      <X className="w-3.5 h-3.5" />
                     </button>
-                  )
-                })}
-
-                {/* YLIA Multiple Artworks Sub-selector */}
-                {theme === 'ylia' && (
-                  <div className="pt-2 border-t border-white/10 flex flex-col gap-1">
-                    <div className="px-2 text-[9px] font-bold text-sky-400 uppercase tracking-wider">
-                      YLIA Artworks
-                    </div>
-                    {[
-                      { url: '/images/ylia_bg.png', name: 'Starry Duet (Kaori & Kousei)' },
-                      { url: '/images/598673.jpg', name: 'Mirrored Horizon (Silhouette)' },
-                      { url: '/images/your-lie-in-april-3840x3070-21018.jpg', name: 'Pastel Aurora (Ocean Piano)' },
-                      { url: '/images/your-lie-in-april-3840x2160-21020.jpg', name: 'Sunset Blossom (Anime Quote)' },
-                    ].map((art) => {
-                      const isArtSel = yliaWallpaper === art.url
-                      return (
-                        <button
-                          key={art.url}
-                          onClick={() => {
-                            setYliaWallpaper(art.url)
-                            localStorage.setItem('virtuoso_ylia_wallpaper', art.url)
-                          }}
-                          className={`px-2 py-1.5 rounded-lg text-left text-[11px] font-semibold transition-all flex items-center justify-between ${
-                            isArtSel
-                              ? 'bg-sky-500/25 text-sky-200 border border-sky-400/30'
-                              : 'bg-zinc-800/30 text-zinc-400 hover:text-zinc-200 hover:bg-zinc-800/60 border border-transparent'
-                          }`}
-                        >
-                          <span className="truncate">{art.name}</span>
-                          {isArtSel && <span className="w-1.5 h-1.5 rounded-full bg-sky-400"></span>}
-                        </button>
-                      )
-                    })}
                   </div>
-                )}
-              </div>
+
+                  {[
+                    { id: 'ylia' as VisualTheme, name: 'Your Lie in April (YLIA)', desc: 'Starry anime artwork, pastel pink (LH) & cyan (RH)' },
+                    { id: 'dark' as VisualTheme, name: 'Concert Dark', desc: 'Midnight obsidian, pastel rose & sky blue' },
+                    { id: 'light' as VisualTheme, name: 'Ivory Studio', desc: 'Frosted light studio, pastel coral & teal' },
+                  ].map((t) => {
+                    const isSel = theme === t.id
+                    return (
+                      <button
+                        key={t.id}
+                        type="button"
+                        onClick={() => {
+                          setTheme(t.id)
+                          localStorage.setItem('virtuoso_theme', t.id)
+                          setThemeMenuOpen(false)
+                        }}
+                        className={`p-2 rounded-xl text-left transition-all border ${
+                          isSel
+                            ? 'bg-sky-500/20 border-sky-500/50 text-white'
+                            : 'bg-zinc-800/40 hover:bg-zinc-800 border-transparent text-zinc-300'
+                        }`}
+                      >
+                        <div className="flex items-center justify-between text-xs font-bold">
+                          <span className={isSel ? 'text-sky-300' : 'text-zinc-200'}>{t.name}</span>
+                          {isSel && <Sparkles className="w-3 h-3 text-sky-400" />}
+                        </div>
+                        <div className="text-[10px] text-zinc-400 mt-0.5 leading-tight">{t.desc}</div>
+                      </button>
+                    )
+                  })}
+
+                  {theme === 'ylia' && (
+                    <div className="pt-2 border-t border-white/10 flex flex-col gap-1">
+                      <div className="px-2 text-[9px] font-bold text-sky-400 uppercase tracking-wider">
+                        YLIA Artworks
+                      </div>
+                      {[
+                        { url: '/images/ylia_bg.png', name: 'Starry Duet (Kaori & Kousei)' },
+                        { url: '/images/598673.jpg', name: 'Mirrored Horizon (Silhouette)' },
+                        { url: '/images/your-lie-in-april-3840x3070-21018.jpg', name: 'Pastel Aurora (Ocean Piano)' },
+                        { url: '/images/your-lie-in-april-3840x2160-21020.jpg', name: 'Sunset Blossom (Anime Quote)' },
+                      ].map((art) => {
+                        const isArtSel = yliaWallpaper === art.url
+                        return (
+                          <button
+                            key={art.url}
+                            type="button"
+                            onClick={() => {
+                              setYliaWallpaper(art.url)
+                              localStorage.setItem('virtuoso_ylia_wallpaper', art.url)
+                            }}
+                            className={`px-2 py-1.5 rounded-lg text-left text-[11px] font-semibold transition-all flex items-center justify-between ${
+                              isArtSel
+                                ? 'bg-sky-500/25 text-sky-200 border border-sky-400/30'
+                                : 'bg-zinc-800/30 text-zinc-400 hover:text-zinc-200 hover:bg-zinc-800/60 border border-transparent'
+                            }`}
+                          >
+                            <span className="truncate">{art.name}</span>
+                            {isArtSel && <span className="w-1.5 h-1.5 rounded-full bg-sky-400"></span>}
+                          </button>
+                        )
+                      })}
+                    </div>
+                  )}
+                </div>
             )}
           </div>
 
-          {/* Steinway Model B Audio Engine Live Telemetry Badge (Visible on all devices) */}
+          {/* Steinway Model B Audio Engine Live Telemetry Badge (Compact dot on mobile, full on sm+) */}
           {onOpenAudioSettings && (
             <button
+              type="button"
               onClick={onOpenAudioSettings}
-              className={`flex items-center gap-1.5 px-2.5 py-1.5 rounded-xl border text-[11px] font-mono transition-all active:scale-95 shadow-sm ${
+              className={`hidden sm:flex items-center gap-1.5 h-9 px-2.5 rounded-xl border text-[11px] font-mono transition-all active:scale-95 shadow-sm ${
                 engineTelemetry.isMainEngineActive
                   ? 'bg-zinc-900/90 border-emerald-500/40 text-emerald-300 hover:border-emerald-500/70'
                   : 'bg-zinc-900/90 border-amber-500/40 text-amber-300 animate-pulse hover:border-amber-500/70'
@@ -547,8 +653,8 @@ export const FlowkeyPlayerView: React.FC<FlowkeyPlayerViewProps> = ({
                     : 'bg-amber-400'
                 }`}
               />
-              <span className="font-semibold hidden sm:inline">
-                {engineTelemetry.isMainEngineActive ? 'Steinway Grand' : 'Loading Engine'}
+              <span className="font-semibold hidden md:inline">
+                {engineTelemetry.isMainEngineActive ? 'Steinway' : 'Loading'}
               </span>
               <span className="text-[10px] text-zinc-400 font-mono">
                 {engineTelemetry.isMainEngineActive
@@ -560,8 +666,9 @@ export const FlowkeyPlayerView: React.FC<FlowkeyPlayerViewProps> = ({
 
           {/* Masterclass Tips Toggle (Desktop) */}
           <button
+            type="button"
             onClick={() => setIsMasterclassOpen(!isMasterclassOpen)}
-            className={`hidden lg:flex items-center gap-1 px-2.5 py-1.5 rounded-xl border text-xs font-semibold transition-all ${
+            className={`hidden lg:flex items-center gap-1 h-9 px-2.5 rounded-xl border text-xs font-semibold transition-all ${
               isMasterclassOpen
                 ? 'bg-amber-500/20 border-amber-500/50 text-amber-300'
                 : 'bg-zinc-900 hover:bg-zinc-800 border-white/10 text-zinc-300'
@@ -572,113 +679,231 @@ export const FlowkeyPlayerView: React.FC<FlowkeyPlayerViewProps> = ({
             <span>Tips</span>
           </button>
 
-          {/* Wrong note toast */}
-          {wrongNoteMidi !== null && (
-            <div className="px-2 py-1 rounded-xl bg-red-500/20 border border-red-500/50 text-red-300 font-mono text-[11px] font-bold animate-pulse">
-              Wrong Key
-            </div>
-          )}
-
-          {/* Roland LX-9 Bluetooth */}
+          {/* Roland LX-9 Bluetooth (md+ in header, mobile in Settings Drawer) */}
           <button
+            type="button"
             onClick={onOpenBluetoothModal}
-            className={`flex items-center gap-1.5 px-2.5 py-1.5 rounded-xl border text-[11px] transition-all ${
+            className={`hidden md:flex items-center gap-1.5 h-9 px-2.5 rounded-xl border text-[11px] transition-all active:scale-95 ${
               isConnectedLX9
                 ? 'bg-blue-500/15 border-blue-500/40 text-blue-300'
-                : 'bg-zinc-900 border-white/10 text-zinc-400 hover:text-zinc-200'
+                : 'bg-zinc-900 hover:bg-zinc-800 border-white/10 text-zinc-400 hover:text-zinc-200'
             }`}
+            title="Bluetooth & USB MIDI"
           >
             <Bluetooth className={`w-3.5 h-3.5 ${isConnectedLX9 ? 'text-blue-400 animate-pulse' : ''}`} />
-            <span className="font-mono text-[10px] hidden sm:inline">
-              {isConnectedLX9 ? `LX-9` : 'Roland'}
+            <span className="font-mono text-[10px] hidden lg:inline">
+              {isConnectedLX9 ? 'LX-9' : 'MIDI'}
             </span>
           </button>
 
-          {/* Acoustic Microphone Piano Recognition (Non-Bluetooth / Upright / Grand) */}
+          {/* Acoustic Microphone Piano Recognition */}
           <button
+            type="button"
             onClick={(e) => handleToggleMic(e)}
-            className={`flex items-center gap-1.5 px-3 py-1.5 rounded-xl border text-xs font-bold transition-all active:scale-95 touch-manipulation cursor-pointer shadow-md flex-shrink-0 z-30 ${
+            className={`flex items-center justify-center gap-1 h-9 px-2.5 rounded-xl border text-xs font-bold transition-all active:scale-95 touch-manipulation cursor-pointer shadow-md flex-shrink-0 ${
               isMicActive
                 ? 'bg-emerald-500 text-zinc-950 border-emerald-400 shadow-[0_0_15px_rgba(16,185,129,0.6)] font-extrabold'
                 : 'bg-zinc-900 hover:bg-zinc-800 border-emerald-500/40 text-emerald-400 hover:text-emerald-300'
             }`}
-            title="Acoustic Piano Microphone Recognition (No Bluetooth/Cable needed)"
+            title="Acoustic Piano Microphone Recognition"
+            aria-label="Toggle Microphone Note Recognition"
           >
-            {isMicActive ? (
-              <div className="flex items-center gap-1">
-                <Mic className="w-4 h-4 text-zinc-950 animate-pulse" />
-                <span className="font-mono text-xs font-black">MIC ON</span>
-              </div>
-            ) : (
-              <div className="flex items-center gap-1">
-                <Mic className="w-4 h-4 text-emerald-400" />
-                <span className="font-mono text-xs font-bold">MIC</span>
-              </div>
-            )}
+            <Mic className={`w-4 h-4 ${isMicActive ? 'text-zinc-950 animate-pulse' : 'text-emerald-400'}`} />
+            <span className="font-mono text-[11px] font-black hidden xs:inline sm:inline">
+              {isMicActive ? 'ON' : 'MIC'}
+            </span>
             {isMicActive && micLevel > 0.05 && (
               <div className="w-1.5 h-2 bg-zinc-950 rounded-full animate-bounce" />
             )}
           </button>
 
-          {/* Mobile Quick Settings Trigger (iPhone) */}
+          {/* Mobile / Tablet Quick Settings Trigger */}
           <button
+            type="button"
             onClick={() => setMobileSettingsOpen(true)}
-            className="flex lg:hidden items-center justify-center w-8 h-8 rounded-xl bg-zinc-900 hover:bg-zinc-800 border border-white/10 text-amber-400 hover:text-amber-300 active:scale-95 transition-all shadow-sm"
+            className="relative flex lg:hidden items-center justify-center w-9 h-9 rounded-xl bg-zinc-900 hover:bg-zinc-800 border border-white/10 text-amber-400 hover:text-amber-300 active:scale-95 transition-all shadow-sm flex-shrink-0"
             title="Settings & Controls"
+            aria-label="Player Settings"
           >
             <Settings className="w-4 h-4" />
+            {isConnectedLX9 && (
+              <span className="w-2 h-2 rounded-full bg-blue-400 absolute top-1.5 right-1.5 shadow-[0_0_6px_#60a5fa]" />
+            )}
           </button>
         </div>
       </header>
 
+      {/* Wrong Note Floating Toast (Non-disruptive, never pushes header buttons off-screen) */}
+      {wrongNoteMidi !== null && (
+        <div className="absolute top-[calc(3.6rem+var(--sat))] right-3 z-40 px-3 py-1.5 rounded-xl bg-red-950/90 backdrop-blur-md border border-red-500/60 text-red-200 font-mono text-xs font-bold shadow-lg pointer-events-none animate-pulse">
+          {language === 'de' ? 'Falsche Taste' : 'Wrong Key'}
+        </div>
+      )}
+
       {/* Mobile Controls & Settings Modal Drawer */}
       {mobileSettingsOpen && (
-        <div className="fixed inset-0 z-50 bg-black/80 backdrop-blur-md flex items-end sm:items-center justify-center p-0 sm:p-4">
-          <div className="w-full max-w-lg bg-zinc-900 border border-white/15 rounded-t-3xl sm:rounded-3xl shadow-2xl overflow-hidden flex flex-col text-zinc-100 max-h-[85vh] animate-in slide-in-from-bottom-6 duration-200">
+        <div
+          onClick={() => setMobileSettingsOpen(false)}
+          className="fixed inset-0 z-50 bg-black/80 backdrop-blur-md flex items-end sm:items-center justify-center p-0 sm:p-4"
+        >
+          <div
+            onClick={(e) => e.stopPropagation()}
+            className="w-full max-w-lg bg-zinc-900 border border-white/15 rounded-t-3xl sm:rounded-3xl shadow-2xl overflow-hidden flex flex-col text-zinc-100 max-h-[86dvh] animate-in slide-in-from-bottom-6 duration-200"
+          >
             {/* Header */}
-            <div className="flex items-center justify-between px-5 py-4 bg-zinc-950 border-b border-white/10">
+            <div className="flex items-center justify-between px-5 py-4 bg-zinc-950 border-b border-white/10 flex-shrink-0">
               <div className="flex items-center gap-2">
                 <Settings className="w-5 h-5 text-amber-400" />
-                <h3 className="font-bold text-sm tracking-wide">Player Controls & Settings</h3>
+                <h3 className="font-bold text-sm tracking-wide">
+                  {language === 'de' ? 'Player-Einstellungen & Steuerung' : 'Player Controls & Settings'}
+                </h3>
               </div>
               <button
+                type="button"
                 onClick={() => setMobileSettingsOpen(false)}
-                className="w-8 h-8 rounded-full bg-zinc-800 flex items-center justify-center text-zinc-400 hover:text-white"
+                className="w-9 h-9 rounded-xl bg-zinc-800 hover:bg-zinc-700 flex items-center justify-center text-zinc-300 hover:text-white active:scale-95"
+                aria-label="Close settings"
               >
                 <X className="w-4 h-4" />
               </button>
             </div>
 
-            <div className="p-4 space-y-4 overflow-y-auto">
-              {/* 1. Visual Theme & Wallpapers */}
-              <div className="space-y-2">
-                <div className="space-y-1.5">
-                  <div className="text-[11px] font-bold text-amber-400 uppercase tracking-wider">Perspektive (2D / 3D)</div>
-                  <div className="grid grid-cols-2 gap-2">
-                    <button
-                      onClick={() => setViewPerspective('2d')}
-                      className={`py-2 rounded-xl text-xs font-bold border transition-all ${
-                        viewPerspective === '2d'
-                          ? 'bg-amber-500 text-zinc-950 font-black'
-                          : 'bg-zinc-800 border-white/10 text-zinc-400'
-                      }`}
-                    >
-                      2D Draufsicht (Klassisch)
-                    </button>
-                    <button
-                      onClick={() => setViewPerspective('3d')}
-                      className={`py-2 rounded-xl text-xs font-bold border transition-all ${
-                        viewPerspective === '3d'
-                          ? 'bg-gradient-to-r from-amber-500 to-orange-500 text-zinc-950 font-black'
-                          : 'bg-zinc-800 border-white/10 text-zinc-400'
-                      }`}
-                    >
-                      3D Synthesia (Perspektive)
-                    </button>
+            <div className="p-4 pb-[max(1.25rem,env(safe-area-inset-bottom))] space-y-5 overflow-y-auto flex-1 min-h-0">
+              {/* 1. Quick Part & Start Measure Practice Launch */}
+              <button
+                type="button"
+                onClick={() => {
+                  setMobileSettingsOpen(false)
+                  setSectionsMenuOpen(true)
+                }}
+                className="w-full p-3.5 rounded-2xl bg-gradient-to-r from-amber-500/20 to-orange-500/15 border border-amber-500/40 flex items-center justify-between text-left active:scale-[0.99] transition-all"
+              >
+                <div className="flex items-center gap-3">
+                  <div className="w-9 h-9 rounded-xl bg-amber-500/20 flex items-center justify-center text-amber-400">
+                    <Target className="w-5 h-5" />
+                  </div>
+                  <div>
+                    <div className="text-xs font-extrabold text-amber-200">
+                      {language === 'de' ? 'Abschnitt & Start-Takt wählen' : 'Part Practice & Start Measure'}
+                    </div>
+                    <div className="text-[11px] text-zinc-400 font-mono">
+                      Start: M.{startMeasure} • {isLooping ? `Loop M.${loopRange[0]}–${loopRange[1]}` : (language === 'de' ? 'Loop aus' : 'Loop off')}
+                    </div>
                   </div>
                 </div>
+                <span className="text-xs font-bold text-amber-400 px-2.5 py-1 rounded-lg bg-amber-500/15">
+                  {language === 'de' ? 'Öffnen' : 'Open'}
+                </span>
+              </button>
 
-                <div className="text-[11px] font-bold text-sky-400 uppercase tracking-wider">Visual Theme</div>
+              {/* 2. Practice & Tempo Tools */}
+              <div className="space-y-2">
+                <div className="text-[11px] font-bold text-emerald-400 uppercase tracking-wider">
+                  {language === 'de' ? 'Übungs- & Tempo-Werkzeuge' : 'Practice & Tempo Tools'}
+                </div>
+                <div className="grid grid-cols-2 gap-2">
+                  {onToggleMetronome && (
+                    <button
+                      type="button"
+                      onClick={onToggleMetronome}
+                      className={`p-3 rounded-xl border flex items-center justify-between text-xs font-bold transition-all ${
+                        isMetronomeOn
+                          ? 'bg-emerald-500/25 border-emerald-400 text-emerald-200'
+                          : 'bg-zinc-800/60 border-white/10 text-zinc-300'
+                      }`}
+                    >
+                      <span className="flex items-center gap-1.5">
+                        <Timer className="w-3.5 h-3.5" />
+                        <span>{language === 'de' ? 'Metronom' : 'Metronome'}</span>
+                      </span>
+                      <span className="font-mono text-[10px]">{isMetronomeOn ? 'ON' : 'OFF'}</span>
+                    </button>
+                  )}
+
+                  {onToggleCountIn && (
+                    <button
+                      type="button"
+                      onClick={onToggleCountIn}
+                      className={`p-3 rounded-xl border flex items-center justify-between text-xs font-bold transition-all ${
+                        isCountInEnabled
+                          ? 'bg-amber-500/25 border-amber-400 text-amber-200'
+                          : 'bg-zinc-800/60 border-white/10 text-zinc-300'
+                      }`}
+                    >
+                      <span>{language === 'de' ? 'Vorzähler (1-4)' : 'Count-In (1-4)'}</span>
+                      <span className="font-mono text-[10px]">{isCountInEnabled ? 'ON' : 'OFF'}</span>
+                    </button>
+                  )}
+
+                  {onToggleSpeedRamp && (
+                    <button
+                      type="button"
+                      onClick={onToggleSpeedRamp}
+                      className={`p-3 rounded-xl border flex items-center justify-between text-xs font-bold transition-all ${
+                        isSpeedRamp
+                          ? 'bg-gradient-to-r from-orange-500/30 to-amber-500/30 border-amber-400 text-amber-200'
+                          : 'bg-zinc-800/60 border-white/10 text-zinc-300'
+                      }`}
+                    >
+                      <span className="flex items-center gap-1.5">
+                        <TrendingUp className="w-3.5 h-3.5" />
+                        <span>Speed Ramp</span>
+                      </span>
+                      <span className="font-mono text-[10px]">{isSpeedRamp ? '+5%' : 'OFF'}</span>
+                    </button>
+                  )}
+
+                  <button
+                    type="button"
+                    onClick={onToggleLoop}
+                    className={`p-3 rounded-xl border flex items-center justify-between text-xs font-bold transition-all ${
+                      isLooping
+                        ? 'bg-blue-500/25 border-blue-400 text-blue-200'
+                        : 'bg-zinc-800/60 border-white/10 text-zinc-300'
+                    }`}
+                  >
+                    <span className="flex items-center gap-1.5">
+                      <Repeat className="w-3.5 h-3.5" />
+                      <span>Loop</span>
+                    </span>
+                    <span className="font-mono text-[10px]">M.{loopRange[0]}–{loopRange[1]}</span>
+                  </button>
+                </div>
+              </div>
+
+              {/* 3. Perspective & Visual Theme */}
+              <div className="space-y-2.5 pt-2 border-t border-white/10">
+                <div className="text-[11px] font-bold text-amber-400 uppercase tracking-wider">
+                  {language === 'de' ? 'Ansicht & Perspektive' : 'View & Perspective'}
+                </div>
+                <div className="grid grid-cols-2 gap-2">
+                  <button
+                    type="button"
+                    onClick={() => setViewPerspective('2d')}
+                    className={`py-2.5 px-2 rounded-xl text-xs font-bold border transition-all ${
+                      viewPerspective === '2d'
+                        ? 'bg-amber-500 text-zinc-950 border-amber-400 font-black'
+                        : 'bg-zinc-800/60 border-white/10 text-zinc-300'
+                    }`}
+                  >
+                    {language === 'de' ? '2D Draufsicht' : '2D Overhead'}
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => setViewPerspective('3d')}
+                    className={`py-2.5 px-2 rounded-xl text-xs font-bold border transition-all ${
+                      viewPerspective === '3d'
+                        ? 'bg-gradient-to-r from-amber-500 to-orange-500 text-zinc-950 border-amber-400 font-black'
+                        : 'bg-zinc-800/60 border-white/10 text-zinc-300'
+                    }`}
+                  >
+                    {language === 'de' ? '3D Synthesia' : '3D Perspective'}
+                  </button>
+                </div>
+
+                <div className="text-[11px] font-bold text-sky-400 uppercase tracking-wider pt-1">
+                  {language === 'de' ? 'Farbschema (Theme)' : 'Visual Theme'}
+                </div>
                 <div className="grid grid-cols-3 gap-2">
                   {[
                     { id: 'ylia' as VisualTheme, label: 'YLIA Anime' },
@@ -687,11 +912,12 @@ export const FlowkeyPlayerView: React.FC<FlowkeyPlayerViewProps> = ({
                   ].map((t) => (
                     <button
                       key={t.id}
+                      type="button"
                       onClick={() => {
                         setTheme(t.id)
                         localStorage.setItem('virtuoso_theme', t.id)
                       }}
-                      className={`py-2 px-1 rounded-xl text-xs font-bold transition-all border ${
+                      className={`py-2.5 px-1 rounded-xl text-xs font-bold transition-all border ${
                         theme === t.id
                           ? 'bg-sky-500/25 border-sky-400 text-sky-200'
                           : 'bg-zinc-800/60 border-white/5 text-zinc-400'
@@ -703,7 +929,7 @@ export const FlowkeyPlayerView: React.FC<FlowkeyPlayerViewProps> = ({
                 </div>
 
                 {theme === 'ylia' && (
-                  <div className="pt-2 space-y-1.5">
+                  <div className="pt-1 space-y-1.5">
                     <div className="text-[10px] text-zinc-400 uppercase font-semibold">YLIA Artwork</div>
                     <div className="grid grid-cols-2 gap-1.5">
                       {[
@@ -714,6 +940,7 @@ export const FlowkeyPlayerView: React.FC<FlowkeyPlayerViewProps> = ({
                       ].map((art) => (
                         <button
                           key={art.url}
+                          type="button"
                           onClick={() => {
                             setYliaWallpaper(art.url)
                             localStorage.setItem('virtuoso_ylia_wallpaper', art.url)
@@ -732,131 +959,91 @@ export const FlowkeyPlayerView: React.FC<FlowkeyPlayerViewProps> = ({
                 )}
               </div>
 
-              {/* 2. View Mode & 3D Perspective */}
-              <div className="space-y-2">
-                <div className="text-[11px] font-bold text-amber-400 uppercase tracking-wider">Perspective & Layout</div>
-                <div className="grid grid-cols-2 gap-2">
-                  <button
-                    onClick={() => setViewPerspective(viewPerspective === '2d' ? '3d' : '2d')}
-                    className="p-2.5 rounded-xl bg-zinc-800/60 border border-white/10 flex items-center justify-between text-xs font-bold"
-                  >
-                    <span>Perspective</span>
-                    <span className="font-mono text-amber-400">{viewPerspective.toUpperCase()}</span>
-                  </button>
-                  <button
-                    onClick={() => setViewLayout(viewLayout === 'keyboard' ? 'sheet' : 'keyboard')}
-                    className="p-2.5 rounded-xl bg-zinc-800/60 border border-white/10 flex items-center justify-between text-xs font-bold capitalize"
-                  >
-                    <span>View Layout</span>
-                    <span className="font-mono text-amber-400">{viewLayout === 'sheet' ? 'Sheet' : 'Keys'}</span>
-                  </button>
+              {/* 4. Master Edition Selector (Now accessible on iPhone!) */}
+              {onEditionChange && (
+                <div className="space-y-2 pt-2 border-t border-white/10">
+                  <div className="text-[11px] font-bold text-amber-400 uppercase tracking-wider">
+                    {language === 'de' ? 'Meister-Edition / Interpretation' : 'Master Edition / Interpretation'}
+                  </div>
+                  <div className="grid grid-cols-2 gap-2">
+                    {editionOptions.map((ed) => (
+                      <button
+                        key={ed.id}
+                        type="button"
+                        onClick={() => {
+                          onEditionChange(ed.id)
+                          setMobileSettingsOpen(false)
+                        }}
+                        className={`p-2.5 rounded-xl text-left border transition-all ${
+                          edition === ed.id
+                            ? 'bg-amber-500/20 border-amber-400 text-amber-200'
+                            : 'bg-zinc-800/50 border-white/5 text-zinc-300'
+                        }`}
+                      >
+                        <div className="text-xs font-bold truncate">{ed.name}</div>
+                        <div className="text-[10px] text-zinc-400 font-mono">{ed.year}</div>
+                      </button>
+                    ))}
+                  </div>
                 </div>
+              )}
+
+              {/* 5. Masterclass Guidance & Pedagogy */}
+              <div className="pt-2 border-t border-white/10 grid grid-cols-2 gap-2">
+                <button
+                  type="button"
+                  onClick={() => {
+                    setMobileSettingsOpen(false)
+                    setIsMasterclassOpen(true)
+                  }}
+                  className="p-3 rounded-xl bg-amber-950/40 border border-amber-500/40 text-amber-300 font-bold text-xs flex items-center justify-center gap-2 active:scale-95"
+                >
+                  <GraduationCap className="w-4 h-4 text-amber-400" />
+                  <span>{language === 'de' ? 'Spiel-Tipps' : 'Masterclass Tips'}</span>
+                </button>
+                {onOpenTutorials && (
+                  <button
+                    type="button"
+                    onClick={() => {
+                      setMobileSettingsOpen(false)
+                      onOpenTutorials()
+                    }}
+                    className="p-3 rounded-xl bg-purple-950/40 border border-purple-500/40 text-purple-300 font-bold text-xs flex items-center justify-center gap-2 active:scale-95"
+                  >
+                    <BookOpen className="w-4 h-4 text-purple-400" />
+                    <span>{language === 'de' ? 'Tutorials' : 'Tutorials'}</span>
+                  </button>
+                )}
               </div>
 
-              {/* 3. Section Selection */}
-              <div className="space-y-1.5">
-                <div className="text-[11px] font-bold text-zinc-400 uppercase tracking-wider">Song Sections</div>
-                <div className="max-h-36 overflow-y-auto space-y-1 pr-1">
-                  {piece.sections.map((sec) => (
-                    <button
-                      key={sec.id}
-                      onClick={() => {
-                        onSeek(sec.startTime)
-                        onLoopRangeChange([sec.startMeasure, sec.endMeasure])
-                        setMobileSettingsOpen(false)
-                      }}
-                      className={`w-full p-2 rounded-xl text-left text-xs font-semibold flex items-center justify-between border ${
-                        currentSection?.id === sec.id
-                          ? 'bg-amber-500/20 border-amber-500/50 text-white'
-                          : 'bg-zinc-800/40 border-white/5 text-zinc-400'
-                      }`}
-                    >
-                      <span className="truncate">{sec.title}</span>
-                      <span className="font-mono text-[10px] text-amber-400 ml-2">M.{sec.startMeasure}–{sec.endMeasure}</span>
-                    </button>
-                  ))}
-                </div>
-              </div>
-
-              {/* 4. Practice & Tempo Tools (Mobile Cockpit) */}
-              <div className="space-y-2 pt-2 border-t border-white/10">
-                <div className="text-[11px] font-bold text-emerald-400 uppercase tracking-wider">Practice & Tempo Tools</div>
-                <div className="grid grid-cols-2 gap-2">
-                  {onToggleMetronome && (
-                    <button
-                      onClick={onToggleMetronome}
-                      className={`p-2.5 rounded-xl border flex items-center justify-between text-xs font-bold transition-all ${
-                        isMetronomeOn
-                          ? 'bg-emerald-500/25 border-emerald-400 text-emerald-200'
-                          : 'bg-zinc-800/60 border-white/10 text-zinc-400'
-                      }`}
-                    >
-                      <span className="flex items-center gap-1.5">
-                        <Timer className="w-3.5 h-3.5" />
-                        <span>Metronome</span>
-                      </span>
-                      <span className="font-mono text-[10px]">{isMetronomeOn ? 'ON' : 'OFF'}</span>
-                    </button>
-                  )}
-
-                  {onToggleSpeedRamp && (
-                    <button
-                      onClick={onToggleSpeedRamp}
-                      className={`p-2.5 rounded-xl border flex items-center justify-between text-xs font-bold transition-all ${
-                        isSpeedRamp
-                          ? 'bg-gradient-to-r from-orange-500/30 to-amber-500/30 border-amber-400 text-amber-200'
-                          : 'bg-zinc-800/60 border-white/10 text-zinc-400'
-                      }`}
-                    >
-                      <span className="flex items-center gap-1.5">
-                        <TrendingUp className="w-3.5 h-3.5" />
-                        <span>Speed Ramp</span>
-                      </span>
-                      <span className="font-mono text-[10px]">{isSpeedRamp ? '+5% ON' : 'OFF'}</span>
-                    </button>
-                  )}
-
-
-
-                  <button
-                    onClick={onToggleLoop}
-                    className={`p-2.5 rounded-xl border flex items-center justify-between text-xs font-bold transition-all ${
-                      isLooping
-                        ? 'bg-blue-500/25 border-blue-400 text-blue-200'
-                        : 'bg-zinc-800/60 border-white/10 text-zinc-400'
-                    }`}
-                  >
-                    <span className="flex items-center gap-1.5">
-                      <Repeat className="w-3.5 h-3.5" />
-                      <span>Loop Range</span>
-                    </span>
-                    <span className="font-mono text-[10px]">M.{loopRange[0]}–{loopRange[1]}</span>
-                  </button>
-                </div>
-              </div>
-
-              {/* 5. Connectivity & Audio */}
+              {/* 6. Connectivity & Audio Engine */}
               <div className="pt-2 border-t border-white/10 flex gap-2">
                 <button
+                  type="button"
                   onClick={() => {
                     setMobileSettingsOpen(false)
                     onOpenBluetoothModal()
                   }}
-                  className="flex-1 p-2.5 rounded-xl bg-blue-950/40 border border-blue-500/40 text-blue-300 font-bold text-xs flex items-center justify-center gap-2"
+                  className="flex-1 p-3 rounded-xl bg-blue-950/40 border border-blue-500/40 text-blue-300 font-bold text-xs flex items-center justify-center gap-2 active:scale-95"
                 >
                   <Bluetooth className="w-4 h-4 text-blue-400" />
-                  <span>Roland LX-9</span>
+                  <span>{isConnectedLX9 ? 'MIDI Active' : 'Bluetooth / MIDI'}</span>
                 </button>
                 {onOpenAudioSettings && (
                   <button
+                    type="button"
                     onClick={() => {
                       setMobileSettingsOpen(false)
                       onOpenAudioSettings()
                     }}
-                    className="flex-1 p-2.5 rounded-xl bg-orange-950/40 border border-orange-500/40 text-orange-300 font-bold text-xs flex items-center justify-center gap-2"
+                    className="flex-1 p-3 rounded-xl bg-orange-950/40 border border-orange-500/40 text-orange-300 font-bold text-xs flex items-center justify-center gap-2 active:scale-95"
                   >
                     <Sliders className="w-4 h-4 text-orange-400" />
-                    <span>Acoustics</span>
+                    <span>
+                      {engineTelemetry.isMainEngineActive
+                        ? `Steinway (${engineTelemetry.loadedSamples}L)`
+                        : 'Acoustics'}
+                    </span>
                   </button>
                 )}
               </div>
@@ -867,253 +1054,281 @@ export const FlowkeyPlayerView: React.FC<FlowkeyPlayerViewProps> = ({
 
       {/* Masterclass Guidance Drawer */}
       {isMasterclassOpen && (
-        <div className="absolute top-14 left-4 right-4 sm:left-auto sm:right-6 sm:w-96 z-40 bg-zinc-900/95 backdrop-blur-2xl border border-amber-500/40 rounded-2xl shadow-2xl p-4 text-zinc-100 flex flex-col gap-3 animate-in fade-in slide-in-from-top-4 duration-200">
-          <div className="flex items-center justify-between border-b border-white/10 pb-2">
-            <div className="flex items-center gap-2">
-              <Sparkles className="w-4 h-4 text-amber-400" />
-              <h4 className="text-xs font-bold uppercase tracking-wider text-amber-400">
-                {language === 'de' ? 'Meisterkurs: Anleitung' : 'Masterclass Guidance'}
-              </h4>
-            </div>
-            <button
-              onClick={() => setIsMasterclassOpen(false)}
-              className="w-6 h-6 rounded-lg bg-zinc-800 hover:bg-zinc-700 flex items-center justify-center text-zinc-400 hover:text-zinc-100"
-            >
-              <X className="w-3.5 h-3.5" />
-            </button>
-          </div>
-
-          <div>
-            <h3 className="text-sm font-bold text-white">{currentSection?.title}</h3>
-            <p className="text-[11px] text-amber-200/90 font-mono mt-0.5">
-              Measures {currentSection?.startMeasure}–{currentSection?.endMeasure} • {currentSection?.tempoSuggestion}
-            </p>
-          </div>
-
-          <div className="space-y-2 text-xs">
-            <div className="p-2.5 rounded-xl bg-zinc-800/60 border border-white/5">
-              <div className="text-[10px] font-bold text-zinc-400 uppercase tracking-wide">
-                {language === 'de' ? 'Klangfarbe & Ausdruck' : 'Character & Phrasing'}
-              </div>
-              <div className="text-zinc-200 mt-1">{currentSection?.character || 'Concert interpretation'}</div>
-            </div>
-
-            <div className="p-2.5 rounded-xl bg-zinc-800/60 border border-white/5">
-              <div className="text-[10px] font-bold text-zinc-400 uppercase tracking-wide">
-                {language === 'de' ? 'Handbewegung & Übergänge' : 'Hand Movement & Transitions'}
-              </div>
-              <div className="text-zinc-200 mt-1">
-                {language === 'de'
-                  ? 'Weiche Handgelenk-Rotation und tiefes Einsinken des Armgewichts in die Tasten.'
-                  : 'Supple lateral wrist rotation. Drop relaxed arm weight into keybeds without finger tension.'}
-              </div>
-            </div>
-
-            <div className="p-2.5 rounded-xl bg-zinc-800/60 border border-white/5">
-              <div className="text-[10px] font-bold text-zinc-400 uppercase tracking-wide flex items-center justify-between">
-                <span>{language === 'de' ? 'Damper Pedal (CC64)' : 'Damper Pedal Timing'}</span>
-                <span className="font-mono text-amber-400">{damperPedal > 30 ? 'HOLD' : 'RELEASE'}</span>
-              </div>
-              <div className="text-zinc-200 mt-1">
-                {language === 'de'
-                  ? 'Folge der goldenen Pedal-Spur: Drücken nach dem Tastenanschlag, blitzschnell lösen bei Harmoniewechseln.'
-                  : 'Follow the falling gold pedal ribbon: Catch damper right after note strike, clear completely on harmonic changes.'}
-              </div>
-            </div>
-          </div>
-        </div>
-      )}
-
-      {/* 2. UPPER: 2D OVERHEAD KEYBOARD & FALLING NOTES HIGHWAY */}
-      {viewLayout === 'keyboard' && (
         <div
-          className={`relative overflow-hidden w-full flex-1 min-h-0 ${theme === 'light' ? 'bg-[#f8fafc]' : 'bg-[#080c1e]'} p-0`}
+          ref={masterclassRef}
+          className="absolute top-[calc(3.6rem+var(--sat))] left-3 right-3 sm:left-auto sm:right-6 sm:w-96 z-40 bg-zinc-900/95 backdrop-blur-2xl border border-amber-500/40 rounded-2xl shadow-2xl p-4 text-zinc-100 flex flex-col gap-3 animate-in fade-in slide-in-from-top-4 duration-200 max-h-[70dvh] overflow-y-auto"
         >
-          {/* Live Competition HUD Overlay */}
-          {playMode === 'competition' && (
-            <div className="absolute top-3 left-1/2 -translate-x-1/2 z-30 flex items-center gap-2.5 sm:gap-3 px-3.5 py-1.5 rounded-2xl bg-zinc-950/90 backdrop-blur-xl border border-amber-500/40 shadow-[0_4px_24px_rgba(0,0,0,0.6)] animate-in fade-in select-none">
-              <div className="flex items-center gap-1.5 text-amber-400 font-black text-xs">
-                <Trophy className="w-3.5 h-3.5 text-yellow-400" />
-                <span className="font-mono text-white text-xs sm:text-sm font-extrabold">{(competitionScore || 0).toLocaleString()}</span>
-                <span className="text-[9px] text-zinc-400">PTS</span>
+            <div className="flex items-center justify-between border-b border-white/10 pb-2">
+              <div className="flex items-center gap-2">
+                <Sparkles className="w-4 h-4 text-amber-400" />
+                <h4 className="text-xs font-bold uppercase tracking-wider text-amber-400">
+                  {language === 'de' ? 'Meisterkurs: Anleitung' : 'Masterclass Guidance'}
+                </h4>
               </div>
-              <div className="h-3.5 w-px bg-white/10" />
-              <div className="flex items-center gap-1 text-xs font-bold text-orange-400">
-                <Flame className="w-3 h-3" />
-                <span className="font-mono text-white font-extrabold">{competitionCombo || 0}x</span>
-                <span className="text-[9px] text-zinc-400">COMBO</span>
-              </div>
-              {competitionLastJudgment && (
-                <>
-                  <div className="h-3.5 w-px bg-white/10" />
-                  <span className={`text-[11px] sm:text-xs font-black uppercase tracking-wider ${competitionLastJudgment.color} animate-pulse`}>
-                    {competitionLastJudgment.text}
-                    {competitionLastJudgment.offsetMs !== undefined && (
-                      <span className="text-[9px] ml-1 font-mono font-normal">
-                        {competitionLastJudgment.offsetMs > 0 ? `+${competitionLastJudgment.offsetMs}ms` : `${competitionLastJudgment.offsetMs}ms`}
-                      </span>
-                    )}
-                  </span>
-                </>
-              )}
-              {onOpenCompetitionReport && (
-                <button
-                  onClick={onOpenCompetitionReport}
-                  className="ml-1 px-2.5 py-1 rounded-xl bg-amber-500 hover:bg-amber-400 text-zinc-950 text-[10px] font-black transition-colors"
-                >
-                  Scorecard
-                </button>
-              )}
+              <button
+                type="button"
+                onClick={() => setIsMasterclassOpen(false)}
+                className="w-7 h-7 rounded-lg bg-zinc-800 hover:bg-zinc-700 flex items-center justify-center text-zinc-400 hover:text-zinc-100"
+              >
+                <X className="w-3.5 h-3.5" />
+              </button>
             </div>
-          )}
 
-          <FallingKeysCanvas
-            piece={piece}
-            currentTime={currentTime}
-            isPlaying={isPlaying}
-            playbackRate={playbackRate}
-            activeNotes={activeNotes}
-            damperPedal={damperPedal}
-            viewMode={viewPerspective}
-            theme={theme}
-            handMode={handMode}
-            expectedNotes={expectedNotes}
-            onScreenKeyPress={onScreenKeyPress}
-            onScreenKeyRelease={onScreenKeyRelease}
-            onTogglePedal={onTogglePedal}
-            showFingers={false}
-            wallpaperUrl={yliaWallpaper}
-          />
-        </div>
+            <div>
+              <h3 className="text-sm font-bold text-white">{currentSection?.title}</h3>
+              <p className="text-[11px] text-amber-200/90 font-mono mt-0.5">
+                Measures {currentSection?.startMeasure}–{currentSection?.endMeasure} • {currentSection?.tempoSuggestion}
+              </p>
+            </div>
+
+            <div className="space-y-2 text-xs">
+              <div className="p-2.5 rounded-xl bg-zinc-800/60 border border-white/5">
+                <div className="text-[10px] font-bold text-zinc-400 uppercase tracking-wide">
+                  {language === 'de' ? 'Klangfarbe & Ausdruck' : 'Character & Phrasing'}
+                </div>
+                <div className="text-zinc-200 mt-1">{currentSection?.character || 'Concert interpretation'}</div>
+              </div>
+
+              <div className="p-2.5 rounded-xl bg-zinc-800/60 border border-white/5">
+                <div className="text-[10px] font-bold text-zinc-400 uppercase tracking-wide">
+                  {language === 'de' ? 'Handbewegung & Übergänge' : 'Hand Movement & Transitions'}
+                </div>
+                <div className="text-zinc-200 mt-1">
+                  {language === 'de'
+                    ? 'Weiche Handgelenk-Rotation und tiefes Einsinken des Armgewichts in die Tasten.'
+                    : 'Supple lateral wrist rotation. Drop relaxed arm weight into keybeds without finger tension.'}
+                </div>
+              </div>
+
+              <div className="p-2.5 rounded-xl bg-zinc-800/60 border border-white/5">
+                <div className="text-[10px] font-bold text-zinc-400 uppercase tracking-wide flex items-center justify-between">
+                  <span>{language === 'de' ? 'Damper Pedal (CC64)' : 'Damper Pedal Timing'}</span>
+                  <span className="font-mono text-amber-400">{damperPedal > 30 ? 'HOLD' : 'RELEASE'}</span>
+                </div>
+                <div className="text-zinc-200 mt-1">
+                  {language === 'de'
+                    ? 'Folge der goldenen Pedal-Spur: Drücken nach dem Tastenanschlag, blitzschnell lösen bei Harmoniewechseln.'
+                    : 'Follow the falling gold pedal ribbon: Catch damper right after note strike, clear completely on harmonic changes.'}
+                </div>
+              </div>
+            </div>
+          </div>
       )}
 
-      {/* 3. CENTER REDESIGNED PRACTICE COCKPIT (RESPONSIVE DUAL-TIER ON MOBILE IPHONE PORTRAIT, SLEEK SINGLE-ROW IN LANDSCAPE) */}
-      <div className="bg-zinc-950/95 backdrop-blur-2xl border-y border-white/[0.08] px-2 sm:px-6 py-1 sm:py-0 sm:h-14 landscape:h-11 landscape:py-0 flex flex-col sm:flex-row landscape:flex-row items-center justify-between gap-1 sm:gap-2 z-20 flex-shrink-0 shadow-lg pl-[max(0.5rem,env(safe-area-inset-left),env(safe-area-inset-right))] pr-[max(0.5rem,env(safe-area-inset-left),env(safe-area-inset-right))]">
-        {/* Tier 1 on Mobile Portrait: Hands + Auxiliary Toggles (Loop & Metro) */}
+      {/* 2. MAIN PERFORMANCE STAGE (Keys Highway OR Full Sheet Music — consistent position!) */}
+      <div className="relative overflow-hidden w-full flex-1 min-h-0">
+        {/* Live Competition HUD Overlay (Available in BOTH Keys and Sheet Modes!) */}
+        {playMode === 'competition' && (
+          <div className="absolute top-2.5 left-1/2 -translate-x-1/2 z-30 flex items-center gap-2 sm:gap-3 px-3 py-1.5 rounded-2xl bg-zinc-950/90 backdrop-blur-xl border border-amber-500/40 shadow-[0_4px_24px_rgba(0,0,0,0.6)] animate-in fade-in select-none max-w-[95vw]">
+            <div className="flex items-center gap-1 text-amber-400 font-black text-xs">
+              <Trophy className="w-3.5 h-3.5 text-yellow-400 flex-shrink-0" />
+              <span className="font-mono text-white text-xs sm:text-sm font-extrabold">
+                {(competitionScore || 0).toLocaleString()}
+              </span>
+            </div>
+            <div className="h-3.5 w-px bg-white/10" />
+            <div className="flex items-center gap-1 text-xs font-bold text-orange-400">
+              <Flame className="w-3 h-3 flex-shrink-0" />
+              <span className="font-mono text-white font-extrabold">{competitionCombo || 0}x</span>
+            </div>
+            {competitionLastJudgment && (
+              <>
+                <div className="h-3.5 w-px bg-white/10 hidden xs:block sm:block" />
+                <span className={`text-[10px] sm:text-xs font-black uppercase tracking-wider truncate ${competitionLastJudgment.color}`}>
+                  {competitionLastJudgment.text}
+                </span>
+              </>
+            )}
+            {onOpenCompetitionReport && (
+              <button
+                type="button"
+                onClick={onOpenCompetitionReport}
+                className="ml-0.5 px-2.5 py-1 rounded-xl bg-amber-500 hover:bg-amber-400 text-zinc-950 text-[10px] font-black transition-colors flex-shrink-0"
+              >
+                {language === 'de' ? 'Bericht' : 'Report'}
+              </button>
+            )}
+          </div>
+        )}
+
+        {viewLayout === 'keyboard' ? (
+          <div className={`w-full h-full ${theme === 'light' ? 'bg-[#f8fafc]' : 'bg-[#080c1e]'}`}>
+            <FallingKeysCanvas
+              piece={piece}
+              currentTime={currentTime}
+              isPlaying={isPlaying}
+              playbackRate={playbackRate}
+              activeNotes={activeNotes}
+              damperPedal={damperPedal}
+              viewMode={viewPerspective}
+              theme={theme}
+              handMode={handMode}
+              expectedNotes={expectedNotes}
+              onScreenKeyPress={onScreenKeyPress}
+              onScreenKeyRelease={onScreenKeyRelease}
+              onTogglePedal={onTogglePedal}
+              showFingers={false}
+              wallpaperUrl={yliaWallpaper}
+            />
+          </div>
+        ) : (
+          <div className="w-full h-full">
+            <SheetMusicView
+              piece={piece}
+              currentTime={currentTime}
+              activeNotes={activeNotes}
+              expectedNotes={expectedNotes}
+              isWaitMode={playMode === 'practice'}
+              playMode={playMode}
+              handMode={handMode}
+              isPlaying={isPlaying}
+              onSeek={onSeek}
+              isLooping={isLooping}
+              loopRange={loopRange}
+              startMeasure={startMeasure}
+              onStartMeasureChange={onStartMeasureChange}
+              onLoopRangeChange={onLoopRangeChange}
+              onToggleLoop={onToggleLoop}
+              onOpenSections={() => setSectionsMenuOpen(true)}
+              language={language}
+              showFingering={false}
+            />
+          </div>
+        )}
+      </div>
+
+      {/* 3. BOTTOM PRACTICE COCKPIT (Consistent Thumb-Friendly Position in Both Keys & Sheet Mode!) */}
+      <div className="bg-zinc-950/95 backdrop-blur-2xl border-t border-white/[0.08] px-2.5 sm:px-5 py-1.5 sm:py-0 sm:min-h-[3.5rem] landscape:min-h-[2.75rem] landscape:py-0.5 flex flex-col sm:flex-row landscape:flex-row items-center justify-between gap-1.5 sm:gap-2 z-20 flex-shrink-0 shadow-[0_-6px_25px_rgba(0,0,0,0.45)] pl-[max(0.65rem,env(safe-area-inset-left))] pr-[max(0.65rem,env(safe-area-inset-right))]">
+        {/* Tier 1 on Mobile Portrait: Hand Selector + Start Measure Pill + Loop */}
         <div className="flex items-center justify-between w-full sm:w-auto landscape:w-auto gap-1.5">
-          {/* Hand Practice Segmented Control (Both, RH Cyan, LH Pink) */}
-          <div className="flex items-center gap-0.5 sm:gap-1 bg-zinc-900 border border-white/10 rounded-xl p-0.5 sm:p-1 shadow-inner flex-shrink-0">
+          {/* Hand Practice Segmented Control */}
+          <div className="flex items-center gap-0.5 bg-zinc-900 border border-white/10 rounded-xl p-0.5 shadow-inner flex-shrink-0">
             <button
+              type="button"
               onClick={() => onHandModeChange('both')}
-              className={`flex items-center gap-1 px-2 sm:px-3 py-1 sm:py-1.5 rounded-lg sm:rounded-xl text-[11px] sm:text-xs font-bold transition-all ${
+              className={`flex items-center gap-1 px-2 sm:px-2.5 py-1 rounded-lg text-[11px] sm:text-xs font-bold transition-all ${
                 handMode === 'both'
-                  ? 'bg-gradient-to-r from-pink-400 to-sky-400 text-zinc-950 shadow-md scale-105'
+                  ? 'bg-gradient-to-r from-pink-400 to-sky-400 text-zinc-950 shadow-sm'
                   : 'text-zinc-400 hover:text-zinc-200'
               }`}
               title="Practice Both Hands"
             >
-              <Hand className="w-3 h-3 sm:w-3.5 sm:h-3.5" />
+              <Hand className="w-3 h-3" />
               <span>Both</span>
             </button>
             <button
+              type="button"
               onClick={() => onHandModeChange('right')}
-              className={`flex items-center gap-1 px-2 sm:px-3 py-1 sm:py-1.5 rounded-lg sm:rounded-xl text-[11px] sm:text-xs font-bold transition-all ${
+              className={`flex items-center gap-1 px-2 sm:px-2.5 py-1 rounded-lg text-[11px] sm:text-xs font-bold transition-all ${
                 handMode === 'right'
-                  ? 'bg-sky-400 text-zinc-950 shadow-md scale-105'
-                  : 'text-zinc-400 hover:text-zinc-200'
+                  ? 'bg-sky-400 text-zinc-950 shadow-sm'
+                  : 'text-sky-400 hover:text-sky-300'
               }`}
-              title="Practice Right Hand (Pastel Cyan Notes)"
+              title="Practice Right Hand"
             >
-              <span className="text-sky-400 font-mono font-bold">RH</span>
-              <span className="hidden md:inline">Right</span>
+              <span className="font-mono font-bold">RH</span>
             </button>
             <button
+              type="button"
               onClick={() => onHandModeChange('left')}
-              className={`flex items-center gap-1 px-2 sm:px-3 py-1 sm:py-1.5 rounded-lg sm:rounded-xl text-[11px] sm:text-xs font-bold transition-all ${
+              className={`flex items-center gap-1 px-2 sm:px-2.5 py-1 rounded-lg text-[11px] sm:text-xs font-bold transition-all ${
                 handMode === 'left'
-                  ? 'bg-pink-400 text-zinc-950 shadow-md scale-105'
-                  : 'text-zinc-400 hover:text-zinc-200'
+                  ? 'bg-pink-400 text-zinc-950 shadow-sm'
+                  : 'text-pink-400 hover:text-pink-300'
               }`}
-              title="Practice Left Hand (Pastel Pink Notes)"
+              title="Practice Left Hand"
             >
-              <span className="text-pink-400 font-mono font-bold">LH</span>
-              <span className="hidden md:inline">Left</span>
+              <span className="font-mono font-bold">LH</span>
             </button>
           </div>
 
-          {/* Quick auxiliary toggles visible on mobile portrait */}
-          <div className="flex sm:hidden items-center gap-1.5">
+          {/* Mobile Portrait Quick Controls: Compact Start Takt Stepper + Loop Toggle */}
+          <div className="flex sm:hidden landscape:hidden items-center gap-1.5">
+            {onStartMeasureChange && (
+              <div className="flex items-center rounded-xl bg-zinc-900 border border-amber-500/35 overflow-hidden shadow-sm">
+                <button
+                  type="button"
+                  onClick={() => onStartMeasureChange(Math.max(1, startMeasure - 1))}
+                  className="px-2 py-1 text-zinc-300 hover:text-white text-xs font-bold active:bg-zinc-800"
+                  aria-label="Previous Start Measure"
+                >
+                  -
+                </button>
+                <button
+                  type="button"
+                  onClick={() => setSectionsMenuOpen(true)}
+                  className="px-2 py-1 font-mono text-[11px] font-bold text-amber-400 border-x border-white/10 active:bg-zinc-800"
+                  title="Configure Start Measure & Section Practice"
+                >
+                  M.{startMeasure}
+                </button>
+                <button
+                  type="button"
+                  onClick={() => onStartMeasureChange(Math.min(maxMeasure, startMeasure + 1))}
+                  className="px-2 py-1 text-zinc-300 hover:text-white text-xs font-bold active:bg-zinc-800"
+                  aria-label="Next Start Measure"
+                >
+                  +
+                </button>
+              </div>
+            )}
+
             <button
-              onClick={() => setSectionsMenuOpen(true)}
-              className="px-2 py-1 rounded-lg border text-[10px] font-bold flex items-center gap-1 transition-all bg-zinc-900 border-white/10 text-amber-400 hover:text-amber-300"
-              title="Practice Specific Part"
-            >
-              <Layers className="w-3 h-3" />
-              <span>Part</span>
-            </button>
-            <button
+              type="button"
               onClick={onToggleLoop}
-              className={`px-2 py-1 rounded-lg border text-[10px] font-bold flex items-center gap-1 transition-all ${
+              className={`px-2 py-1 rounded-xl border text-[11px] font-bold flex items-center gap-1 transition-all active:scale-95 ${
                 isLooping
-                  ? 'bg-blue-500/20 border-blue-500/60 text-blue-300'
+                  ? 'bg-blue-500/25 border-blue-500/60 text-blue-300'
                   : 'bg-zinc-900 border-white/10 text-zinc-400'
               }`}
-              title="Loop"
+              title="Toggle Section Loop"
             >
               <Repeat className="w-3 h-3" />
-              <span>Loop</span>
+              <span>{isLooping ? `${loopRange[0]}–${loopRange[1]}` : 'Loop'}</span>
             </button>
-            {onToggleMetronome && (
-              <button
-                onClick={onToggleMetronome}
-                className={`px-2 py-1 rounded-lg border text-[10px] font-bold flex items-center gap-1 transition-all ${
-                  isMetronomeOn
-                    ? 'bg-emerald-500/20 border-emerald-500/60 text-emerald-300'
-                    : 'bg-zinc-900 border-white/10 text-zinc-400'
-                }`}
-                title="Metronome"
-              >
-                <Timer className="w-3 h-3" />
-                <span>Metro</span>
-              </button>
-            )}
-            {onToggleCountIn && (
-              <button
-                onClick={onToggleCountIn}
-                className={`px-2 py-1 rounded-lg border text-[10px] font-bold flex items-center gap-1 transition-all ${
-                  isCountInEnabled
-                    ? 'bg-amber-500/20 border-amber-500/60 text-amber-300'
-                    : 'bg-zinc-900 border-white/10 text-zinc-400'
-                }`}
-                title="Count-In"
-              >
-                <span className="font-mono text-[10px] font-bold">1-4</span>
-              </button>
-            )}
           </div>
         </div>
 
-        {/* Tier 2: Main Transport (Rewind, Play, 3-Way Mode Switcher, Speed) */}
-        <div className="flex items-center justify-between sm:justify-center gap-1 sm:gap-3 landscape:gap-2.5 w-full sm:w-auto landscape:w-auto flex-nowrap">
-          {/* Rewind */}
+        {/* Tier 2: Main Transport (Zero-overflow on 375px iPhone!) */}
+        <div className="flex items-center justify-between sm:justify-center gap-1.5 sm:gap-2.5 w-full sm:w-auto landscape:w-auto flex-nowrap">
+          {/* Rewind to Start Measure / Loop Start */}
           <button
+            type="button"
             onClick={onRewind}
-            className="w-8 h-8 sm:w-10 sm:h-10 landscape:w-8 landscape:h-8 rounded-full bg-zinc-900 hover:bg-zinc-800 border border-white/10 flex items-center justify-center text-zinc-400 hover:text-white transition-all active:scale-95 shadow-md flex-shrink-0"
-            title={language === 'de' ? `Zurückspulen zu Takt ${isLooping ? loopRange[0] : startMeasure}` : `Rewind to measure ${isLooping ? loopRange[0] : startMeasure}`}
+            className="w-9 h-9 sm:w-9 sm:h-9 landscape:w-8 landscape:h-8 rounded-full bg-zinc-900 hover:bg-zinc-800 border border-white/10 flex items-center justify-center text-zinc-300 hover:text-white transition-all active:scale-95 shadow-md flex-shrink-0"
+            title={
+              language === 'de'
+                ? `Zurück zu Takt ${isLooping ? loopRange[0] : startMeasure}`
+                : `Rewind to measure ${isLooping ? loopRange[0] : startMeasure}`
+            }
+            aria-label="Rewind"
           >
-            <RotateCcw className="w-3.5 h-3.5 sm:w-4 sm:h-4" />
+            <RotateCcw className="w-4 h-4" />
           </button>
 
-          {/* Start Measure Selector Pill */}
+          {/* Desktop / Landscape Start Measure Pill */}
           {onStartMeasureChange && (
-            <div className="flex items-center rounded-xl bg-zinc-900 border border-amber-500/30 overflow-hidden shadow-sm flex-shrink-0">
+            <div className="hidden sm:flex landscape:flex items-center rounded-xl bg-zinc-900 border border-amber-500/35 overflow-hidden shadow-sm flex-shrink-0">
               <button
+                type="button"
                 onClick={() => onStartMeasureChange(Math.max(1, startMeasure - 1))}
-                className="px-1.5 sm:px-2 py-1 text-zinc-400 hover:text-white text-xs font-bold transition-colors active:scale-95"
+                className="px-2 py-1.5 text-zinc-400 hover:text-white text-xs font-bold transition-colors active:scale-95"
                 title={language === 'de' ? 'Vorheriger Start-Takt (-)' : 'Previous Start Measure (-)'}
               >
                 -
               </button>
               <button
+                type="button"
                 onClick={() => setSectionsMenuOpen(true)}
-                className="px-1.5 sm:px-2 py-1 font-mono text-[10px] sm:text-xs font-bold text-amber-400 hover:text-amber-300 border-x border-white/10 transition-colors"
-                title={language === 'de' ? 'Start-Takt (Jedes Mal ab hier) - Klicken zum Konfigurieren' : 'Start Measure (Click to configure)'}
+                className="px-2 py-1.5 font-mono text-[11px] font-bold text-amber-400 hover:text-amber-300 border-x border-white/10 transition-colors"
+                title={language === 'de' ? 'Start-Takt & Abschnitte konfigurieren' : 'Configure Start Measure & Sections'}
               >
-                Start: M.{startMeasure}
+                Start M.{startMeasure}
               </button>
               <button
+                type="button"
                 onClick={() => onStartMeasureChange(Math.min(maxMeasure, startMeasure + 1))}
-                className="px-1.5 sm:px-2 py-1 text-zinc-400 hover:text-white text-xs font-bold transition-colors active:scale-95"
+                className="px-2 py-1.5 text-zinc-400 hover:text-white text-xs font-bold transition-colors active:scale-95"
                 title={language === 'de' ? 'Nächster Start-Takt (+)' : 'Next Start Measure (+)'}
               >
                 +
@@ -1121,24 +1336,27 @@ export const FlowkeyPlayerView: React.FC<FlowkeyPlayerViewProps> = ({
             </div>
           )}
 
-          {/* Central Vibrantly Glowing Play/Pause Button */}
+          {/* Central Glowing Play/Pause Button */}
           <button
+            type="button"
             onClick={onTogglePlay}
-            className="w-9 h-9 sm:w-13 sm:h-13 landscape:w-9 landscape:h-9 rounded-full bg-gradient-to-tr from-orange-600 via-orange-500 to-amber-500 hover:from-orange-500 hover:to-amber-400 text-white flex items-center justify-center shadow-[0_0_20px_rgba(249,115,22,0.6)] active:scale-95 transition-all p-2 sm:p-3 landscape:p-2 flex-shrink-0"
+            className="w-10 h-10 sm:w-11 sm:h-11 landscape:w-9 landscape:h-9 rounded-full bg-gradient-to-tr from-orange-600 via-orange-500 to-amber-500 hover:from-orange-500 hover:to-amber-400 text-white flex items-center justify-center shadow-[0_0_20px_rgba(249,115,22,0.55)] active:scale-95 transition-all flex-shrink-0"
             title={isPlaying ? 'Pause' : 'Play'}
+            aria-label={isPlaying ? 'Pause' : 'Play'}
           >
             {isPlaying ? (
-              <Pause className="w-4 h-4 sm:w-6 sm:h-6 landscape:w-4 landscape:h-4 fill-current" />
+              <Pause className="w-4 h-4 sm:w-5 sm:h-5 fill-current" />
             ) : (
-              <Play className="w-4 h-4 sm:w-6 sm:h-6 landscape:w-4 landscape:h-4 fill-current ml-0.5" />
+              <Play className="w-4 h-4 sm:w-5 sm:h-5 fill-current ml-0.5" />
             )}
           </button>
 
-          {/* 3-Way Mode Segmented Switcher (Flow / Adaptive Practice / Competition Exam) */}
+          {/* 3-Way Mode Segmented Switcher (Flow / Wait / Comp) */}
           <div className="flex items-center p-0.5 bg-zinc-900 border border-white/10 rounded-xl shadow-sm flex-shrink-0">
             <button
-              onClick={() => onChangePlayMode ? onChangePlayMode('flow') : onToggleWaitMode()}
-              className={`px-1.5 sm:px-2.5 py-1 sm:py-1.5 rounded-lg sm:rounded-xl text-[10px] sm:text-xs font-bold transition-all flex items-center gap-0.5 sm:gap-1 ${
+              type="button"
+              onClick={() => (onChangePlayMode ? onChangePlayMode('flow') : onToggleWaitMode())}
+              className={`px-2 sm:px-2.5 py-1.5 rounded-lg text-[11px] sm:text-xs font-bold transition-all flex items-center gap-1 ${
                 playMode === 'flow'
                   ? 'bg-zinc-800 text-white shadow-sm font-extrabold'
                   : 'text-zinc-400 hover:text-zinc-200'
@@ -1149,8 +1367,9 @@ export const FlowkeyPlayerView: React.FC<FlowkeyPlayerViewProps> = ({
               <span>Flow</span>
             </button>
             <button
-              onClick={() => onChangePlayMode ? onChangePlayMode('practice') : onToggleWaitMode()}
-              className={`px-1.5 sm:px-2.5 py-1 sm:py-1.5 rounded-lg sm:rounded-xl text-[10px] sm:text-xs font-bold transition-all flex items-center gap-0.5 sm:gap-1 ${
+              type="button"
+              onClick={() => (onChangePlayMode ? onChangePlayMode('practice') : onToggleWaitMode())}
+              className={`px-2 sm:px-2.5 py-1.5 rounded-lg text-[11px] sm:text-xs font-bold transition-all flex items-center gap-1 ${
                 playMode === 'practice'
                   ? 'bg-gradient-to-r from-amber-500 to-orange-500 text-zinc-950 font-extrabold shadow-[0_0_12px_rgba(245,158,11,0.5)]'
                   : 'text-zinc-400 hover:text-zinc-200'
@@ -1161,10 +1380,11 @@ export const FlowkeyPlayerView: React.FC<FlowkeyPlayerViewProps> = ({
               <span>Wait</span>
             </button>
             <button
-              onClick={() => onChangePlayMode ? onChangePlayMode('competition') : onToggleWaitMode()}
-              className={`px-1.5 sm:px-2.5 py-1 sm:py-1.5 rounded-lg sm:rounded-xl text-[10px] sm:text-xs font-bold transition-all flex items-center gap-0.5 sm:gap-1 ${
+              type="button"
+              onClick={() => (onChangePlayMode ? onChangePlayMode('competition') : onToggleWaitMode())}
+              className={`px-2 sm:px-2.5 py-1.5 rounded-lg text-[11px] sm:text-xs font-bold transition-all flex items-center gap-1 ${
                 playMode === 'competition'
-                  ? 'bg-gradient-to-r from-yellow-400 via-amber-500 to-orange-600 text-zinc-950 font-extrabold shadow-[0_0_15px_rgba(250,204,21,0.6)] animate-pulse'
+                  ? 'bg-gradient-to-r from-yellow-400 via-amber-500 to-orange-600 text-zinc-950 font-extrabold shadow-[0_0_15px_rgba(250,204,21,0.6)]'
                   : 'text-zinc-400 hover:text-zinc-200'
               }`}
               title="Competition Mode: real-time examination, scoring, mistake log & jury critiques!"
@@ -1174,37 +1394,39 @@ export const FlowkeyPlayerView: React.FC<FlowkeyPlayerViewProps> = ({
             </button>
           </div>
 
-          {/* Speed / Tempo Popover Controller */}
-          <div className="relative flex-shrink-0">
+          {/* Speed / Tempo Popover Controller (Right-aligned, upward, document-level click-outside dismiss) */}
+          <div ref={speedMenuRef} className="relative flex-shrink-0">
             <button
+              type="button"
               onClick={() => setSpeedMenuOpen(!speedMenuOpen)}
-              className="flex items-center gap-1 px-2 sm:px-3 py-1 sm:py-2 rounded-xl sm:rounded-2xl bg-zinc-900 hover:bg-zinc-800 border border-white/10 font-mono text-[10px] sm:text-xs font-bold text-zinc-200 transition-all shadow-sm"
-              title="Change Speed"
+              className="flex items-center gap-1 h-9 px-2.5 rounded-xl bg-zinc-900 hover:bg-zinc-800 border border-white/10 font-mono text-[11px] sm:text-xs font-bold text-zinc-200 transition-all shadow-sm active:scale-95"
+              title="Change Playback Speed"
             >
-              <Gauge className="w-3 h-3 sm:w-3.5 sm:h-3.5 text-orange-400" />
+              <Gauge className="w-3.5 h-3.5 text-orange-400" />
               <span>{Math.round(playbackRate * 100)}%</span>
             </button>
 
             {speedMenuOpen && (
-              <div className="absolute bottom-full mb-3 left-1/2 -translate-x-1/2 bg-zinc-900/95 backdrop-blur-2xl border border-white/15 rounded-2xl p-3 shadow-2xl flex flex-col gap-2.5 z-50 min-w-[190px]">
+              <div className="absolute bottom-full mb-2.5 right-0 bg-zinc-900/95 backdrop-blur-2xl border border-white/15 rounded-2xl p-3.5 shadow-2xl flex flex-col gap-3 z-50 w-56 animate-in fade-in slide-in-from-bottom-2 duration-150">
                 <div className="flex items-center justify-between text-[11px] font-bold text-zinc-400 uppercase">
-                  <span>Playback Speed</span>
-                  <span className="font-mono text-amber-400">{Math.round(playbackRate * 100)}%</span>
+                  <span>{language === 'de' ? 'Tempo' : 'Playback Speed'}</span>
+                  <span className="font-mono text-amber-400 text-xs">{Math.round(playbackRate * 100)}%</span>
                 </div>
 
                 {/* Quick preset buttons */}
-                <div className="grid grid-cols-4 gap-1">
+                <div className="grid grid-cols-4 gap-1.5">
                   {[0.25, 0.5, 0.75, 1.0].map((rate) => (
                     <button
                       key={rate}
+                      type="button"
                       onClick={() => {
                         onRateChange(rate)
                         setSpeedMenuOpen(false)
                       }}
-                      className={`py-1.5 rounded-lg text-xs font-mono font-bold transition-all ${
+                      className={`py-2 rounded-xl text-xs font-mono font-bold transition-all ${
                         playbackRate === rate
                           ? 'bg-amber-500 text-zinc-950 shadow-md'
-                          : 'bg-zinc-800 hover:bg-zinc-750 text-zinc-300'
+                          : 'bg-zinc-800 hover:bg-zinc-700 text-zinc-300'
                       }`}
                     >
                       {Math.round(rate * 100)}%
@@ -1220,18 +1442,19 @@ export const FlowkeyPlayerView: React.FC<FlowkeyPlayerViewProps> = ({
                   step="0.05"
                   value={playbackRate}
                   onChange={(e) => onRateChange(parseFloat(e.target.value))}
-                  className="w-full accent-amber-500 cursor-pointer"
+                  className="w-full accent-amber-500 cursor-pointer h-2"
                 />
               </div>
             )}
           </div>
         </div>
 
-        {/* Right on Desktop / Landscape: Auxiliary Toggles (Loop & Metro) */}
+        {/* Right on Desktop / Landscape: Auxiliary Toggles (Loop, Speed Ramp, Metro, Count-In) */}
         <div className="hidden sm:flex items-center gap-1.5 flex-shrink-0">
           {/* Loop Mode & Part Practice Selector */}
           <div className="flex items-center rounded-xl border border-white/10 bg-zinc-900 overflow-hidden shadow-sm">
             <button
+              type="button"
               onClick={onToggleLoop}
               className={`flex items-center gap-1 px-2.5 py-1.5 text-xs font-bold transition-all active:scale-95 ${
                 isLooping
@@ -1241,9 +1464,10 @@ export const FlowkeyPlayerView: React.FC<FlowkeyPlayerViewProps> = ({
               title="Toggle Loop On/Off"
             >
               <Repeat className={`w-3.5 h-3.5 ${isLooping ? 'text-blue-400' : ''}`} />
-              <span>Loop</span>
+              <span className="hidden md:inline">Loop</span>
             </button>
             <button
+              type="button"
               onClick={() => setSectionsMenuOpen(true)}
               className="px-2 py-1.5 font-mono text-[11px] text-amber-400 hover:text-amber-300 border-l border-white/10 hover:bg-zinc-800 transition-colors"
               title="Select Part to Practice, Loop or View on Sheet"
@@ -1255,8 +1479,9 @@ export const FlowkeyPlayerView: React.FC<FlowkeyPlayerViewProps> = ({
           {/* Speed Ramp */}
           {isLooping && onToggleSpeedRamp && (
             <button
+              type="button"
               onClick={onToggleSpeedRamp}
-              className={`flex items-center gap-1 px-2 py-1.5 rounded-xl border text-xs font-bold transition-all shadow-sm active:scale-95 ${
+              className={`hidden md:flex items-center gap-1 px-2 py-1.5 rounded-xl border text-xs font-bold transition-all shadow-sm active:scale-95 ${
                 isSpeedRamp
                   ? 'bg-gradient-to-r from-orange-500 to-amber-500 border-amber-400 text-zinc-950 font-extrabold shadow-[0_0_12px_rgba(249,115,22,0.4)]'
                   : 'bg-zinc-900 hover:bg-zinc-800 border-white/10 text-zinc-400 hover:text-zinc-200'
@@ -1271,10 +1496,11 @@ export const FlowkeyPlayerView: React.FC<FlowkeyPlayerViewProps> = ({
           {/* Metronome Click Toggle */}
           {onToggleMetronome && (
             <button
+              type="button"
               onClick={onToggleMetronome}
-              className={`flex items-center gap-1 px-2.5 py-1.5 rounded-xl border text-xs font-bold transition-all shadow-sm active:scale-95 ${
+              className={`hidden lg:flex items-center gap-1 px-2.5 py-1.5 rounded-xl border text-xs font-bold transition-all shadow-sm active:scale-95 ${
                 isMetronomeOn
-                  ? 'bg-emerald-500/20 border-emerald-500/60 text-emerald-300 shadow-[0_0_12px_rgba(16,185,129,0.3)] animate-pulse'
+                  ? 'bg-emerald-500/20 border-emerald-500/60 text-emerald-300 shadow-[0_0_12px_rgba(16,185,129,0.3)]'
                   : 'bg-zinc-900 hover:bg-zinc-800 border-white/10 text-zinc-400 hover:text-zinc-200'
               }`}
               title="Metronome Click"
@@ -1287,8 +1513,9 @@ export const FlowkeyPlayerView: React.FC<FlowkeyPlayerViewProps> = ({
           {/* Count-In Pre-Roll Toggle */}
           {onToggleCountIn && (
             <button
+              type="button"
               onClick={onToggleCountIn}
-              className={`flex items-center gap-1 px-2.5 py-1.5 rounded-xl border text-xs font-bold transition-all shadow-sm active:scale-95 ${
+              className={`hidden lg:flex items-center gap-1 px-2.5 py-1.5 rounded-xl border text-xs font-bold transition-all shadow-sm active:scale-95 ${
                 isCountInEnabled
                   ? 'bg-amber-500/20 border-amber-500/60 text-amber-300 shadow-[0_0_12px_rgba(245,158,11,0.3)]'
                   : 'bg-zinc-900 hover:bg-zinc-800 border-white/10 text-zinc-500 hover:text-zinc-300'
@@ -1301,137 +1528,182 @@ export const FlowkeyPlayerView: React.FC<FlowkeyPlayerViewProps> = ({
         </div>
       </div>
 
-      {/* 4. LOWER: AUTHENTIC FULL SHEET MUSIC PAGE */}
-      {viewLayout === 'sheet' && (
-        <div
-          className="relative overflow-hidden flex-1 min-h-0 bg-[#fdfbf7]"
-        >
-          <SheetMusicView
-            piece={piece}
-            currentTime={currentTime}
-            activeNotes={activeNotes}
-            expectedNotes={expectedNotes}
-            isWaitMode={playMode === 'practice'}
-            playMode={playMode}
-            handMode={handMode}
-            isPlaying={isPlaying}
-            onSeek={onSeek}
-            isLooping={isLooping}
-            loopRange={loopRange}
-            startMeasure={startMeasure}
-            onStartMeasureChange={onStartMeasureChange}
-            onLoopRangeChange={onLoopRangeChange}
-            onToggleLoop={onToggleLoop}
-            language={language}
-            showFingering={false}
-          />
-        </div>
-      )}
+      {/* 4. TOUCH-FRIENDLY INTERACTIVE PROGRESS SCRUBBER & MEASURE BAR */}
+      <div className="bg-zinc-950 border-t border-white/[0.06] px-3 sm:px-5 pt-1 pb-[max(0.4rem,env(safe-area-inset-bottom))] pl-[max(0.75rem,env(safe-area-inset-left))] pr-[max(0.75rem,env(safe-area-inset-right))] flex items-center gap-2.5 flex-shrink-0">
+        <span className="text-[10px] font-mono font-bold text-amber-400 flex-shrink-0 w-12">
+          M.{currentMeasure}/{maxMeasure}
+        </span>
 
-      {/* 5. BOTTOM ORANGE PROGRESS SCRUBBER LINE */}
-      <div
-        onClick={(e) => {
-          const rect = e.currentTarget.getBoundingClientRect()
-          const clickX = e.clientX - rect.left
-          const ratio = Math.max(0, Math.min(1, clickX / rect.width))
-          onSeek(ratio * (piece.duration || 1))
-        }}
-        className="h-2 bg-stone-300 hover:h-3 cursor-pointer relative transition-all group flex-shrink-0 mb-[env(safe-area-inset-bottom,0px)]"
-      >
+        {/* Generous 24px-tall interactive drag & tap scrubber */}
         <div
-          className="h-full bg-gradient-to-r from-orange-500 to-amber-500 group-hover:from-orange-400 group-hover:to-amber-400 relative"
-          style={{ width: `${progressPercent}%` }}
+          ref={scrubberRef}
+          onPointerDown={(e) => {
+            isScrubbingRef.current = true
+            e.currentTarget.setPointerCapture(e.pointerId)
+            seekAtClientX(e.clientX)
+          }}
+          onPointerMove={(e) => {
+            if (!isScrubbingRef.current) return
+            seekAtClientX(e.clientX)
+          }}
+          onPointerUp={() => {
+            isScrubbingRef.current = false
+          }}
+          onPointerCancel={() => {
+            isScrubbingRef.current = false
+          }}
+          className="flex-1 h-6 flex items-center cursor-pointer touch-none group"
         >
-          <div className="w-3 h-3 rounded-full bg-orange-600 absolute right-0 top-1/2 -translate-y-1/2 shadow-md opacity-0 group-hover:opacity-100 transition-opacity" />
+          <div className="w-full h-1.5 group-hover:h-2 bg-zinc-800 rounded-full relative transition-all overflow-visible">
+            <div
+              className="h-full bg-gradient-to-r from-orange-500 to-amber-400 rounded-full relative"
+              style={{ width: `${progressPercent}%` }}
+            >
+              <div className="w-3.5 h-3.5 rounded-full bg-amber-400 border-2 border-zinc-950 absolute -right-1.5 top-1/2 -translate-y-1/2 shadow-[0_0_8px_rgba(245,158,11,0.8)]" />
+            </div>
+          </div>
         </div>
+
+        <span className="text-[10px] font-mono text-zinc-400 flex-shrink-0 tabular-nums">
+          {formatTimeShort(currentTime)} / {formatTimeShort(piece.duration || 0)}
+        </span>
       </div>
 
-      {/* Universal Section & Part Practice Modal (Mobile & Desktop) */}
+      {/* Universal Section & Part Practice Modal (Mobile & Desktop, Backdrop Click Close, Fast Measure Jump!) */}
       {sectionsMenuOpen && (
-        <div className="fixed inset-0 z-50 bg-black/80 backdrop-blur-md flex items-center justify-center p-4 select-none animate-in fade-in duration-200">
-          <div className="bg-zinc-900 border border-white/15 rounded-3xl w-full max-w-lg shadow-2xl overflow-hidden flex flex-col max-h-[90vh]">
+        <div
+          onClick={() => setSectionsMenuOpen(false)}
+          className="fixed inset-0 z-50 bg-black/80 backdrop-blur-md flex items-end sm:items-center justify-center p-0 sm:p-4 select-none animate-in fade-in duration-200"
+        >
+          <div
+            onClick={(e) => e.stopPropagation()}
+            className="bg-zinc-900 border border-white/15 rounded-t-3xl sm:rounded-3xl w-full max-w-lg shadow-2xl overflow-hidden flex flex-col max-h-[88dvh]"
+          >
             {/* Header */}
-            <div className="px-5 py-4 border-b border-white/10 flex items-center justify-between bg-zinc-950/80">
-              <div className="flex items-center gap-2.5">
-                <div className="p-2 rounded-xl bg-amber-500/15 text-amber-400 border border-amber-500/30">
+            <div className="px-5 py-4 border-b border-white/10 flex items-center justify-between bg-zinc-950/90 flex-shrink-0">
+              <div className="flex items-center gap-2.5 min-w-0">
+                <div className="p-2 rounded-xl bg-amber-500/15 text-amber-400 border border-amber-500/30 flex-shrink-0">
                   <Layers className="w-5 h-5" />
                 </div>
-                <div>
-                  <h3 className="text-sm font-bold text-white">
-                    {language === 'de' ? 'Abschnitt & Takte üben' : 'Part & Measure Practice'}
+                <div className="min-w-0">
+                  <h3 className="text-sm font-bold text-white truncate">
+                    {language === 'de' ? 'Abschnitt & Start-Takt wählen' : 'Part & Start Measure Practice'}
                   </h3>
-                  <p className="text-[11px] text-zinc-400">
+                  <p className="text-[11px] text-zinc-400 truncate">
                     {language === 'de'
-                      ? 'Wähle den Taktbereich zum Anhören, Üben oder Noten anzeigen'
-                      : 'Choose measure range to loop, practice in wait mode, or display on sheet'}
+                      ? `1–${maxMeasure} Takte • Start-Takt, Loop & Notenblatt`
+                      : `Measures 1–${maxMeasure} • Start Takt, Loop & Sheet`}
                   </p>
                 </div>
               </div>
               <button
+                type="button"
                 onClick={() => setSectionsMenuOpen(false)}
-                className="p-2 rounded-xl bg-zinc-800 text-zinc-400 hover:text-white transition-colors"
+                className="w-9 h-9 rounded-xl bg-zinc-800 hover:bg-zinc-700 text-zinc-300 hover:text-white flex items-center justify-center transition-colors flex-shrink-0"
+                aria-label="Close modal"
               >
                 <X className="w-4 h-4" />
               </button>
             </div>
 
-            <div className="p-5 overflow-y-auto space-y-5 flex-1 scrollbar-thin scrollbar-thumb-zinc-800">
-              {/* Start-Takt Chooser (Start every time from here) */}
+            <div className="p-4 sm:p-5 pb-[max(1.5rem,env(safe-area-inset-bottom))] overflow-y-auto space-y-5 flex-1 min-h-0">
+              {/* Start-Takt Chooser (Start every time from here — with direct input & ±10 fast jump!) */}
               {onStartMeasureChange && (
                 <div className="p-4 bg-gradient-to-br from-amber-500/10 via-zinc-950/80 to-zinc-950/90 rounded-2xl border border-amber-500/30 space-y-3 shadow-lg">
-                  <div className="flex items-center justify-between">
+                  <div className="flex items-center justify-between gap-2">
                     <span className="text-xs font-bold uppercase tracking-wider text-amber-400 flex items-center gap-1.5">
-                      <Target className="w-3.5 h-3.5 text-amber-400" />
-                      <span>{language === 'de' ? 'Start-Takt wählen (Jedes Mal ab hier)' : 'Default Start Measure'}</span>
+                      <Target className="w-3.5 h-3.5 text-amber-400 flex-shrink-0" />
+                      <span>{language === 'de' ? 'Start-Takt (Jedes Mal ab hier)' : 'Default Start Measure'}</span>
                     </span>
-                    <span className="text-[11px] font-mono font-bold text-amber-400 bg-amber-500/20 px-2.5 py-0.5 rounded-lg border border-amber-500/40">
-                      Takt {startMeasure}
+                    <span className="text-[11px] font-mono font-bold text-amber-400 bg-amber-500/20 px-2.5 py-0.5 rounded-lg border border-amber-500/40 flex-shrink-0">
+                      M. {startMeasure} / {maxMeasure}
                     </span>
                   </div>
                   <p className="text-[11px] text-zinc-300 leading-snug">
                     {language === 'de'
-                      ? 'Wähle den Takt, an dem das Stück und jede Übungseinheit standardmäßig startet.'
-                      : 'Choose the measure where playback and practice start every time.'}
+                      ? 'Wähle den Takt, an dem das Üben jedes Mal automatisch beginnt (Start, Zurückspulen, Neustart).'
+                      : 'Choose the exact measure where practice begins every time (play, rewind, restart).'}
                   </p>
 
-                  <div className="flex items-center gap-2">
-                    <div className="flex items-center bg-zinc-900 border border-white/10 rounded-xl p-1 flex-1 justify-between">
+                  {/* Fast Stepper with -10, -1, Direct Input, +1, +10 */}
+                  <div className="flex items-center bg-zinc-900 border border-white/10 rounded-xl p-1 gap-1">
+                    {maxMeasure > 15 && (
                       <button
-                        onClick={() => onStartMeasureChange(Math.max(1, startMeasure - 1))}
-                        className="w-8 h-8 rounded-lg bg-zinc-800 hover:bg-zinc-700 text-white font-bold flex items-center justify-center text-sm active:scale-95 transition-all"
+                        type="button"
+                        onClick={() => onStartMeasureChange(clampMeasure(startMeasure - 10))}
+                        className="px-2 h-9 rounded-lg bg-zinc-800 hover:bg-zinc-700 text-zinc-300 font-mono font-bold text-xs active:scale-95 transition-all"
                       >
-                        -
+                        -10
                       </button>
-                      <span className="font-mono text-sm font-extrabold text-amber-300">
-                        M. {startMeasure}
-                      </span>
-                      <button
-                        onClick={() => onStartMeasureChange(Math.min(maxMeasure, startMeasure + 1))}
-                        className="w-8 h-8 rounded-lg bg-zinc-800 hover:bg-zinc-700 text-white font-bold flex items-center justify-center text-sm active:scale-95 transition-all"
-                      >
-                        +
-                      </button>
-                    </div>
-
+                    )}
                     <button
+                      type="button"
+                      onClick={() => onStartMeasureChange(clampMeasure(startMeasure - 1))}
+                      className="w-9 h-9 rounded-lg bg-zinc-800 hover:bg-zinc-700 text-white font-bold flex items-center justify-center text-sm active:scale-95 transition-all"
+                    >
+                      -
+                    </button>
+                    <input
+                      type="number"
+                      min={1}
+                      max={maxMeasure}
+                      value={startMeasure}
+                      onChange={(e) => {
+                        const val = parseInt(e.target.value, 10)
+                        if (!isNaN(val)) onStartMeasureChange(clampMeasure(val))
+                      }}
+                      className="flex-1 min-w-0 bg-transparent text-center font-mono text-base font-extrabold text-amber-300 focus:outline-none"
+                      aria-label="Start measure number"
+                    />
+                    <button
+                      type="button"
+                      onClick={() => onStartMeasureChange(clampMeasure(startMeasure + 1))}
+                      className="w-9 h-9 rounded-lg bg-zinc-800 hover:bg-zinc-700 text-white font-bold flex items-center justify-center text-sm active:scale-95 transition-all"
+                    >
+                      +
+                    </button>
+                    {maxMeasure > 15 && (
+                      <button
+                        type="button"
+                        onClick={() => onStartMeasureChange(clampMeasure(startMeasure + 10))}
+                        className="px-2 h-9 rounded-lg bg-zinc-800 hover:bg-zinc-700 text-zinc-300 font-mono font-bold text-xs active:scale-95 transition-all"
+                      >
+                        +10
+                      </button>
+                    )}
+                  </div>
+
+                  {/* Quick Jump Chips + Primary Launch */}
+                  <div className="flex flex-wrap items-center gap-2">
+                    <button
+                      type="button"
                       onClick={() => onStartMeasureChange(1)}
                       className={`px-3 py-2 rounded-xl text-xs font-bold transition-all border active:scale-95 ${
                         startMeasure === 1
-                          ? 'bg-amber-500/20 border-amber-500/50 text-amber-300 font-extrabold'
+                          ? 'bg-amber-500/20 border-amber-500/50 text-amber-300'
                           : 'bg-zinc-800 hover:bg-zinc-700 text-zinc-300 border-white/5'
                       }`}
                     >
                       M. 1
                     </button>
                     <button
+                      type="button"
                       onClick={() => onStartMeasureChange(currentMeasure)}
                       className={`px-3 py-2 rounded-xl text-xs font-bold transition-all border active:scale-95 ${
                         startMeasure === currentMeasure
-                          ? 'bg-amber-500/20 border-amber-500/50 text-amber-300 font-extrabold'
+                          ? 'bg-amber-500/20 border-amber-500/50 text-amber-300'
                           : 'bg-zinc-800 hover:bg-zinc-700 text-zinc-300 border-white/5'
                       }`}
                     >
-                      M. {currentMeasure} ({language === 'de' ? 'Aktuell' : 'Now'})
+                      {language === 'de' ? `Aktuell (M.${currentMeasure})` : `Current (M.${currentMeasure})`}
+                    </button>
+                    <button
+                      type="button"
+                      onClick={() => handlePracticeFromStartMeasure(startMeasure)}
+                      className="flex-1 min-w-[140px] px-3 py-2 rounded-xl bg-amber-500 hover:bg-amber-400 text-zinc-950 font-black text-xs flex items-center justify-center gap-1.5 shadow-md active:scale-95 transition-all"
+                    >
+                      <Play className="w-3.5 h-3.5 fill-current" />
+                      <span>{language === 'de' ? `Ab Takt ${startMeasure} üben` : `Practice from M.${startMeasure}`}</span>
                     </button>
                   </div>
                 </div>
@@ -1442,33 +1714,48 @@ export const FlowkeyPlayerView: React.FC<FlowkeyPlayerViewProps> = ({
                 <div className="flex items-center justify-between">
                   <span className="text-xs font-bold uppercase tracking-wider text-amber-400 flex items-center gap-1.5">
                     <Sliders className="w-3.5 h-3.5" />
-                    <span>{language === 'de' ? 'Taktbereich wählen' : 'Choose Range (From – To)'}</span>
+                    <span>{language === 'de' ? 'Taktbereich wählen (Loop)' : 'Choose Range (From – To)'}</span>
                   </span>
                   <span className="text-[11px] font-mono text-zinc-400 bg-zinc-900 px-2.5 py-0.5 rounded-lg border border-white/5">
                     {customEndMeasure - customStartMeasure + 1} {language === 'de' ? 'Takte' : 'Measures'}
                   </span>
                 </div>
 
-                {/* Range Steppers */}
+                {/* Range Steppers with Direct Numeric Input */}
                 <div className="grid grid-cols-2 gap-3">
                   {/* From Measure */}
-                  <div className="bg-zinc-900/90 border border-white/10 rounded-2xl p-3 flex flex-col gap-2">
+                  <div className="bg-zinc-900/90 border border-white/10 rounded-2xl p-2.5 flex flex-col gap-2">
                     <label className="text-[10px] uppercase font-bold text-zinc-400">
-                      {language === 'de' ? 'Von Takt (Start)' : 'From Measure (Start)'}
+                      {language === 'de' ? 'Von Takt (Start)' : 'From Measure'}
                     </label>
-                    <div className="flex items-center justify-between">
+                    <div className="flex items-center justify-between gap-1">
                       <button
+                        type="button"
                         onClick={() => setCustomStartMeasure((m) => Math.max(1, m - 1))}
-                        className="w-8 h-8 rounded-xl bg-zinc-800 hover:bg-zinc-700 text-white font-bold flex items-center justify-center text-sm active:scale-95 transition-all"
+                        className="w-8 h-8 rounded-xl bg-zinc-800 hover:bg-zinc-700 text-white font-bold flex items-center justify-center text-sm active:scale-95 transition-all flex-shrink-0"
                       >
                         -
                       </button>
-                      <span className="font-mono text-base font-extrabold text-amber-300">
-                        M. {customStartMeasure}
-                      </span>
+                      <input
+                        type="number"
+                        min={1}
+                        max={customEndMeasure}
+                        value={customStartMeasure}
+                        onChange={(e) => {
+                          const val = parseInt(e.target.value, 10)
+                          if (!isNaN(val)) {
+                            const clamped = clampMeasure(val)
+                            setCustomStartMeasure(clamped)
+                            if (clamped > customEndMeasure) setCustomEndMeasure(clamped)
+                          }
+                        }}
+                        className="w-full min-w-0 bg-transparent text-center font-mono text-base font-extrabold text-amber-300 focus:outline-none"
+                        aria-label="Loop start measure"
+                      />
                       <button
+                        type="button"
                         onClick={() => setCustomStartMeasure((m) => Math.min(customEndMeasure, m + 1))}
-                        className="w-8 h-8 rounded-xl bg-zinc-800 hover:bg-zinc-700 text-white font-bold flex items-center justify-center text-sm active:scale-95 transition-all"
+                        className="w-8 h-8 rounded-xl bg-zinc-800 hover:bg-zinc-700 text-white font-bold flex items-center justify-center text-sm active:scale-95 transition-all flex-shrink-0"
                       >
                         +
                       </button>
@@ -1476,23 +1763,37 @@ export const FlowkeyPlayerView: React.FC<FlowkeyPlayerViewProps> = ({
                   </div>
 
                   {/* To Measure */}
-                  <div className="bg-zinc-900/90 border border-white/10 rounded-2xl p-3 flex flex-col gap-2">
+                  <div className="bg-zinc-900/90 border border-white/10 rounded-2xl p-2.5 flex flex-col gap-2">
                     <label className="text-[10px] uppercase font-bold text-zinc-400">
-                      {language === 'de' ? 'Bis Takt (Ende)' : 'To Measure (End)'}
+                      {language === 'de' ? 'Bis Takt (Ende)' : 'To Measure'}
                     </label>
-                    <div className="flex items-center justify-between">
+                    <div className="flex items-center justify-between gap-1">
                       <button
+                        type="button"
                         onClick={() => setCustomEndMeasure((m) => Math.max(customStartMeasure, m - 1))}
-                        className="w-8 h-8 rounded-xl bg-zinc-800 hover:bg-zinc-700 text-white font-bold flex items-center justify-center text-sm active:scale-95 transition-all"
+                        className="w-8 h-8 rounded-xl bg-zinc-800 hover:bg-zinc-700 text-white font-bold flex items-center justify-center text-sm active:scale-95 transition-all flex-shrink-0"
                       >
                         -
                       </button>
-                      <span className="font-mono text-base font-extrabold text-amber-300">
-                        M. {customEndMeasure}
-                      </span>
+                      <input
+                        type="number"
+                        min={customStartMeasure}
+                        max={maxMeasure}
+                        value={customEndMeasure}
+                        onChange={(e) => {
+                          const val = parseInt(e.target.value, 10)
+                          if (!isNaN(val)) {
+                            const clamped = clampMeasure(val)
+                            setCustomEndMeasure(Math.max(customStartMeasure, clamped))
+                          }
+                        }}
+                        className="w-full min-w-0 bg-transparent text-center font-mono text-base font-extrabold text-amber-300 focus:outline-none"
+                        aria-label="Loop end measure"
+                      />
                       <button
+                        type="button"
                         onClick={() => setCustomEndMeasure((m) => Math.min(maxMeasure, m + 1))}
-                        className="w-8 h-8 rounded-xl bg-zinc-800 hover:bg-zinc-700 text-white font-bold flex items-center justify-center text-sm active:scale-95 transition-all"
+                        className="w-8 h-8 rounded-xl bg-zinc-800 hover:bg-zinc-700 text-white font-bold flex items-center justify-center text-sm active:scale-95 transition-all flex-shrink-0"
                       >
                         +
                       </button>
@@ -1519,9 +1820,9 @@ export const FlowkeyPlayerView: React.FC<FlowkeyPlayerViewProps> = ({
                 </div>
 
                 {/* 3 Main Action Buttons */}
-                <div className="grid grid-cols-1 sm:grid-cols-3 gap-2.5 pt-1">
-                  {/* 1. Listen in Loop */}
+                <div className="grid grid-cols-1 sm:grid-cols-3 gap-2 pt-1">
                   <button
+                    type="button"
                     onClick={() => handleListenInLoop(customStartMeasure, customEndMeasure)}
                     className="p-3 rounded-2xl bg-blue-600 hover:bg-blue-500 text-white font-bold text-xs flex items-center justify-center gap-1.5 shadow-md shadow-blue-500/25 active:scale-95 transition-all"
                   >
@@ -1529,8 +1830,8 @@ export const FlowkeyPlayerView: React.FC<FlowkeyPlayerViewProps> = ({
                     <span>{language === 'de' ? 'Im Loop anhören' : 'Listen in Loop'}</span>
                   </button>
 
-                  {/* 2. Practice Part */}
                   <button
+                    type="button"
                     onClick={() => handlePracticePart(customStartMeasure, customEndMeasure)}
                     className="p-3 rounded-2xl bg-amber-500 hover:bg-amber-400 text-zinc-950 font-bold text-xs flex items-center justify-center gap-1.5 shadow-md shadow-amber-500/25 active:scale-95 transition-all"
                   >
@@ -1538,8 +1839,8 @@ export const FlowkeyPlayerView: React.FC<FlowkeyPlayerViewProps> = ({
                     <span>{language === 'de' ? 'Abschnitt üben' : 'Practice Part'}</span>
                   </button>
 
-                  {/* 3. Display Sheet */}
                   <button
+                    type="button"
                     onClick={() => handleDisplaySheet(customStartMeasure, customEndMeasure)}
                     className="p-3 rounded-2xl bg-emerald-600 hover:bg-emerald-500 text-white font-bold text-xs flex items-center justify-center gap-1.5 shadow-md shadow-emerald-500/25 active:scale-95 transition-all"
                   >
@@ -1565,20 +1866,18 @@ export const FlowkeyPlayerView: React.FC<FlowkeyPlayerViewProps> = ({
                           setCustomStartMeasure(sec.startMeasure)
                           setCustomEndMeasure(sec.endMeasure)
                         }}
-                        className={`p-3.5 rounded-2xl cursor-pointer transition-all border flex items-center justify-between ${
+                        className={`p-3.5 rounded-2xl cursor-pointer transition-all border flex flex-col sm:flex-row sm:items-center justify-between gap-2.5 ${
                           isSelected
                             ? 'bg-amber-500/20 border-amber-500/60 text-white'
                             : 'bg-zinc-800/60 hover:bg-zinc-800 border-white/5 text-zinc-200'
                         }`}
                       >
-                        <div className="flex-1 pr-3">
-                          <div className="text-xs font-bold text-white flex items-center gap-2">
+                        <div className="flex-1 min-w-0">
+                          <div className="text-xs font-bold text-white flex items-center gap-2 flex-wrap">
                             <span>{sec.title}</span>
-                            {isSelected && (
-                              <span className="px-1.5 py-0.5 rounded text-[9px] bg-amber-500 text-zinc-950 font-black">
-                                SELECTED
-                              </span>
-                            )}
+                            <span className="font-mono text-[10px] font-bold text-amber-400 bg-amber-500/10 px-2 py-0.5 rounded-lg border border-amber-500/20">
+                              M. {sec.startMeasure}–{sec.endMeasure}
+                            </span>
                           </div>
                           <div className="text-[11px] text-zinc-400 mt-0.5">{sec.character}</div>
                           {sec.tempoSuggestion && (
@@ -1587,48 +1886,53 @@ export const FlowkeyPlayerView: React.FC<FlowkeyPlayerViewProps> = ({
                             </div>
                           )}
                         </div>
-                        <div className="text-right flex flex-col items-end gap-1.5">
-                          <span className="font-mono text-xs font-bold text-amber-400 bg-amber-500/10 px-2 py-0.5 rounded-lg border border-amber-500/20">
-                            M. {sec.startMeasure}–{sec.endMeasure}
-                          </span>
-                          <div className="flex items-center gap-1.5">
-                            {onStartMeasureChange && (
-                              <button
-                                onClick={(e) => {
-                                  e.stopPropagation()
-                                  onStartMeasureChange(sec.startMeasure)
-                                }}
-                                className={`px-2 py-1 rounded-lg text-[10px] font-bold transition-colors ${
-                                  startMeasure === sec.startMeasure
-                                    ? 'bg-amber-500 text-zinc-950 font-black shadow-sm'
-                                    : 'bg-zinc-700/60 hover:bg-zinc-700 text-zinc-300'
-                                }`}
-                                title={language === 'de' ? `Start-Takt auf M. ${sec.startMeasure} setzen` : `Set Start Measure to M. ${sec.startMeasure}`}
-                              >
-                                {startMeasure === sec.startMeasure ? '★ Start' : 'Start'}
-                              </button>
-                            )}
+                        <div className="flex items-center gap-1.5 flex-shrink-0">
+                          {onStartMeasureChange && (
                             <button
+                              type="button"
                               onClick={(e) => {
                                 e.stopPropagation()
-                                handleListenInLoop(sec.startMeasure, sec.endMeasure)
+                                onStartMeasureChange(sec.startMeasure)
                               }}
-                              className="px-2.5 py-1 rounded-lg bg-blue-500/20 hover:bg-blue-500/40 text-blue-300 text-[10px] font-bold transition-colors"
-                              title="Loop this section"
+                              className={`px-2.5 py-1.5 rounded-lg text-[10px] font-bold transition-colors ${
+                                startMeasure === sec.startMeasure
+                                  ? 'bg-amber-500 text-zinc-950 font-black shadow-sm'
+                                  : 'bg-zinc-700/70 hover:bg-zinc-700 text-zinc-200'
+                              }`}
                             >
-                              Loop
+                              {startMeasure === sec.startMeasure ? '★ Start' : 'Start'}
                             </button>
-                            <button
-                              onClick={(e) => {
-                                e.stopPropagation()
-                                handleDisplaySheet(sec.startMeasure, sec.endMeasure)
-                              }}
-                              className="px-2.5 py-1 rounded-lg bg-emerald-500/20 hover:bg-emerald-500/40 text-emerald-300 text-[10px] font-bold transition-colors"
-                              title="Display sheet for this section"
-                            >
-                              Sheet
-                            </button>
-                          </div>
+                          )}
+                          <button
+                            type="button"
+                            onClick={(e) => {
+                              e.stopPropagation()
+                              handlePracticePart(sec.startMeasure, sec.endMeasure)
+                            }}
+                            className="px-2.5 py-1.5 rounded-lg bg-amber-500/20 hover:bg-amber-500/35 text-amber-300 text-[10px] font-bold transition-colors"
+                          >
+                            {language === 'de' ? 'Üben' : 'Practice'}
+                          </button>
+                          <button
+                            type="button"
+                            onClick={(e) => {
+                              e.stopPropagation()
+                              handleListenInLoop(sec.startMeasure, sec.endMeasure)
+                            }}
+                            className="px-2.5 py-1.5 rounded-lg bg-blue-500/20 hover:bg-blue-500/40 text-blue-300 text-[10px] font-bold transition-colors"
+                          >
+                            Loop
+                          </button>
+                          <button
+                            type="button"
+                            onClick={(e) => {
+                              e.stopPropagation()
+                              handleDisplaySheet(sec.startMeasure, sec.endMeasure)
+                            }}
+                            className="px-2.5 py-1.5 rounded-lg bg-emerald-500/20 hover:bg-emerald-500/40 text-emerald-300 text-[10px] font-bold transition-colors"
+                          >
+                            Sheet
+                          </button>
                         </div>
                       </div>
                     )

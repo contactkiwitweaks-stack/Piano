@@ -44,7 +44,7 @@ export const FlowkeyHomeView: React.FC<FlowkeyHomeViewProps> = ({
   language,
   viewTab = 'songs',
   onSelectPieceAndEdition,
-  onOpenPlayer,
+  onOpenPlayer: _onOpenPlayer,
   onOpenImportModal,
 }) => {
   const catalog = useMemo(() => LibraryRepository.getCatalog(), [])
@@ -139,6 +139,11 @@ export const FlowkeyHomeView: React.FC<FlowkeyHomeViewProps> = ({
   }
 
   const quickSearchTags = [
+    { label: 'Bohemian Rhapsody', query: 'bohemian' },
+    { label: 'Sorrow', query: 'sorrow' },
+    { label: 'Czardas', query: 'czardas' },
+    { label: 'Liebestraum', query: 'liebestraum' },
+    { label: 'Twinkle Twinkle', query: 'twinkle' },
     { label: 'Flower Dance', query: 'flower dance' },
     { label: 'River Flows in You', query: 'river flows' },
     { label: 'La Campanella', query: 'campanella' },
@@ -152,7 +157,6 @@ export const FlowkeyHomeView: React.FC<FlowkeyHomeViewProps> = ({
     { label: 'ICARUS', query: 'icarus' },
     { label: 'Für Elise', query: 'fur elise' },
     { label: 'Moonlight Sonata', query: 'moonlight' },
-    { label: 'Passacaglia', query: 'passacaglia' },
   ]
 
   const difficultyBadge = (diff: number) => {
@@ -223,16 +227,19 @@ export const FlowkeyHomeView: React.FC<FlowkeyHomeViewProps> = ({
     return `${m}:${s.toString().padStart(2, '0')}`
   }
 
-  // Curated spotlight pieces for top carousel
+  // Curated spotlight pieces for top carousel (includes newest additions!)
   const spotlightPieces = useMemo(() => {
     return catalog.filter((p) =>
       [
+        'queen-bohemian-rhapsody',
+        'chopin-liszt-sorrow',
         'liszt-la-campanella',
+        'liszt-liebestraum-3',
+        'monti-czardas',
         'river-flows-in-you',
         'hikaru-nara',
         'joe-hisaishi-one-summers-day',
         'dj-okawari-flower-dance',
-        'carol-of-the-bells',
         'chopin-nocturne-c-sharp-minor',
       ].includes(p.id)
     )
@@ -313,22 +320,25 @@ export const FlowkeyHomeView: React.FC<FlowkeyHomeViewProps> = ({
     })
   }, [catalog, searchQuery, selectedGenre])
 
-  // Shelves
+  // Dynamic Shelves (automatically include all pieces by category so new songs never disappear!)
+  const animeIds = ['hikaru-nara', 'joe-hisaishi-one-summers-day', 'joe-hisaishi-merry-go-round', 'kensuke-ushio-in-the-sea']
+
   const animeShelf = useMemo(() => {
-    return catalog.filter((p) =>
-      ['hikaru-nara', 'joe-hisaishi-one-summers-day', 'joe-hisaishi-merry-go-round', 'kensuke-ushio-in-the-sea'].includes(p.id)
-    )
+    return catalog.filter((p) => animeIds.includes(p.id))
   }, [catalog])
 
   const contemporaryShelf = useMemo(() => {
-    return catalog.filter((p) =>
-      ['river-flows-in-you', 'dj-okawari-flower-dance', 'sia-snowman', 'carol-of-the-bells', 'tony-ann-icarus', 'abba-the-winner-takes-it-all'].includes(p.id)
+    return catalog.filter(
+      (p) =>
+        !animeIds.includes(p.id) &&
+        (p.period === 'Contemporary' || p.period === 'Neoclassical')
     )
   }, [catalog])
 
   const classicalShelf = useMemo(() => {
-    return catalog.filter((p) =>
-      ['liszt-la-campanella', 'chopin-nocturne-c-sharp-minor', 'chopin-ballade-1', 'beethoven-moonlight-1', 'beethoven-fur-elise', 'handel-halvorsen-passacaglia', 'bach-prelude-c'].includes(p.id)
+    return catalog.filter(
+      (p) =>
+        p.period === 'Classical' || p.period === 'Romantic' || p.period === 'Baroque'
     )
   }, [catalog])
 
@@ -340,7 +350,6 @@ export const FlowkeyHomeView: React.FC<FlowkeyHomeViewProps> = ({
 
   const handleLaunchPiece = (pieceSummary: LibraryPieceSummary, editionId: MasterEditionId = 'urtext') => {
     onSelectPieceAndEdition(pieceSummary.id, editionId, 'original')
-    onOpenPlayer()
   }
 
   // Gorgeous Album Art Card
@@ -430,7 +439,7 @@ export const FlowkeyHomeView: React.FC<FlowkeyHomeViewProps> = ({
   // MY SONGS TAB VIEW
   if (viewTab === 'mySongs') {
     return (
-      <div className="w-full h-full bg-[#0a0a0f] text-zinc-100 overflow-y-auto select-none px-4 sm:px-8 pl-[max(1rem,env(safe-area-inset-left),env(safe-area-inset-right))] pr-[max(1rem,env(safe-area-inset-left),env(safe-area-inset-right))] py-6 space-y-8 max-w-7xl mx-auto scrollbar-thin scrollbar-thumb-zinc-800 pb-[max(7rem,calc(env(safe-area-inset-bottom)+5rem))]">
+      <div className="w-full h-full bg-[#0a0a0f] text-zinc-100 overflow-y-auto touch-pan-y select-none px-4 sm:px-8 pl-[max(1rem,env(safe-area-inset-left))] pr-[max(1rem,env(safe-area-inset-right))] py-6 space-y-8 max-w-7xl mx-auto pb-[calc(11.5rem+env(safe-area-inset-bottom))]">
         <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4 p-6 rounded-3xl bg-gradient-to-r from-zinc-900 via-zinc-900/90 to-amber-950/20 border border-white/10 shadow-xl">
           <div className="flex items-center gap-4">
             <div className="w-12 h-12 rounded-2xl bg-orange-500/20 border border-orange-500/40 flex items-center justify-center text-orange-400 shadow-md">
@@ -495,7 +504,6 @@ export const FlowkeyHomeView: React.FC<FlowkeyHomeViewProps> = ({
                   key={piece.id}
                   onClick={() => {
                     onSelectPieceAndEdition(piece.id, 'urtext', 'original')
-                    onOpenPlayer()
                   }}
                   className="p-4 rounded-2xl bg-zinc-900 border border-white/5 hover:border-amber-500/40 cursor-pointer group transition-all flex items-center justify-between gap-3 shadow-md"
                 >
@@ -546,33 +554,39 @@ export const FlowkeyHomeView: React.FC<FlowkeyHomeViewProps> = ({
             </div>
           ) : (
             <div className="space-y-2.5">
-              {competitionScores.slice(0, 10).map((record, rIdx) => (
-                <div
-                  key={rIdx}
-                  className="p-3.5 rounded-xl bg-zinc-900 border border-white/5 flex items-center justify-between gap-3 text-xs"
-                >
-                  <div className="flex items-center gap-3 min-w-0">
-                    <div className="w-9 h-9 rounded-xl bg-amber-500/20 border border-amber-500/40 flex items-center justify-center text-amber-400 font-extrabold text-sm flex-shrink-0">
-                      {record.grade}
+              {competitionScores.slice(0, 10).map((record, rIdx) => {
+                const matchedCatalog = catalog.find((c) => c.id === record.pieceId)
+                const displayName = matchedCatalog ? matchedCatalog.title : record.pieceId
+                const displayDate = record.date || (language === 'de' ? 'Kürzlich' : 'Recent')
+                return (
+                  <div
+                    key={rIdx}
+                    onClick={() => onSelectPieceAndEdition(record.pieceId, 'urtext', 'original')}
+                    className="p-3.5 rounded-xl bg-zinc-900 border border-white/5 hover:border-amber-500/40 cursor-pointer flex items-center justify-between gap-3 text-xs transition-all active:scale-[0.99]"
+                  >
+                    <div className="flex items-center gap-3 min-w-0">
+                      <div className="w-9 h-9 rounded-xl bg-amber-500/20 border border-amber-500/40 flex items-center justify-center text-amber-400 font-extrabold text-sm flex-shrink-0">
+                        {record.grade}
+                      </div>
+                      <div className="min-w-0">
+                        <div className="font-bold text-zinc-100 truncate">{displayName}</div>
+                        <div className="text-[11px] text-zinc-400 flex flex-wrap items-center gap-x-2 gap-y-0.5">
+                          <span>{displayDate}</span>
+                          <span>•</span>
+                          <span>{language === 'de' ? 'Genauigkeit' : 'Accuracy'}: {record.accuracyPercent}%</span>
+                          <span>•</span>
+                          <span>+{record.extraNotesCount} {language === 'de' ? 'Extranoten' : 'extra'}</span>
+                        </div>
+                      </div>
                     </div>
-                    <div className="min-w-0">
-                      <div className="font-bold text-zinc-100 truncate">{record.pieceId}</div>
-                      <div className="text-[11px] text-zinc-500 flex items-center gap-2">
-                        <span>{record.date ? new Date(record.date).toLocaleDateString() : 'Recent'}</span>
-                        <span>•</span>
-                        <span>Genauigkeit: {record.accuracyPercent}%</span>
-                        <span>•</span>
-                        <span>+{record.extraNotesCount} Extranoten</span>
+                    <div className="text-right flex-shrink-0">
+                      <div className="font-mono font-bold text-amber-400 text-sm">
+                        {record.score.toLocaleString()} pts
                       </div>
                     </div>
                   </div>
-                  <div className="text-right flex-shrink-0">
-                    <div className="font-mono font-bold text-amber-400 text-sm">
-                      {record.score.toLocaleString()} pts
-                    </div>
-                  </div>
-                </div>
-              ))}
+                )
+              })}
             </div>
           )}
         </section>
@@ -583,7 +597,7 @@ export const FlowkeyHomeView: React.FC<FlowkeyHomeViewProps> = ({
   const isBrowsingAll = selectedGenre === 'all' && searchQuery.trim().length === 0 && viewTab !== 'search'
 
   return (
-    <div className="w-full h-full bg-[#0a0a0f] text-zinc-100 overflow-y-auto select-none px-4 sm:px-8 pl-[max(1rem,env(safe-area-inset-left),env(safe-area-inset-right))] pr-[max(1rem,env(safe-area-inset-left),env(safe-area-inset-right))] py-6 space-y-8 max-w-7xl mx-auto scrollbar-thin scrollbar-thumb-zinc-800 pb-[max(7rem,calc(env(safe-area-inset-bottom)+5rem))]">
+    <div className="w-full h-full bg-[#0a0a0f] text-zinc-100 overflow-y-auto touch-pan-y select-none px-4 sm:px-8 pl-[max(1rem,env(safe-area-inset-left))] pr-[max(1rem,env(safe-area-inset-right))] py-6 space-y-8 max-w-7xl mx-auto pb-[calc(11.5rem+env(safe-area-inset-bottom))]">
       {/* Search Bar */}
       <div className="space-y-3">
         <div className="relative">

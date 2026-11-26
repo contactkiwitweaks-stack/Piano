@@ -405,33 +405,34 @@ export const NoteReadingTrainer: React.FC<NoteReadingTrainerProps> = ({
 
       {/* Gamified Stat Badges & Speed Rank */}
       <div className="grid grid-cols-3 gap-2 sm:gap-3 my-3">
-        <div className="bg-zinc-900/60 border border-zinc-800 p-2.5 sm:p-3 rounded-2xl flex items-center gap-2.5">
-          <div className="w-9 h-9 rounded-xl bg-orange-500/15 border border-orange-500/30 flex items-center justify-center text-orange-400 shadow-sm">
+        <div className="bg-zinc-900/60 border border-zinc-800 p-2 sm:p-3 rounded-2xl flex items-center gap-2 min-w-0">
+          <div className="w-8 h-8 sm:w-9 sm:h-9 rounded-xl bg-orange-500/15 border border-orange-500/30 flex items-center justify-center text-orange-400 shadow-sm flex-shrink-0">
             <Flame className="w-4 h-4" />
           </div>
-          <div>
-            <div className="text-[10px] text-zinc-400 font-medium">{t.streak}</div>
-            <div className="text-sm sm:text-base font-bold text-zinc-100 font-mono flex items-center gap-1">
-              {streak} <span className="text-[10px] text-zinc-500">/ Best: {bestStreak}</span>
+          <div className="min-w-0">
+            <div className="text-[10px] text-zinc-400 font-medium truncate">{t.streak}</div>
+            <div className="text-xs sm:text-base font-bold text-zinc-100 font-mono truncate">
+              {streak} <span className="text-[10px] text-zinc-500 hidden sm:inline">/ Best: {bestStreak}</span>
             </div>
           </div>
         </div>
 
-        <div className="bg-zinc-900/60 border border-zinc-800 p-2.5 sm:p-3 rounded-2xl flex items-center gap-2.5">
-          <div className="w-9 h-9 rounded-xl bg-amber-500/15 border border-amber-500/30 flex items-center justify-center text-amber-400 shadow-sm">
+        <div className="bg-zinc-900/60 border border-zinc-800 p-2 sm:p-3 rounded-2xl flex items-center gap-2 min-w-0">
+          <div className="w-8 h-8 sm:w-9 sm:h-9 rounded-xl bg-amber-500/15 border border-amber-500/30 flex items-center justify-center text-amber-400 shadow-sm flex-shrink-0">
             <Zap className="w-4 h-4" />
           </div>
-          <div>
-            <div className="text-[10px] text-zinc-400 font-medium flex items-center gap-1">
-              <span>{t.reactionSpeed}</span>
+          <div className="min-w-0">
+            <div className="text-[10px] text-zinc-400 font-medium flex items-center gap-1 truncate">
+              <span className="sm:hidden">{language === 'de' ? 'Tempo' : 'Speed'}</span>
+              <span className="hidden sm:inline truncate">{t.reactionSpeed}</span>
               {speedRank && (
-                <span className={`text-[9px] px-1.5 py-0.2 rounded border font-semibold ${speedRank.color}`}>
+                <span className={`hidden md:inline text-[9px] px-1.5 py-0.5 rounded border font-semibold ${speedRank.color}`}>
                   {speedRank.label}
                 </span>
               )}
             </div>
             <div
-              className={`text-sm sm:text-base font-bold font-mono ${
+              className={`text-xs sm:text-base font-bold font-mono truncate ${
                 lastReactionMs && lastReactionMs < 700
                   ? 'text-emerald-400'
                   : lastReactionMs && lastReactionMs < 1300
@@ -444,22 +445,22 @@ export const NoteReadingTrainer: React.FC<NoteReadingTrainerProps> = ({
           </div>
         </div>
 
-        <div className="bg-zinc-900/60 border border-zinc-800 p-2.5 sm:p-3 rounded-2xl flex items-center gap-2.5">
-          <div className="w-9 h-9 rounded-xl bg-emerald-500/15 border border-emerald-500/30 flex items-center justify-center text-emerald-400 shadow-sm">
+        <div className="bg-zinc-900/60 border border-zinc-800 p-2 sm:p-3 rounded-2xl flex items-center gap-2 min-w-0">
+          <div className="w-8 h-8 sm:w-9 sm:h-9 rounded-xl bg-emerald-500/15 border border-emerald-500/30 flex items-center justify-center text-emerald-400 shadow-sm flex-shrink-0">
             <Award className="w-4 h-4" />
           </div>
-          <div>
-            <div className="text-[10px] text-zinc-400 font-medium">{t.accuracy}</div>
-            <div className="text-sm sm:text-base font-bold text-emerald-400 font-mono">
-              {accuracyPct}% <span className="text-[10px] text-zinc-500">({correctAttempts}/{totalAttempts})</span>
+          <div className="min-w-0">
+            <div className="text-[10px] text-zinc-400 font-medium truncate">{t.accuracy}</div>
+            <div className="text-xs sm:text-base font-bold text-emerald-400 font-mono truncate">
+              {accuracyPct}% <span className="text-[10px] text-zinc-500 hidden sm:inline">({correctAttempts}/{totalAttempts})</span>
             </div>
           </div>
         </div>
       </div>
 
-      {/* Main Flashcard Sheet Music SVG Canvas */}
+      {/* Main Flashcard Sheet Music SVG Canvas (Responsive ViewBox prevents clipping on iPhone!) */}
       <div
-        className={`flex-1 relative min-h-[250px] rounded-2xl border flex items-center justify-center transition-all overflow-hidden ${
+        className={`flex-1 relative min-h-[240px] rounded-2xl border flex items-center justify-center transition-all overflow-hidden ${
           feedbackState === 'correct'
             ? 'bg-emerald-950/20 border-emerald-500/60 shadow-[0_0_35px_rgba(16,185,129,0.25)]'
             : feedbackState === 'wrong'
@@ -467,7 +468,7 @@ export const NoteReadingTrainer: React.FC<NoteReadingTrainerProps> = ({
             : 'bg-zinc-900/50 border-zinc-800'
         }`}
       >
-        <svg className="w-full max-w-md h-64 overflow-visible">
+        <svg viewBox="0 0 420 265" preserveAspectRatio="xMidYMid meet" className="w-full max-w-md h-64 overflow-visible">
           {/* Treble Staff Lines */}
           {[0, 1, 2, 3, 4].map((i) => (
             <line
@@ -617,21 +618,66 @@ export const NoteReadingTrainer: React.FC<NoteReadingTrainerProps> = ({
           )}
         </div>
 
-        {/* Diatonic Buttons with Direct Accidental Options */}
+        {/* Chromatic Black Keys Row (Shown for Levels 3–5 with Sharps & Flats) */}
+        {level >= 3 && (
+          <div className="grid grid-cols-5 gap-1.5 sm:gap-2 pb-1">
+            {[
+              { pc: 1, label: 'C♯ / D♭' },
+              { pc: 3, label: 'D♯ / E♭' },
+              { pc: 6, label: 'F♯ / G♭' },
+              { pc: 8, label: 'G♯ / A♭' },
+              { pc: 10, label: 'A♯ / B♭' },
+            ].map((bk) => {
+              const targetPc = currentTarget.midi % 12
+              const isMatch = targetPc === bk.pc
+              return (
+                <button
+                  key={bk.pc}
+                  type="button"
+                  onClick={() => {
+                    if (isMatch) {
+                      evaluateNote(currentTarget.midi)
+                    } else {
+                      const octave = Math.floor(currentTarget.midi / 12) - 1
+                      evaluateNote((octave + 1) * 12 + bk.pc)
+                    }
+                  }}
+                  className={`py-2.5 rounded-xl border text-[11px] sm:text-xs font-mono font-bold active:scale-95 transition-all shadow-sm ${
+                    isMatch && feedbackState === 'correct'
+                      ? 'bg-emerald-500/30 border-emerald-500 text-emerald-200'
+                      : 'bg-zinc-950 hover:bg-zinc-800 border-zinc-700 text-amber-300'
+                  }`}
+                >
+                  {bk.label}
+                </button>
+              )
+            })}
+          </div>
+        )}
+
+        {/* Diatonic Natural White Keys */}
         <div className="grid grid-cols-7 gap-1 sm:gap-2">
-          {['C', 'D', 'E', 'F', 'G', 'A', 'B'].map((letter) => {
-            const isMatch = currentTarget.noteName.startsWith(letter)
+          {([
+            { letter: 'C', pc: 0 },
+            { letter: 'D', pc: 2 },
+            { letter: 'E', pc: 4 },
+            { letter: 'F', pc: 5 },
+            { letter: 'G', pc: 7 },
+            { letter: 'A', pc: 9 },
+            { letter: 'B', pc: 11 },
+          ] as const).map(({ letter, pc }) => {
+            const targetPc = currentTarget.midi % 12
+            const isMatch = level >= 3 ? targetPc === pc : currentTarget.noteName.startsWith(letter) && !currentTarget.accidental
             return (
               <button
                 key={letter}
+                type="button"
                 onClick={() => {
                   if (isMatch) {
                     evaluateNote(currentTarget.midi)
                   } else {
                     const octave = Math.floor(currentTarget.midi / 12) - 1
-                    const baseOffsets: Record<string, number> = { C: 0, D: 2, E: 4, F: 5, G: 7, A: 9, B: 11 }
-                    const wrongMidi = (octave + 1) * 12 + baseOffsets[letter]
-                    evaluateNote(wrongMidi)
+                    evaluateNote((octave + 1) * 12 + pc)
                   }
                 }}
                 className={`py-3 rounded-xl border text-sm font-bold active:scale-95 transition-all shadow-sm ${
@@ -649,8 +695,14 @@ export const NoteReadingTrainer: React.FC<NoteReadingTrainerProps> = ({
 
       {/* Mnemonic Guide Modal */}
       {showMnemonicModal && (
-        <div className="fixed inset-0 z-50 bg-black/85 backdrop-blur-md flex items-center justify-center p-4">
-          <div className="w-full max-w-lg bg-zinc-900 border border-zinc-700 rounded-2xl p-5 space-y-4 text-xs animate-in fade-in zoom-in-95 max-h-[90vh] overflow-y-auto">
+        <div
+          onClick={() => setShowMnemonicModal(false)}
+          className="fixed inset-0 z-50 bg-black/85 backdrop-blur-md flex items-center justify-center p-4"
+        >
+          <div
+            onClick={(e) => e.stopPropagation()}
+            className="w-full max-w-lg bg-zinc-900 border border-zinc-700 rounded-2xl p-5 space-y-4 text-xs animate-in fade-in zoom-in-95 max-h-[90vh] overflow-y-auto"
+          >
             <div className="flex items-center justify-between border-b border-zinc-800 pb-2">
               <h3 className="font-bold text-sm text-amber-400 flex items-center gap-2">
                 <Trophy className="w-4 h-4 text-amber-400" />

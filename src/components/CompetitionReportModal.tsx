@@ -117,8 +117,14 @@ export const CompetitionReportModal: React.FC<CompetitionReportModalProps> = ({
   })
 
   return (
-    <div className="fixed inset-0 z-50 bg-black/85 backdrop-blur-md flex items-center justify-center p-3 sm:p-4 animate-in fade-in duration-200">
-      <div className="w-full max-w-2xl max-h-[92vh] bg-[#0c0d12] border border-white/10 rounded-3xl shadow-2xl overflow-hidden flex flex-col text-zinc-100 select-none">
+    <div
+      onClick={onClose}
+      className="fixed inset-0 z-50 bg-black/85 backdrop-blur-md flex items-end sm:items-center justify-center p-0 sm:p-4 animate-in fade-in duration-200"
+    >
+      <div
+        onClick={(e) => e.stopPropagation()}
+        className="w-full max-w-2xl max-h-[90dvh] bg-[#0c0d12] border border-white/10 rounded-t-3xl sm:rounded-3xl shadow-2xl overflow-hidden flex flex-col text-zinc-100 select-none"
+      >
         {/* Header */}
         <div className="px-5 py-4 bg-zinc-950/90 border-b border-white/10 flex items-center justify-between flex-shrink-0">
           <div className="flex items-center gap-2.5">
@@ -380,7 +386,7 @@ export const CompetitionReportModal: React.FC<CompetitionReportModalProps> = ({
         </div>
 
         {/* Footer Buttons */}
-        <div className="p-4 bg-zinc-950/90 border-t border-white/10 flex items-center justify-between gap-3 flex-shrink-0">
+        <div className="p-4 pb-[max(1rem,env(safe-area-inset-bottom))] bg-zinc-950/90 border-t border-white/10 flex items-center justify-between gap-3 flex-shrink-0">
           <button
             onClick={onRetry}
             className="px-4 py-2.5 rounded-xl bg-zinc-900 hover:bg-zinc-800 text-zinc-200 border border-white/10 text-xs font-bold flex items-center gap-1.5 transition-colors"

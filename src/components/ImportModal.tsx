@@ -224,84 +224,96 @@ export const ImportModal: React.FC<ImportModalProps> = ({
   }
 
   return (
-    <div className="fixed inset-0 z-50 bg-black/85 backdrop-blur-md flex items-center justify-center p-3 animate-in fade-in duration-200">
-      <div className="w-full max-w-lg bg-[#0e0f14] border border-white/10 rounded-3xl shadow-2xl overflow-hidden flex flex-col text-zinc-100 select-none max-h-[90vh]">
+    <div
+      onClick={onClose}
+      className="fixed inset-0 z-50 bg-black/85 backdrop-blur-md flex items-end sm:items-center justify-center p-0 sm:p-3 animate-in fade-in duration-200"
+    >
+      <div
+        onClick={(e) => e.stopPropagation()}
+        className="w-full max-w-lg bg-[#0e0f14] border border-white/10 rounded-t-3xl sm:rounded-3xl shadow-2xl overflow-hidden flex flex-col text-zinc-100 select-none max-h-[88dvh]"
+      >
         {/* Modal Header */}
-        <div className="flex items-center justify-between px-5 py-4 bg-zinc-950/90 border-b border-white/10">
-          <div className="flex items-center gap-2.5">
-            <div className="w-9 h-9 rounded-2xl bg-amber-500/20 border border-amber-500/40 flex items-center justify-center text-amber-400">
+        <div className="flex items-center justify-between px-5 py-4 bg-zinc-950/90 border-b border-white/10 flex-shrink-0">
+          <div className="flex items-center gap-2.5 min-w-0">
+            <div className="w-9 h-9 rounded-2xl bg-amber-500/20 border border-amber-500/40 flex items-center justify-center text-amber-400 flex-shrink-0">
               <Upload className="w-4 h-4" />
             </div>
-            <div>
-              <h3 className="text-sm font-black text-white">
+            <div className="min-w-0">
+              <h3 className="text-sm font-black text-white truncate">
                 {language === 'de' ? 'Song importieren & Cloud' : 'Import Songs & Cloud Repertoire'}
               </h3>
-              <p className="text-[11px] text-zinc-400">
+              <p className="text-[11px] text-zinc-400 truncate">
                 {language === 'de' ? 'Kein PC nötig – Lade Stücke direkt auf dein iPhone' : 'Directly on your iPhone with zero PC or iTunes needed'}
               </p>
             </div>
           </div>
           <button
+            type="button"
             onClick={onClose}
-            className="w-8 h-8 rounded-xl bg-zinc-900 hover:bg-zinc-800 border border-white/10 flex items-center justify-center text-zinc-400 hover:text-white"
+            className="w-8 h-8 rounded-xl bg-zinc-900 hover:bg-zinc-800 border border-white/10 flex items-center justify-center text-zinc-300 hover:text-white flex-shrink-0 ml-2"
+            aria-label="Close import modal"
           >
             <X className="w-4 h-4" />
           </button>
         </div>
 
         {/* Tab Switcher */}
-        <div className="grid grid-cols-4 gap-1 p-2 bg-zinc-950/60 border-b border-white/5 text-xs font-bold">
+        <div className="grid grid-cols-4 gap-1 p-2 bg-zinc-950/60 border-b border-white/5 text-[11px] sm:text-xs font-bold flex-shrink-0">
           <button
+            type="button"
             onClick={() => setActiveTab('cloud')}
-            className={`py-2 rounded-xl flex items-center justify-center gap-1 transition-all ${
+            className={`py-2 px-1 rounded-xl flex items-center justify-center gap-1 transition-all ${
               activeTab === 'cloud'
                 ? 'bg-amber-500 text-zinc-950 shadow-md'
                 : 'text-zinc-400 hover:text-zinc-200 hover:bg-zinc-900'
             }`}
           >
-            <CloudDownload className="w-3.5 h-3.5" />
-            <span>Cloud</span>
+            <CloudDownload className="w-3.5 h-3.5 flex-shrink-0" />
+            <span className="truncate">Cloud</span>
           </button>
 
           <button
+            type="button"
             onClick={() => setActiveTab('pcSync')}
-            className={`py-2 rounded-xl flex items-center justify-center gap-1 transition-all ${
+            className={`py-2 px-1 rounded-xl flex items-center justify-center gap-1 transition-all ${
               activeTab === 'pcSync'
                 ? 'bg-amber-500 text-zinc-950 shadow-md'
                 : 'text-zinc-400 hover:text-zinc-200 hover:bg-zinc-900'
             }`}
           >
-            <Laptop className="w-3.5 h-3.5" />
-            <span>PC WLAN</span>
+            <Laptop className="w-3.5 h-3.5 flex-shrink-0" />
+            <span className="truncate">{language === 'de' ? 'PC WLAN' : 'PC WiFi'}</span>
           </button>
 
           <button
+            type="button"
             onClick={() => setActiveTab('upload')}
-            className={`py-2 rounded-xl flex items-center justify-center gap-1 transition-all ${
+            className={`py-2 px-1 rounded-xl flex items-center justify-center gap-1 transition-all ${
               activeTab === 'upload'
                 ? 'bg-amber-500 text-zinc-950 shadow-md'
                 : 'text-zinc-400 hover:text-zinc-200 hover:bg-zinc-900'
             }`}
           >
-            <Upload className="w-3.5 h-3.5" />
-            <span>Dateien</span>
+            <Upload className="w-3.5 h-3.5 flex-shrink-0" />
+            <span className="truncate">{language === 'de' ? 'Dateien' : 'Files'}</span>
           </button>
 
           <button
+            type="button"
             onClick={() => setActiveTab('url')}
-            className={`py-2 rounded-xl flex items-center justify-center gap-1 transition-all ${
+            className={`py-2 px-1 rounded-xl flex items-center justify-center gap-1 transition-all ${
               activeTab === 'url'
                 ? 'bg-amber-500 text-zinc-950 shadow-md'
                 : 'text-zinc-400 hover:text-zinc-200 hover:bg-zinc-900'
             }`}
           >
-            <Globe className="w-3.5 h-3.5" />
-            <span>URL</span>
+            <Globe className="w-3.5 h-3.5 flex-shrink-0" />
+            <span className="truncate">URL</span>
           </button>
         </div>
 
         {/* Modal Body */}
-        <div className="p-5 overflow-y-auto space-y-4 text-xs">
+        <div className="p-5 pb-[max(1.25rem,env(safe-area-inset-bottom))] overflow-y-auto touch-pan-y space-y-4 text-xs flex-1 min-h-0">
           {activeTab === 'upload' && (
             <div className="space-y-3">
               {/* Drag & Drop File Zone */}

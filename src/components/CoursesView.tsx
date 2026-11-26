@@ -12,6 +12,7 @@ import {
   GraduationCap,
   RotateCcw,
   Eye,
+  Flame,
 } from 'lucide-react'
 
 interface CoursesViewProps {
@@ -28,8 +29,8 @@ export const CoursesView: React.FC<CoursesViewProps> = ({
   language,
   onSelectCourseLesson,
   onOpenSightReading,
-  onOpenWarmups: _onOpenWarmups,
-  onOpenTutorials: _onOpenTutorials,
+  onOpenWarmups,
+  onOpenTutorials,
 }) => {
   const [selectedCourse, setSelectedCourse] = useState<Course | null>(null)
   const [selectedCategory, setSelectedCategory] = useState<string>('all')
@@ -128,7 +129,7 @@ export const CoursesView: React.FC<CoursesViewProps> = ({
     const nextLesson = selectedCourse.lessons.find((l) => !completedLessons[l.id]) || selectedCourse.lessons[0]
 
     return (
-      <div className="w-full h-full bg-[#0a0a0f] text-zinc-100 flex flex-col overflow-y-auto select-none px-4 sm:px-8 pl-[max(1rem,env(safe-area-inset-left),env(safe-area-inset-right))] pr-[max(1rem,env(safe-area-inset-left),env(safe-area-inset-right))] py-6 max-w-5xl mx-auto pb-[max(7rem,calc(env(safe-area-inset-bottom)+5rem))] animate-in fade-in duration-200">
+      <div className="w-full h-full bg-[#0a0a0f] text-zinc-100 flex flex-col overflow-y-auto touch-pan-y select-none px-4 sm:px-8 pl-[max(1rem,env(safe-area-inset-left))] pr-[max(1rem,env(safe-area-inset-right))] py-6 max-w-5xl mx-auto pb-[calc(11.5rem+env(safe-area-inset-bottom))] animate-in fade-in duration-200">
         {/* Back Button & Top Bar */}
         <div className="flex items-center justify-between mb-6">
           <button
@@ -232,14 +233,16 @@ export const CoursesView: React.FC<CoursesViewProps> = ({
                         {isDone && (
                           <>
                             <span>•</span>
-                            <span className="text-emerald-400 font-bold">Abgeschlossen</span>
+                            <span className="text-emerald-400 font-bold">
+                              {language === 'de' ? 'Abgeschlossen' : 'Completed'}
+                            </span>
                           </>
                         )}
                       </div>
                     </div>
                   </div>
 
-                  <div className="flex items-center gap-2 self-end sm:self-center">
+                  <div className="flex flex-wrap items-center gap-2 self-end sm:self-center">
                     <button
                       onClick={() => setExpandedLessonId(isExpanded ? null : lesson.id)}
                       className={`px-3 py-1.5 rounded-xl border text-xs font-semibold transition-all flex items-center gap-1.5 ${
@@ -261,7 +264,9 @@ export const CoursesView: React.FC<CoursesViewProps> = ({
                           : 'bg-zinc-800/80 hover:bg-zinc-800 border-white/10 text-zinc-400'
                       }`}
                     >
-                      {isDone ? 'Erledigt' : 'Als erledigt markieren'}
+                      {isDone
+                        ? language === 'de' ? 'Erledigt' : 'Done'
+                        : language === 'de' ? 'Als erledigt markieren' : 'Mark Done'}
                     </button>
 
                     <button
@@ -271,7 +276,7 @@ export const CoursesView: React.FC<CoursesViewProps> = ({
                       className="px-4 py-2 rounded-xl bg-amber-500 hover:bg-amber-400 text-zinc-950 font-black text-xs flex items-center gap-1.5 transition-all shadow-md active:scale-95"
                     >
                       <Play className="w-3.5 h-3.5 fill-current" />
-                      <span>Üben</span>
+                      <span>{language === 'de' ? 'Üben' : 'Practice'}</span>
                     </button>
                   </div>
                 </div>
@@ -407,9 +412,9 @@ export const CoursesView: React.FC<CoursesViewProps> = ({
   })
 
   return (
-    <div className="w-full h-full bg-[#0a0a0f] text-zinc-100 overflow-y-auto select-none px-4 sm:px-8 pl-[max(1rem,env(safe-area-inset-left),env(safe-area-inset-right))] pr-[max(1rem,env(safe-area-inset-left),env(safe-area-inset-right))] py-6 space-y-8 max-w-6xl mx-auto scrollbar-thin scrollbar-thumb-zinc-800 pb-[max(7rem,calc(env(safe-area-inset-bottom)+5rem))]">
-      {/* Flagship Banner: Interactive Sight-Reading & Note Reading Masterclass */}
-      <div className="rounded-3xl bg-gradient-to-r from-emerald-900/60 via-teal-900/40 to-zinc-950 border border-emerald-500/30 p-6 sm:p-7 flex flex-col md:flex-row items-start md:items-center justify-between gap-5 shadow-2xl relative overflow-hidden">
+    <div className="w-full h-full bg-[#0a0a0f] text-zinc-100 overflow-y-auto touch-pan-y select-none px-4 sm:px-8 pl-[max(1rem,env(safe-area-inset-left))] pr-[max(1rem,env(safe-area-inset-right))] py-6 space-y-6 max-w-6xl mx-auto pb-[calc(11.5rem+env(safe-area-inset-bottom))]">
+      {/* Flagship Banner: Interactive Sight-Reading + Quick Launch Tools */}
+      <div className="rounded-3xl bg-gradient-to-r from-emerald-900/60 via-teal-900/40 to-zinc-950 border border-emerald-500/30 p-5 sm:p-7 flex flex-col md:flex-row items-start md:items-center justify-between gap-4 shadow-2xl relative overflow-hidden">
         <div className="space-y-1.5 max-w-xl z-10">
           <div className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-emerald-500/20 text-emerald-300 text-xs font-black tracking-wide uppercase">
             <Sparkles className="w-3.5 h-3.5" />
@@ -426,6 +431,7 @@ export const CoursesView: React.FC<CoursesViewProps> = ({
         </div>
 
         <button
+          type="button"
           onClick={onOpenSightReading}
           className="px-5 py-3 rounded-2xl bg-emerald-500 hover:bg-emerald-400 text-zinc-950 font-black text-xs sm:text-sm flex items-center gap-2 shadow-[0_0_20px_rgba(16,185,129,0.4)] active:scale-95 transition-all flex-shrink-0"
         >
@@ -433,6 +439,61 @@ export const CoursesView: React.FC<CoursesViewProps> = ({
           <span>{language === 'de' ? 'Trainer starten' : 'Launch Trainer'}</span>
         </button>
       </div>
+
+      {/* Quick Academy Shortcuts: Masterclasses & Warm-Up Drills (Restores previously unreachable views!) */}
+      {(onOpenTutorials || onOpenWarmups) && (
+        <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+          {onOpenTutorials && (
+            <button
+              type="button"
+              onClick={onOpenTutorials}
+              className="p-4 rounded-2xl bg-zinc-900/80 hover:bg-zinc-900 border border-amber-500/30 hover:border-amber-500/60 flex items-center justify-between gap-3 text-left transition-all active:scale-[0.99] shadow-md group"
+            >
+              <div className="flex items-center gap-3 min-w-0">
+                <div className="w-10 h-10 rounded-xl bg-amber-500/20 border border-amber-500/40 flex items-center justify-center text-amber-400 flex-shrink-0">
+                  <GraduationCap className="w-5 h-5" />
+                </div>
+                <div className="min-w-0">
+                  <div className="text-sm font-bold text-white group-hover:text-amber-300 transition-colors truncate">
+                    {language === 'de' ? 'Meisterkurse & Video-Pädagogik' : 'Masterclasses & Pedagogy'}
+                  </div>
+                  <div className="text-[11px] text-zinc-400 truncate">
+                    {language === 'de'
+                      ? 'Handgelenk, Pedal-Timing & gezielte Takt-Übungen'
+                      : 'Wrist biomechanics, pedal timing & passage labs'}
+                  </div>
+                </div>
+              </div>
+              <ChevronRight className="w-4 h-4 text-zinc-500 group-hover:text-amber-400 flex-shrink-0" />
+            </button>
+          )}
+
+          {onOpenWarmups && (
+            <button
+              type="button"
+              onClick={onOpenWarmups}
+              className="p-4 rounded-2xl bg-zinc-900/80 hover:bg-zinc-900 border border-orange-500/30 hover:border-orange-500/60 flex items-center justify-between gap-3 text-left transition-all active:scale-[0.99] shadow-md group"
+            >
+              <div className="flex items-center gap-3 min-w-0">
+                <div className="w-10 h-10 rounded-xl bg-orange-500/20 border border-orange-500/40 flex items-center justify-center text-orange-400 flex-shrink-0">
+                  <Flame className="w-5 h-5" />
+                </div>
+                <div className="min-w-0">
+                  <div className="text-sm font-bold text-white group-hover:text-orange-300 transition-colors truncate">
+                    {language === 'de' ? 'Tägliche Finger-Warmups & Drills' : 'Daily Finger Warm-Ups & Drills'}
+                  </div>
+                  <div className="text-[11px] text-zinc-400 truncate">
+                    {language === 'de'
+                      ? 'Tonleitern, Arpeggien & Geläufigkeits-Übungen'
+                      : 'Scales, arpeggios, trills & octave agility'}
+                  </div>
+                </div>
+              </div>
+              <ChevronRight className="w-4 h-4 text-zinc-500 group-hover:text-orange-400 flex-shrink-0" />
+            </button>
+          )}
+        </div>
+      )}
 
       {/* Header & Global Stats */}
       <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
@@ -452,9 +513,11 @@ export const CoursesView: React.FC<CoursesViewProps> = ({
         <div className="p-3 bg-zinc-900 border border-white/10 rounded-2xl flex items-center gap-4 shadow-sm self-start sm:self-center">
           {renderProgressRing(overallPercent, 44, 4)}
           <div>
-            <div className="text-xs font-bold text-white">Gesamtfortschritt</div>
+            <div className="text-xs font-bold text-white">
+              {language === 'de' ? 'Gesamtfortschritt' : 'Overall Progress'}
+            </div>
             <div className="text-[11px] text-zinc-400 font-mono">
-              {completedTotal} / {totalLessons} Lektionen
+              {completedTotal} / {totalLessons} {language === 'de' ? 'Lektionen' : 'Lessons'}
             </div>
           </div>
         </div>
@@ -501,7 +564,7 @@ export const CoursesView: React.FC<CoursesViewProps> = ({
             >
               {isNoteCourse && (
                 <div className="absolute top-3 right-3 px-2 py-0.5 rounded-full bg-emerald-500/20 border border-emerald-500/40 text-emerald-300 font-mono text-[9px] font-black uppercase">
-                  Flaggschiff
+                  {language === 'de' ? 'Flaggschiff' : 'Flagship'}
                 </div>
               )}
 
@@ -526,7 +589,13 @@ export const CoursesView: React.FC<CoursesViewProps> = ({
               <div className="pt-4 mt-4 border-t border-white/5 flex items-center justify-between text-xs text-zinc-500 font-medium">
                 <span>{course.lessons.length} {language === 'de' ? 'Lektionen' : 'Lessons'}</span>
                 <span className="text-amber-400 group-hover:translate-x-1 transition-transform flex items-center gap-0.5 font-bold">
-                  <span>{progress === 100 ? 'Wiederholen' : progress > 0 ? 'Fortsetzen' : 'Starten'}</span>
+                  <span>
+                    {progress === 100
+                      ? language === 'de' ? 'Wiederholen' : 'Review'
+                      : progress > 0
+                      ? language === 'de' ? 'Fortsetzen' : 'Continue'
+                      : language === 'de' ? 'Starten' : 'Start'}
+                  </span>
                   <ChevronRight className="w-3.5 h-3.5" />
                 </span>
               </div>

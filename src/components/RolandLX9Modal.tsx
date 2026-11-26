@@ -59,6 +59,7 @@ export const RolandLX9Modal: React.FC<RolandLX9ModalProps> = ({
   // Subscribe to live MIDI events when modal is open for real-time visual diagnostics
   useEffect(() => {
     if (!isOpen) return
+    setIsMicListening(AcousticNoteRecognizer.getInstance().isListening)
 
     const midiMgr = MidiManager.getInstance()
     const unsubscribe = midiMgr.subscribe(
@@ -154,33 +155,41 @@ export const RolandLX9Modal: React.FC<RolandLX9ModalProps> = ({
   }
 
   return (
-    <div className="fixed inset-0 z-50 bg-black/85 backdrop-blur-md flex items-center justify-center p-3 animate-in fade-in duration-200">
-      <div className="w-full max-w-lg bg-[#0e0f14] border border-white/10 rounded-3xl shadow-2xl overflow-hidden flex flex-col text-zinc-100 select-none max-h-[90vh]">
+    <div
+      onClick={onClose}
+      className="fixed inset-0 z-50 bg-black/85 backdrop-blur-md flex items-end sm:items-center justify-center p-0 sm:p-3 animate-in fade-in duration-200"
+    >
+      <div
+        onClick={(e) => e.stopPropagation()}
+        className="w-full max-w-lg bg-[#0e0f14] border border-white/10 rounded-t-3xl sm:rounded-3xl shadow-2xl overflow-hidden flex flex-col text-zinc-100 select-none max-h-[88dvh]"
+      >
         {/* Header */}
-        <div className="flex items-center justify-between px-5 py-4 bg-zinc-950/90 border-b border-white/10">
-          <div className="flex items-center gap-3">
-            <div className="w-9 h-9 rounded-2xl bg-blue-500/20 border border-blue-500/40 flex items-center justify-center text-blue-400 shadow-sm">
+        <div className="flex items-center justify-between px-5 py-4 bg-zinc-950/90 border-b border-white/10 flex-shrink-0">
+          <div className="flex items-center gap-3 min-w-0">
+            <div className="w-9 h-9 rounded-2xl bg-blue-500/20 border border-blue-500/40 flex items-center justify-center text-blue-400 shadow-sm flex-shrink-0">
               <Bluetooth className="w-5 h-5" />
             </div>
-            <div>
-              <h3 className="text-sm font-black text-white">
+            <div className="min-w-0">
+              <h3 className="text-sm font-black text-white truncate">
                 {language === 'de' ? 'Bluetooth & USB-MIDI Studio' : 'Universal Bluetooth & USB MIDI Studio'}
               </h3>
-              <p className="text-[11px] text-zinc-400">
+              <p className="text-[11px] text-zinc-400 truncate">
                 Roland, Yamaha, Kawai, Casio, Donner, Korg & Apple CoreMIDI
               </p>
             </div>
           </div>
           <button
+            type="button"
             onClick={onClose}
-            className="w-8 h-8 rounded-xl bg-zinc-900 hover:bg-zinc-800 border border-white/10 flex items-center justify-center text-zinc-400 hover:text-white transition-colors"
+            className="w-8 h-8 rounded-xl bg-zinc-900 hover:bg-zinc-800 border border-white/10 flex items-center justify-center text-zinc-300 hover:text-white transition-colors flex-shrink-0 ml-2"
+            aria-label="Close MIDI modal"
           >
             <X className="w-4 h-4" />
           </button>
         </div>
 
         {/* Content */}
-        <div className="p-5 space-y-4 text-xs overflow-y-auto">
+        <div className="p-5 pb-[max(1.25rem,env(safe-area-inset-bottom))] space-y-4 text-xs overflow-y-auto touch-pan-y flex-1 min-h-0">
           {/* Connection Status Badge */}
           <div
             className={`p-3.5 rounded-2xl border flex items-center justify-between shadow-sm transition-all ${

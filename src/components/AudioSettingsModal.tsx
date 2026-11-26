@@ -175,36 +175,44 @@ export const AudioSettingsModal: React.FC<AudioSettingsModalProps> = ({
   ]
 
   return (
-    <div className="fixed inset-0 z-50 bg-black/80 backdrop-blur-md flex items-center justify-center p-4 select-none animate-in fade-in duration-200">
-      <div className="bg-zinc-900 border border-white/10 rounded-3xl w-full max-w-xl overflow-hidden shadow-2xl flex flex-col max-h-[90vh]">
+    <div
+      onClick={onClose}
+      className="fixed inset-0 z-50 bg-black/80 backdrop-blur-md flex items-end sm:items-center justify-center p-0 sm:p-4 select-none animate-in fade-in duration-200"
+    >
+      <div
+        onClick={(e) => e.stopPropagation()}
+        className="bg-zinc-900 border border-white/10 rounded-t-3xl sm:rounded-3xl w-full max-w-xl overflow-hidden shadow-2xl flex flex-col max-h-[88dvh]"
+      >
         {/* Header */}
-        <div className="px-6 py-4 bg-zinc-950/80 border-b border-zinc-800 flex items-center justify-between">
-          <div className="flex items-center gap-3">
-            <div className="w-10 h-10 rounded-2xl bg-orange-500/20 border border-orange-500/40 flex items-center justify-center text-orange-400">
+        <div className="px-5 py-4 bg-zinc-950/90 border-b border-zinc-800 flex items-center justify-between flex-shrink-0">
+          <div className="flex items-center gap-3 min-w-0">
+            <div className="w-10 h-10 rounded-2xl bg-orange-500/20 border border-orange-500/40 flex items-center justify-center text-orange-400 flex-shrink-0">
               <Sliders className="w-5 h-5" />
             </div>
-            <div>
-              <h3 className="text-base font-bold text-white">
+            <div className="min-w-0">
+              <h3 className="text-sm sm:text-base font-bold text-white truncate">
                 {titles.title[language] || titles.title.en}
               </h3>
-              <p className="text-[11px] text-zinc-400">
+              <p className="text-[11px] text-zinc-400 truncate">
                 {titles.subtitle[language] || titles.subtitle.en}
               </p>
             </div>
           </div>
           <button
+            type="button"
             onClick={onClose}
-            className="w-8 h-8 rounded-xl bg-zinc-800 hover:bg-zinc-700 flex items-center justify-center text-zinc-400 hover:text-white transition-colors"
+            className="w-8 h-8 rounded-xl bg-zinc-800 hover:bg-zinc-700 flex items-center justify-center text-zinc-300 hover:text-white transition-colors flex-shrink-0 ml-2"
+            aria-label="Close acoustics settings"
           >
             <X className="w-4 h-4" />
           </button>
         </div>
 
         {/* Settings Body */}
-        <div className="p-6 overflow-y-auto space-y-6 scrollbar-thin scrollbar-thumb-zinc-800">
+        <div className="p-5 overflow-y-auto touch-pan-y space-y-6 flex-1 min-h-0">
           {/* REAL ENGINE TELEMETRY CARD */}
           <div className="p-4 rounded-2xl bg-zinc-950/80 border border-white/10 space-y-3">
-            <div className="flex items-center justify-between">
+            <div className="flex flex-wrap items-center justify-between gap-2">
               <div className="flex items-center gap-2">
                 <Cpu className="w-4 h-4 text-emerald-400" />
                 <span className="text-xs font-bold uppercase tracking-wider text-zinc-200">
@@ -443,7 +451,7 @@ export const AudioSettingsModal: React.FC<AudioSettingsModalProps> = ({
         </div>
 
         {/* Footer */}
-        <div className="px-6 py-4 bg-zinc-950 border-t border-zinc-800 flex justify-end">
+        <div className="px-5 py-3.5 pb-[max(0.9rem,env(safe-area-inset-bottom))] bg-zinc-950 border-t border-zinc-800 flex justify-end flex-shrink-0">
           <button
             onClick={onClose}
             className="px-5 py-2.5 rounded-xl bg-orange-500 hover:bg-orange-600 text-white font-bold text-xs shadow-md transition-colors"

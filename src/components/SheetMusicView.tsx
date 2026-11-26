@@ -1,7 +1,7 @@
 import React, { useRef, useEffect, useMemo, useState, useCallback } from 'react'
 import type { NoteEvent, Piece, PedalEvent } from '../types/music'
 import type { LanguageCode } from '../i18n/translations'
-import { Moon, Sun, RotateCcw } from 'lucide-react'
+import { Moon, Sun, RotateCcw, Layers } from 'lucide-react'
 
 interface SheetMusicViewProps {
   piece: Piece
@@ -19,6 +19,7 @@ interface SheetMusicViewProps {
   onStartMeasureChange?: (measure: number) => void
   onLoopRangeChange?: (range: [number, number]) => void
   onToggleLoop?: () => void
+  onOpenSections?: () => void
   language?: LanguageCode
   showFingering?: boolean
 }
@@ -58,13 +59,13 @@ const F_CLEF_PATH =
 const SYSTEM_WIDTH = 960
 const LINE_SPACING = 9
 const STAFF_HEIGHT = LINE_SPACING * 4 // 36px
-const TREBLE_TOP_Y = 54
-const TREBLE_BOTTOM_Y = TREBLE_TOP_Y + STAFF_HEIGHT // 90px
-const MIDDLE_C_Y = TREBLE_BOTTOM_Y + LINE_SPACING // 99px
-const BASS_TOP_Y = MIDDLE_C_Y + LINE_SPACING // 108px
-const BASS_BOTTOM_Y = BASS_TOP_Y + STAFF_HEIGHT // 144px
-const PEDAL_Y = BASS_BOTTOM_Y + 22 // 166px
-const SYSTEM_HEIGHT = PEDAL_Y + 16 // 182px
+const TREBLE_TOP_Y = 64
+const TREBLE_BOTTOM_Y = TREBLE_TOP_Y + STAFF_HEIGHT // 100px
+const MIDDLE_C_Y = TREBLE_BOTTOM_Y + LINE_SPACING // 109px
+const BASS_TOP_Y = MIDDLE_C_Y + LINE_SPACING // 118px
+const BASS_BOTTOM_Y = BASS_TOP_Y + STAFF_HEIGHT // 154px
+const PEDAL_Y = BASS_BOTTOM_Y + 22 // 176px
+const SYSTEM_HEIGHT = PEDAL_Y + 16 // 192px
 
 interface MeasureColumn {
   tKey: number
@@ -86,6 +87,8 @@ export const SheetMusicView: React.FC<SheetMusicViewProps> = ({
   loopRange,
   startMeasure = 1,
   onStartMeasureChange,
+  onOpenSections,
+  language = 'en',
 }) => {
   const scrollContainerRef = useRef<HTMLDivElement>(null)
   const [containerWidth, setContainerWidth] = useState<number>(800)
@@ -270,27 +273,27 @@ export const SheetMusicView: React.FC<SheetMusicViewProps> = ({
   const getLedgerLines = useCallback((y: number, hand: 'right' | 'left'): number[] => {
     const lines: number[] = []
     if (hand === 'right') {
-      // Below treble staff (Line 1 E4 is 90)
-      if (y >= 96) {
+      // Below treble staff (Line 1 E4 is TREBLE_BOTTOM_Y)
+      if (y >= TREBLE_BOTTOM_Y + 6) {
         for (let ly = MIDDLE_C_Y; ly <= y + 2; ly += LINE_SPACING) {
           lines.push(ly)
         }
       }
-      // Above treble staff (Line 5 F5 is 54)
-      if (y <= 48) {
+      // Above treble staff (Line 5 F5 is TREBLE_TOP_Y)
+      if (y <= TREBLE_TOP_Y - 6) {
         for (let ly = TREBLE_TOP_Y - LINE_SPACING; ly >= y - 2; ly -= LINE_SPACING) {
           lines.push(ly)
         }
       }
     } else {
-      // Above bass staff (Line 5 A3 is 108)
-      if (y <= 102) {
+      // Above bass staff (Line 5 A3 is BASS_TOP_Y)
+      if (y <= BASS_TOP_Y - 6) {
         for (let ly = MIDDLE_C_Y; ly >= y - 2; ly -= LINE_SPACING) {
           lines.push(ly)
         }
       }
-      // Below bass staff (Line 1 G2 is 144)
-      if (y >= 150) {
+      // Below bass staff (Line 1 G2 is BASS_BOTTOM_Y)
+      if (y >= BASS_BOTTOM_Y + 6) {
         for (let ly = BASS_BOTTOM_Y + LINE_SPACING; ly <= y + 2; ly += LINE_SPACING) {
           lines.push(ly)
         }
@@ -302,38 +305,84 @@ export const SheetMusicView: React.FC<SheetMusicViewProps> = ({
   return (
     <div
       ref={scrollContainerRef}
-      className="w-full h-full overflow-y-auto overflow-x-hidden transition-colors duration-200 select-none pb-24"
+      className="w-full h-full overflow-y-auto overflow-x-hidden transition-colors duration-200 select-none pb-24 touch-pan-y"
       style={{ backgroundColor: pageBgColor }}
     >
       {/* 1. Classical Score Sheet Header */}
-      <div className="max-w-4xl mx-auto pt-6 pb-4 px-4 sm:px-8 border-b border-stone-200/40 dark:border-zinc-800/60 mb-2">
-        <div className="flex items-center justify-between gap-4">
-          <div className="flex items-center gap-2">
-            <span className="px-2.5 py-0.5 rounded-full text-[11px] font-bold tracking-wider uppercase bg-amber-500/15 text-amber-600 dark:text-amber-400 border border-amber-500/20">
+      <div
+        className={`max-w-4xl mx-auto pt-4 pb-3 px-4 sm:px-8 border-b mb-2 ${
+          isDark ? 'border-zinc-800/70' : 'border-stone-300/70'
+        }`}
+      >
+        <div className="flex flex-wrap items-center justify-between gap-2">
+          <div className="flex flex-wrap items-center gap-1.5">
+            <span
+              className={`px-2.5 py-0.5 rounded-full text-[11px] font-bold tracking-wider uppercase border ${
+                isDark
+                  ? 'bg-amber-500/15 text-amber-400 border-amber-500/25'
+                  : 'bg-amber-500/15 text-amber-700 border-amber-500/30'
+              }`}
+            >
               Henle Urtext
             </span>
-            <span className="text-xs font-mono font-medium text-stone-500 dark:text-zinc-500">
-              Takt {currentMeasure} / {maxMeasure}
+            <span
+              className={`text-xs font-mono font-semibold ${
+                isDark ? 'text-zinc-400' : 'text-stone-600'
+              }`}
+            >
+              {language === 'de' ? 'Takt' : 'M.'} {currentMeasure} / {maxMeasure}
             </span>
             {startMeasure > 1 && (
-              <span className="px-2 py-0.5 rounded-full text-[10px] font-mono font-bold bg-amber-500/15 text-amber-600 dark:text-amber-400 border border-amber-500/30 flex items-center gap-1 shadow-sm">
+              <span
+                className={`px-2 py-0.5 rounded-full text-[10px] font-mono font-bold border flex items-center gap-1 shadow-sm ${
+                  isDark
+                    ? 'bg-amber-500/15 text-amber-400 border-amber-500/30'
+                    : 'bg-amber-500/15 text-amber-700 border-amber-500/40'
+                }`}
+              >
                 <span>★</span>
                 <span>Start M.{startMeasure}</span>
               </span>
             )}
             {isLooping && loopRange && (
-              <span className="px-2 py-0.5 rounded-full text-[10px] font-mono font-bold bg-blue-500/15 text-blue-600 dark:text-blue-400 border border-blue-500/30 flex items-center gap-1 shadow-sm">
+              <span
+                className={`px-2 py-0.5 rounded-full text-[10px] font-mono font-bold border flex items-center gap-1 shadow-sm ${
+                  isDark
+                    ? 'bg-blue-500/15 text-blue-400 border-blue-500/30'
+                    : 'bg-blue-500/15 text-blue-700 border-blue-500/40'
+                }`}
+              >
                 <span>⟲</span>
                 <span>Loop M.{loopRange[0]}–{loopRange[1]}</span>
               </span>
             )}
           </div>
 
-          <div className="flex items-center gap-2">
+          <div className="flex items-center gap-1.5">
+            {onOpenSections && (
+              <button
+                type="button"
+                onClick={onOpenSections}
+                className={`px-2.5 py-1.5 rounded-lg border text-[11px] font-bold flex items-center gap-1 transition-colors active:scale-95 ${
+                  isDark
+                    ? 'border-amber-500/40 bg-zinc-800/90 text-amber-300 hover:bg-zinc-700'
+                    : 'border-amber-500/40 bg-amber-50 text-amber-800 hover:bg-amber-100'
+                }`}
+              >
+                <Layers className="w-3.5 h-3.5" />
+                <span>{language === 'de' ? 'Takte / Loop' : 'Parts / Start'}</span>
+              </button>
+            )}
+
             {/* Theme Toggle (Ivory vs OLED Dark) */}
             <button
+              type="button"
               onClick={toggleTheme}
-              className="p-1.5 rounded-lg border border-stone-300 dark:border-zinc-700 bg-stone-100/70 dark:bg-zinc-800/80 text-stone-700 dark:text-zinc-300 hover:text-amber-500 transition-colors"
+              className={`p-2 rounded-lg border transition-colors active:scale-95 ${
+                isDark
+                  ? 'border-zinc-700 bg-zinc-800/80 text-zinc-300 hover:text-amber-400'
+                  : 'border-stone-300 bg-stone-100 text-stone-700 hover:text-amber-600'
+              }`}
               title={isDark ? 'Switch to Ivory Parchment' : 'Switch to OLED Dark'}
             >
               {isDark ? <Sun className="w-3.5 h-3.5" /> : <Moon className="w-3.5 h-3.5" />}
@@ -341,12 +390,17 @@ export const SheetMusicView: React.FC<SheetMusicViewProps> = ({
 
             {/* Jump to Start Measure */}
             <button
+              type="button"
               onClick={() => {
                 const targetMeas = isLooping && loopRange ? loopRange[0] : startMeasure
                 const note = piece.notes.find((n) => n.measure >= targetMeas)
                 onSeek(note ? note.startTime : 0)
               }}
-              className="p-1.5 rounded-lg border border-stone-300 dark:border-zinc-700 bg-stone-100/70 dark:bg-zinc-800/80 text-stone-700 dark:text-zinc-300 hover:text-amber-500 transition-colors"
+              className={`p-2 rounded-lg border transition-colors active:scale-95 ${
+                isDark
+                  ? 'border-zinc-700 bg-zinc-800/80 text-zinc-300 hover:text-amber-400'
+                  : 'border-stone-300 bg-stone-100 text-stone-700 hover:text-amber-600'
+              }`}
               title={`Seek to start measure (M. ${isLooping && loopRange ? loopRange[0] : startMeasure})`}
             >
               <RotateCcw className="w-3.5 h-3.5" />
@@ -355,25 +409,40 @@ export const SheetMusicView: React.FC<SheetMusicViewProps> = ({
         </div>
 
         {/* Piece Title & Subtitle (Classical Typography) */}
-        <div className="text-center mt-3 mb-1">
+        <div className="text-center mt-2.5 mb-1">
           <h1
-            className="text-2xl sm:text-3xl font-serif font-extrabold tracking-tight"
+            className="text-xl sm:text-3xl font-serif font-extrabold tracking-tight"
             style={{ color: inkColor }}
           >
             {piece.title}
           </h1>
-          <p className="text-xs sm:text-sm font-serif italic text-stone-600 dark:text-zinc-400 mt-0.5">
+          <p
+            className={`text-xs sm:text-sm font-serif italic mt-0.5 ${
+              isDark ? 'text-zinc-400' : 'text-stone-600'
+            }`}
+          >
             {piece.composer}
             {piece.opus ? ` • ${piece.opus}` : ''}
           </p>
         </div>
 
-        {/* Initial Tempo & Key Info */}
-        <div className="flex items-center justify-between text-[11px] font-serif font-semibold mt-2 text-stone-500 dark:text-zinc-400 px-1">
+        {/* Initial Tempo, Key & Quick Tap Tip */}
+        <div
+          className={`flex flex-wrap items-center justify-between gap-2 text-[11px] font-serif font-semibold mt-2 px-1 ${
+            isDark ? 'text-zinc-400' : 'text-stone-600'
+          }`}
+        >
           <div className="flex items-center gap-1.5">
             <span className="font-sans font-bold">♩</span>
             <span>= {piece.tempoBpm || 80}</span>
           </div>
+          {onStartMeasureChange && (
+            <span className={`text-[10px] font-sans ${isDark ? 'text-zinc-500' : 'text-stone-500'}`}>
+              {language === 'de'
+                ? 'Tipp: Auf Taktnummer tippen = ★ Start-Takt setzen'
+                : 'Tip: Tap any measure # to set ★ Start Measure'}
+            </span>
+          )}
           <div>
             <span>{piece.key || 'C Major'}</span>
             <span className="mx-1.5">•</span>
@@ -425,13 +494,13 @@ export const SheetMusicView: React.FC<SheetMusicViewProps> = ({
                   strokeWidth="1.6"
                 />
 
-                {/* Treble Clef Vector (Placed exactly on G4 Line) */}
-                <g transform="translate(19, 24) scale(0.95)" fill={inkColor}>
+                {/* Treble Clef Vector (Placed exactly on G4 Line relative to TREBLE_TOP_Y) */}
+                <g transform={`translate(19, ${TREBLE_TOP_Y - 30}) scale(0.95)`} fill={inkColor}>
                   <path d={G_CLEF_PATH} />
                 </g>
 
-                {/* Bass Clef Vector (Placed exactly straddling F3 Line) */}
-                <g transform="translate(20, 114) scale(1.0)" fill={inkColor}>
+                {/* Bass Clef Vector (Placed exactly straddling F3 Line relative to BASS_TOP_Y) */}
+                <g transform={`translate(20, ${BASS_TOP_Y + 6}) scale(1.0)`} fill={inkColor}>
                   <path d={F_CLEF_PATH} />
                 </g>
 
@@ -439,15 +508,15 @@ export const SheetMusicView: React.FC<SheetMusicViewProps> = ({
                 {sharpsCount > 0 && (
                   <g fill={inkColor} fontSize="14" fontFamily="serif" fontWeight="bold">
                     {/* Treble Sharps */}
-                    {sharpsCount >= 1 && <text x="50" y="58">♯</text>} {/* F#5 */}
-                    {sharpsCount >= 2 && <text x="57" y="72">♯</text>} {/* C#5 */}
-                    {sharpsCount >= 3 && <text x="64" y="54">♯</text>} {/* G#5 */}
-                    {sharpsCount >= 4 && <text x="71" y="67">♯</text>} {/* D#5 */}
+                    {sharpsCount >= 1 && <text x="50" y={TREBLE_TOP_Y + 4}>♯</text>} {/* F#5 */}
+                    {sharpsCount >= 2 && <text x="57" y={TREBLE_TOP_Y + 18}>♯</text>} {/* C#5 */}
+                    {sharpsCount >= 3 && <text x="64" y={TREBLE_TOP_Y}>♯</text>} {/* G#5 */}
+                    {sharpsCount >= 4 && <text x="71" y={TREBLE_TOP_Y + 13}>♯</text>} {/* D#5 */}
                     {/* Bass Sharps */}
-                    {sharpsCount >= 1 && <text x="50" y="122">♯</text>} {/* F#3 */}
-                    {sharpsCount >= 2 && <text x="57" y="136">♯</text>} {/* C#3 */}
-                    {sharpsCount >= 3 && <text x="64" y="118">♯</text>} {/* G#3 */}
-                    {sharpsCount >= 4 && <text x="71" y="131">♯</text>} {/* D#3 */}
+                    {sharpsCount >= 1 && <text x="50" y={BASS_TOP_Y + 14}>♯</text>} {/* F#3 */}
+                    {sharpsCount >= 2 && <text x="57" y={BASS_TOP_Y + 28}>♯</text>} {/* C#3 */}
+                    {sharpsCount >= 3 && <text x="64" y={BASS_TOP_Y + 10}>♯</text>} {/* G#3 */}
+                    {sharpsCount >= 4 && <text x="71" y={BASS_TOP_Y + 23}>♯</text>} {/* D#3 */}
                   </g>
                 )}
 
@@ -455,15 +524,15 @@ export const SheetMusicView: React.FC<SheetMusicViewProps> = ({
                 {flatsCount > 0 && (
                   <g fill={inkColor} fontSize="15" fontFamily="serif" fontWeight="bold">
                     {/* Treble Flats */}
-                    {flatsCount >= 1 && <text x="50" y="77">♭</text>} {/* Bb4 */}
-                    {flatsCount >= 2 && <text x="57" y="64">♭</text>} {/* Eb5 */}
-                    {flatsCount >= 3 && <text x="64" y="82">♭</text>} {/* Ab4 */}
-                    {flatsCount >= 4 && <text x="71" y="69">♭</text>} {/* Db5 */}
+                    {flatsCount >= 1 && <text x="50" y={TREBLE_TOP_Y + 23}>♭</text>} {/* Bb4 */}
+                    {flatsCount >= 2 && <text x="57" y={TREBLE_TOP_Y + 10}>♭</text>} {/* Eb5 */}
+                    {flatsCount >= 3 && <text x="64" y={TREBLE_TOP_Y + 28}>♭</text>} {/* Ab4 */}
+                    {flatsCount >= 4 && <text x="71" y={TREBLE_TOP_Y + 15}>♭</text>} {/* Db5 */}
                     {/* Bass Flats */}
-                    {flatsCount >= 1 && <text x="50" y="140">♭</text>} {/* Bb2 */}
-                    {flatsCount >= 2 && <text x="57" y="127">♭</text>} {/* Eb3 */}
-                    {flatsCount >= 3 && <text x="64" y="145">♭</text>} {/* Ab2 */}
-                    {flatsCount >= 4 && <text x="71" y="132">♭</text>} {/* Db3 */}
+                    {flatsCount >= 1 && <text x="50" y={BASS_TOP_Y + 32}>♭</text>} {/* Bb2 */}
+                    {flatsCount >= 2 && <text x="57" y={BASS_TOP_Y + 19}>♭</text>} {/* Eb3 */}
+                    {flatsCount >= 3 && <text x="64" y={BASS_TOP_Y + 37}>♭</text>} {/* Ab2 */}
+                    {flatsCount >= 4 && <text x="71" y={BASS_TOP_Y + 24}>♭</text>} {/* Db3 */}
                   </g>
                 )}
 
@@ -648,23 +717,23 @@ export const SheetMusicView: React.FC<SheetMusicViewProps> = ({
                         </g>
                       )}
 
-                      {/* Designated Start Measure Badge */}
+                      {/* Designated Start Measure Badge (crisp separation above WAIT pointer & high notes) */}
                       {mNum === startMeasure && (
                         <g>
                           <rect
                             x={mStartX + 2}
-                            y={TREBLE_TOP_Y - 24}
-                            width={58}
-                            height={12}
-                            rx={3}
+                            y={TREBLE_TOP_Y - 48}
+                            width={68}
+                            height={15}
+                            rx={4}
                             fill="#f59e0b"
                           />
                           <text
-                            x={mStartX + 31}
-                            y={TREBLE_TOP_Y - 15}
+                            x={mStartX + 36}
+                            y={TREBLE_TOP_Y - 37.5}
                             fill="#09090b"
                             fontFamily="monospace"
-                            fontSize="8"
+                            fontSize="8.5"
                             fontWeight="900"
                             textAnchor="middle"
                           >
@@ -685,7 +754,7 @@ export const SheetMusicView: React.FC<SheetMusicViewProps> = ({
                         />
                       )}
 
-                      {/* Measure Number at top-left with Click-to-Set-Start */}
+                      {/* Measure Number at top-left with Generous Touch Hit-Box for iPhone */}
                       <g
                         onClick={(e) => {
                           e.stopPropagation()
@@ -694,12 +763,24 @@ export const SheetMusicView: React.FC<SheetMusicViewProps> = ({
                         }}
                         className="cursor-pointer"
                       >
+                        <rect
+                          x={mStartX}
+                          y={TREBLE_TOP_Y - 22}
+                          width={34}
+                          height={20}
+                          rx={4}
+                          fill={
+                            mNum === startMeasure
+                              ? 'rgba(245, 158, 11, 0.18)'
+                              : 'transparent'
+                          }
+                        />
                         <text
-                          x={mStartX + 4}
-                          y={TREBLE_TOP_Y - 6}
+                          x={mStartX + 5}
+                          y={TREBLE_TOP_Y - 8}
                           fill={mNum === startMeasure ? '#f59e0b' : dimInkColor}
                           fontFamily="monospace"
-                          fontSize="9.5"
+                          fontSize="10"
                           fontWeight={mNum === startMeasure ? '900' : 'bold'}
                         >
                           {mNum}

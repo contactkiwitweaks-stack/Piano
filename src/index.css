@@ -21,6 +21,19 @@
     -webkit-tap-highlight-color: transparent;
     -webkit-touch-callout: none;
   }
+
+  /* Allow text selection inside inputs/textareas for URL/IP/search editing */
+  input,
+  textarea {
+    -webkit-user-select: text;
+    user-select: text;
+  }
+
+  /* Smooth native iOS momentum scrolling for all overflow containers */
+  .overflow-y-auto,
+  .overflow-x-auto {
+    -webkit-overflow-scrolling: touch;
+  }
 }
 
 /* Safe Area Utility Classes for iPhone 17 Pro Dynamic Island & Home Bar */
