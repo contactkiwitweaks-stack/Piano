@@ -6,6 +6,16 @@ import type { LibraryPieceSummary } from '../types/edition'
 
 const CUSTOM_SONGS_KEY = 'virtuoso_custom_songs_v1'
 const COMPETITION_SCORES_KEY = 'virtuoso_competition_scores_v1'
+const STUDY_SHELVES_KEY = 'virtuoso_study_shelves_v1'
+
+export type StudyShelfId = 'studying' | 'planning' | 'mastered' | 'favorites'
+
+export interface StudyShelfEntry {
+  pieceId: string
+  shelf: StudyShelfId
+  addedAt: number
+  targetNote?: string // e.g., "Bis Takt 26 ausbauen"
+}
 
 export interface CompetitionScoreRecord {
   pieceId: string
@@ -394,5 +404,88 @@ export class SongStorageManager {
     } catch {
       return null
     }
+  }
+
+  // =========================================================================
+  // PERSONAL STUDY SHELVES ("Aktuell am Lernen", "Geplant", "Gemeistert", "Favoriten")
+  // =========================================================================
+  private static getDefaultStudyShelves(): StudyShelfEntry[] {
+    const now = Date.now()
+    return [
+      {
+        pieceId: 'chopin-ballade-1',
+        shelf: 'studying',
+        addedAt: now,
+        targetNote: 'Takt 1–26 Fokus (Lento & Moderato)',
+      },
+      {
+        pieceId: 'franz-behr-french-childs-song',
+        shelf: 'studying',
+        addedAt: now - 1000,
+        targetNote: 'Violinschlüssel beide Hände & p/mf',
+      },
+      {
+        pieceId: 'httyd-test-drive',
+        shelf: 'planning',
+        addedAt: now - 2000,
+      },
+      {
+        pieceId: 'chopin-nocturne-c-sharp-minor',
+        shelf: 'planning',
+        addedAt: now - 3000,
+      },
+    ]
+  }
+
+  public static getStudyShelves(): StudyShelfEntry[] {
+    try {
+      const raw = localStorage.getItem(STUDY_SHELVES_KEY)
+      if (!raw) {
+        const defaults = this.getDefaultStudyShelves()
+        localStorage.setItem(STUDY_SHELVES_KEY, JSON.stringify(defaults))
+        return defaults
+      }
+      const parsed = JSON.parse(raw) as StudyShelfEntry[]
+      return Array.isArray(parsed) ? parsed : this.getDefaultStudyShelves()
+    } catch {
+      return this.getDefaultStudyShelves()
+    }
+  }
+
+  public static getPieceShelf(pieceId: string): StudyShelfId | null {
+    const entry = this.getStudyShelves().find((e) => e.pieceId === pieceId)
+    return entry ? entry.shelf : null
+  }
+
+  public static setPieceShelf(pieceId: string, shelf: StudyShelfId | null, targetNote?: string): StudyShelfEntry[] {
+    const current = this.getStudyShelves().filter((e) => e.pieceId !== pieceId)
+    if (shelf) {
+      current.unshift({
+        pieceId,
+        shelf,
+        addedAt: Date.now(),
+        targetNote,
+      })
+    }
+    try {
+      localStorage.setItem(STUDY_SHELVES_KEY, JSON.stringify(current))
+    } catch {}
+    return current
+  }
+
+  public static getLastOpenedPieceId(): string {
+    try {
+      const saved = localStorage.getItem('virtuoso_last_piece_id')
+      if (saved) return saved
+      const studying = this.getStudyShelves().find((e) => e.shelf === 'studying')
+      if (studying) return studying.pieceId
+    } catch {}
+    return 'chopin-ballade-1'
+  }
+
+  public static setLastOpenedPieceId(pieceId: string): void {
+    try {
+      localStorage.setItem('virtuoso_last_piece_id', pieceId)
+    } catch {}
   }
 }

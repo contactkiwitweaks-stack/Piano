@@ -84,6 +84,7 @@ interface FlowkeyPlayerViewProps {
   onEditionChange?: (edition: MasterEditionId) => void
   onOpenBluetoothModal: () => void
   onOpenTutorials?: () => void
+  onOpenPracticeCoach?: () => void
   onBackToDiscovery: () => void
   onScreenKeyPress?: (midi: number) => void
   onScreenKeyRelease?: (midi: number) => void
@@ -149,6 +150,7 @@ export const FlowkeyPlayerView: React.FC<FlowkeyPlayerViewProps> = ({
   onEditionChange,
   onOpenBluetoothModal,
   onOpenTutorials,
+  onOpenPracticeCoach,
   onBackToDiscovery,
   onScreenKeyPress,
   onScreenKeyRelease,
@@ -677,6 +679,19 @@ export const FlowkeyPlayerView: React.FC<FlowkeyPlayerViewProps> = ({
             </button>
           )}
 
+          {/* Passive Practice Coach Button (Wait & Flow Analytics — works without Comp mode!) */}
+          {onOpenPracticeCoach && (
+            <button
+              type="button"
+              onClick={onOpenPracticeCoach}
+              className="flex items-center gap-1 h-9 px-2.5 rounded-xl border border-emerald-500/40 bg-emerald-950/50 hover:bg-emerald-900/60 text-emerald-300 text-xs font-bold transition-all active:scale-95 flex-shrink-0"
+              title={language === 'de' ? 'Passiver Übe-Coach (Fehler, Stocken & Stärken)' : 'Passive Practice Coach (Mistakes & Strengths)'}
+            >
+              <TrendingUp className="w-3.5 h-3.5 text-emerald-400" />
+              <span className="hidden sm:inline">Coach</span>
+            </button>
+          )}
+
           {/* Masterclass Tips Toggle (Desktop) */}
           <button
             type="button"
@@ -1001,32 +1016,47 @@ export const FlowkeyPlayerView: React.FC<FlowkeyPlayerViewProps> = ({
                 </div>
               )}
 
-              {/* 5. Masterclass Guidance & Pedagogy */}
-              <div className="pt-2 border-t border-white/10 grid grid-cols-2 gap-2">
-                <button
-                  type="button"
-                  onClick={() => {
-                    setMobileSettingsOpen(false)
-                    setIsMasterclassOpen(true)
-                  }}
-                  className="p-3 rounded-xl bg-amber-950/40 border border-amber-500/40 text-amber-300 font-bold text-xs flex items-center justify-center gap-2 active:scale-95"
-                >
-                  <GraduationCap className="w-4 h-4 text-amber-400" />
-                  <span>{language === 'de' ? 'Spiel-Tipps' : 'Masterclass Tips'}</span>
-                </button>
-                {onOpenTutorials && (
+              {/* 5. Practice Coach, Masterclass Guidance & Pedagogy */}
+              <div className="pt-2 border-t border-white/10 space-y-2">
+                {onOpenPracticeCoach && (
                   <button
                     type="button"
                     onClick={() => {
                       setMobileSettingsOpen(false)
-                      onOpenTutorials()
+                      onOpenPracticeCoach()
                     }}
-                    className="p-3 rounded-xl bg-purple-950/40 border border-purple-500/40 text-purple-300 font-bold text-xs flex items-center justify-center gap-2 active:scale-95"
+                    className="w-full p-3 rounded-xl bg-emerald-950/50 border border-emerald-500/45 text-emerald-300 font-extrabold text-xs flex items-center justify-center gap-2 active:scale-95"
                   >
-                    <BookOpen className="w-4 h-4 text-purple-400" />
-                    <span>{language === 'de' ? 'Tutorials' : 'Tutorials'}</span>
+                    <TrendingUp className="w-4 h-4 text-emerald-400" />
+                    <span>{language === 'de' ? 'Passiver Übe-Coach (Wait-Analyse)' : 'Passive Practice Coach'}</span>
                   </button>
                 )}
+                <div className="grid grid-cols-2 gap-2">
+                  <button
+                    type="button"
+                    onClick={() => {
+                      setMobileSettingsOpen(false)
+                      setIsMasterclassOpen(true)
+                    }}
+                    className="p-3 rounded-xl bg-amber-950/40 border border-amber-500/40 text-amber-300 font-bold text-xs flex items-center justify-center gap-2 active:scale-95"
+                  >
+                    <GraduationCap className="w-4 h-4 text-amber-400" />
+                    <span>{language === 'de' ? 'Spiel-Tipps' : 'Masterclass Tips'}</span>
+                  </button>
+                  {onOpenTutorials && (
+                    <button
+                      type="button"
+                      onClick={() => {
+                        setMobileSettingsOpen(false)
+                        onOpenTutorials()
+                      }}
+                      className="p-3 rounded-xl bg-purple-950/40 border border-purple-500/40 text-purple-300 font-bold text-xs flex items-center justify-center gap-2 active:scale-95"
+                    >
+                      <BookOpen className="w-4 h-4 text-purple-400" />
+                      <span>{language === 'de' ? 'Tutorials' : 'Tutorials'}</span>
+                    </button>
+                  )}
+                </div>
               </div>
 
               {/* 6. Connectivity & Audio Engine */}

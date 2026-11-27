@@ -28,7 +28,7 @@ export interface CourseLesson {
 
 export interface Course {
   id: string
-  category: 'beginner' | 'technique' | 'scales' | 'chords'
+  category: 'beginner' | 'pedaling' | 'technique' | 'scales' | 'chords'
   title: {
     en: string
     de: string
@@ -50,6 +50,254 @@ export interface Course {
 }
 
 export const coursesData: Course[] = [
+  // PEDALING MASTERCLASS (NEW!)
+  {
+    id: 'course-pedaling-mastery',
+    category: 'pedaling',
+    title: {
+      en: 'Art of Pedaling: Syncopated, Half-Pedal & Una Corda',
+      de: 'Pedalkunst & Resonanz: Nach-Pedalisieren, Halbpedal & Una Corda',
+      fr: 'L’art de la pédale : syncopée, demi-pédale et Una Corda',
+      ja: 'ペダリングの極意：後踏み・ハーフペダル・ウナコルダ',
+      zh: '踏板艺术大师课：切分踏板、半踏板与弱音踏板',
+    },
+    subtitle: {
+      en: 'Master clean harmonic changes, Roland LX-9 continuous CC64 half-pedaling (40–75), flutter pedaling for Chopin chromatic bass, and Una Corda tone color.',
+      de: 'Meistere saubere Harmoniewechsel, stufenloses Halbpedal (CC64 40–75 am Roland LX-9), Flatter-Pedal für Chopins chromatische Bässe und Una Corda Klangfarben.',
+      fr: 'Maîtrisez les changements harmoniques propres, la demi-pédale CC64 et les couleurs Una Corda.',
+      ja: '濁りのないハーモニー変化、CC64ハーフペダル、ショパンの半音階バスでのフラッターペダルを習得。',
+      zh: '掌握干净的和声换踏板、CC64半踏板控制与肖邦半音低音抖踏板技巧。',
+    },
+    lessonCount: 5,
+    overallProgress: 0,
+    coverGradient: 'from-cyan-600 via-sky-800 to-zinc-950',
+    lessons: [
+      {
+        id: 'ped-1',
+        number: 1,
+        title: {
+          en: 'Syncopated (After-)Pedaling: Clean Legato Without Blur',
+          de: 'Synkopiertes Nach-Pedalisieren (Legato ohne Klangbrei)',
+          fr: 'Pédale syncopée : legato pur sans brouillard',
+          ja: '後踏み（シンコペーション・ペダル）の基礎',
+          zh: '切分音后踏板：纯净连奏不浑浊',
+        },
+        durationMin: 10,
+        progressPercent: 0,
+        targetPieceId: 'bach-prelude-c',
+        practiceVariant: 'slow-practice',
+        description: {
+          en: 'Golden rule: Finger DOWN → Foot UP immediately → Foot DOWN to catch the new harmony! Never press foot and finger at the same moment.',
+          de: 'Goldene Regel: Taste RUNTER → Fuß blitzschnell HOCH (alter Klang weg) → Fuß wieder RUNTER (neue Harmonie fangen)! Niemals Finger und Fuß gleichzeitig drücken.',
+          fr: 'Règle d’or : doigt en bas, pied en haut pour nettoyer, puis pied en bas pour capter.',
+          ja: '黄金律：鍵盤を押す→直後にペダルを上げて濁りを消す→新しい響きをキャッチ！',
+          zh: '黄金法则：手指落键→脚尖迅速抬起清除旧和声→立刻踩下捕获新共鸣！',
+        },
+      },
+      {
+        id: 'ped-2',
+        number: 2,
+        title: {
+          en: 'Half-Pedaling (CC64 40–75) for Chopin & Romantic Repertoire',
+          de: 'Halbpedal-Technik (CC64 40–75) für Chopin Ballade Nr. 1',
+          fr: 'Demi-pédale (CC64 40–75) pour Chopin et le répertoire romantique',
+          ja: 'ハーフペダル（CC64 40〜75）：ショパン・バラード第1番実践',
+          zh: '半踏板技术（CC64 40–75）：肖邦第一叙事曲实战',
+        },
+        durationMin: 14,
+        progressPercent: 0,
+        targetPieceId: 'chopin-ballade-1',
+        practiceVariant: 'slow-practice',
+        description: {
+          en: 'On your Roland LX-9, depressing CC64 to 45–70 lets deep bass strings resonate while gently brushing upper treble overtones clean — essential for Ballade No. 1 M. 8–26!',
+          de: 'Am Roland LX-9 lässt CC64 zwischen 45 und 70 die tiefen Basssaiten warm schwingen, während hohe Obertöne sauber abgedämpft werden — unverzichtbar für Ballade Nr. 1 Takt 8–26!',
+          fr: 'Sur Roland LX-9, maintenir CC64 entre 45 et 70 conserve la basse tout en éclaircissant l’aigu.',
+          ja: 'Roland LX-9のCC64を45〜70に保つことで、低音の響きを残しつつ高音の濁りを防ぎます。',
+          zh: '在Roland LX-9上将CC64控制在45–70区间，保留低音共鸣同时让高音旋律清澈透亮。',
+        },
+      },
+      {
+        id: 'ped-3',
+        number: 3,
+        title: {
+          en: 'Harmonic Clearing on Chord Changes (Cm/A → D7)',
+          de: 'Sauberes Harmonie-Wechseln bei Akkordwechseln',
+          fr: 'Changements de pédale nets sur modulations',
+          ja: '和音変化でのクリアな踏み替え',
+          zh: '和声转换处的干净换踏板',
+        },
+        durationMin: 12,
+        progressPercent: 0,
+        targetPieceId: 'chopin-nocturne-c-sharp-minor',
+        practiceVariant: 'original',
+        description: {
+          en: 'Listen with your ears, not your foot! Clear completely whenever the bass harmony shifts (e.g., Ballade M. 10 beat 4) so minor/dominant chords never clash.',
+          de: 'Höre mit den Ohren, nicht mit dem Fuß! Öffne das Dämpferpedal komplett bei jedem Harmoniewechsel (z. B. Ballade Takt 10 Schlag 4: c-Moll → D7).',
+          fr: 'Écoutez la résonance et nettoyez totalement à chaque changement d’harmonie.',
+          ja: '足ではなく耳で聴く！和声が変わる瞬間に完全にダンパーを戻して濁りを防ぎます。',
+          zh: '用耳朵而非习惯踩踏板！每逢和声变换瞬间彻底释放阻尼，避免不协和浑浊。',
+        },
+      },
+      {
+        id: 'ped-4',
+        number: 4,
+        title: {
+          en: 'Flutter Pedaling for Chromatic Running Bass (M. 24–25)',
+          de: 'Flatter-Pedal bei chromatischen Bass-Läufen (Takt 24–25)',
+          fr: 'Pédale vibrée (flutter) pour basses chromatiques',
+          ja: 'フラッターペダル：半音階バスラインを透き通らせる技法',
+          zh: '抖踏板技巧：保持半音阶低音线条清晰透明',
+        },
+        durationMin: 15,
+        progressPercent: 0,
+        targetPieceId: 'chopin-ballade-1',
+        practiceVariant: 'hands-separate-left',
+        description: {
+          en: 'Rapid shallow half-lifts (CC64 oscillating 30 ↔ 65) scrub away clashing passing tones in Ballade M. 24–25 while keeping the lush concert hall halo alive.',
+          de: 'Schnelle, flache Mikro-Bewegungen (CC64 pendelt zwischen 30 und 65) wischen reibende Durchgangstöne weg, ohne den warmen Konzertsaal-Klang abzuschneiden.',
+          fr: 'Micro-mouvements rapides entre 30 et 65 pour garder la transparence chromatique.',
+          ja: 'CC64を30〜65で小刻みに揺らし、半音階の濁りを取り除きながら豊かな響きを保ちます。',
+          zh: '让CC64在30与65之间快速轻颤，洗去经过音碰撞同时保留大厅温暖余韵。',
+        },
+      },
+      {
+        id: 'ped-5',
+        number: 5,
+        title: {
+          en: 'Una Corda (CC67 Soft Pedal) & Sotto Voce Tone Color',
+          de: 'Una Corda (CC67 linkes Pedal) & Sotto-Voce Klangfarbe',
+          fr: 'Una Corda (CC67) et couleurs sotto voce',
+          ja: 'ウナ・コルダ（左ペダルCC67）とソット・ヴォーチェの音色',
+          zh: '弱音踏板（CC67）与低语般的音色塑造',
+        },
+        durationMin: 12,
+        progressPercent: 0,
+        targetPieceId: 'beethoven-moonlight-1',
+        practiceVariant: 'original',
+        description: {
+          en: 'The left pedal is NOT just for playing quietly — it shifts hammer tone into veiled, velvety intimacy for nocturnal passages and Chopin sotto voce echoes.',
+          de: 'Das linke Pedal macht nicht einfach nur „leiser“ — es verwandelt den Anschlag in samtigen, verschleierten Zauberklang für Mondscheinsonate & Chopin sotto voce.',
+          fr: 'La pédale douce transforme le timbre en velours intime, idéal pour les passages nocturnes.',
+          ja: '左ペダルは単なる消音ではなく、ビロードのように柔らかな神秘的音色を生み出します。',
+          zh: '左踏板并非单纯减小音量，而是赋予琴声如丝绒般朦胧深邃的夜曲音色。',
+        },
+      },
+    ],
+  },
+
+  // SIGHT-READING INTENSIVE (NEW!)
+  {
+    id: 'course-sight-reading-intensive',
+    category: 'beginner',
+    title: {
+      en: 'Sight-Reading Lab: Chords, Rhythms & Key Signatures',
+      de: 'Vom-Blatt-Spiel Labor: Akkorde, Notenwerte & Tonarten',
+      fr: 'Atelier lecture à vue : accords, rythmes et armures',
+      ja: '初見演奏ラボ：和音・リズム・調号の実践トレーニング',
+      zh: '视奏强化实验室：和弦图形、时值节奏与调号实战',
+    },
+    subtitle: {
+      en: 'Read full chords at a glance, distinguish whole/dotted-half/half/quarter/8th values, master dual treble clef (Franz Behr), and navigate D Major & G minor key signatures.',
+      de: 'Erfasse ganze Akkordformen auf einen Blick, unterscheide Ganze/Punktierte Halbe/Halbe/Viertel/Achtel sicher, meistere doppelten Violinschlüssel (Franz Behr) & Vorzeichen.',
+      fr: 'Lisez les accords d’un coup d’œil, distinguez les valeurs rythmiques et maîtrisez les armures.',
+      ja: '和音の形、音符の長さ（全音符〜16分音符）、両手ト音記号（ベール）や調号を瞬時に読む訓練。',
+      zh: '一眼识别和弦结构、精准分辨全/附点二分/二分/四分/八分音符，攻克双手高音谱表与调号。',
+    },
+    lessonCount: 4,
+    overallProgress: 0,
+    coverGradient: 'from-teal-600 via-emerald-800 to-zinc-950',
+    lessons: [
+      {
+        id: 'sri-1',
+        number: 1,
+        title: {
+          en: "Reading Note Values & Dual Treble Clef (Franz Behr)",
+          de: "Notenwerte (Ganze, Punktierte Halbe, Halbe, Viertel) — Franz Behr",
+          fr: "Valeurs rythmiques & double clé de sol (Franz Behr)",
+          ja: "音符の長さと両手ト音記号の読譜（フランツ・ベール）",
+          zh: "音符时值与双手高音谱表实战（贝洱）",
+        },
+        durationMin: 10,
+        progressPercent: 0,
+        targetPieceId: 'franz-behr-french-childs-song',
+        practiceVariant: 'wait-for-note',
+        description: {
+          en: "Practice reading whole notes (M.8 & M.16), half notes, quarters, and the final dotted half + quarter rest (M.24) with BOTH hands in treble clef!",
+          de: "Übe Ganze (Takt 8 & 16), Halbe, Viertel sowie die finale punktierte Halbe + Viertelpause (Takt 24) — mit beiden Händen im Violinschlüssel!",
+          fr: "Pratiquez rondes, blanches, noires et blanche pointée + soupir final en double clé de sol.",
+          ja: "全音符、2分音符、付点2分音符＋4分休符を両手ト音記号で正確に読む練習。",
+          zh: "在双手高音谱表下精准练习全音符、二分音符与第24小节附点二分加四分休止符。",
+        },
+      },
+      {
+        id: 'sri-2',
+        number: 2,
+        title: {
+          en: 'Reading 2-Sharp Key Signatures & Full Chords (HTTYD Test Drive)',
+          de: 'D-Dur (2 Kreuze: F♯, C♯) & volle Akkorde lesen (HTTYD)',
+          fr: 'Armure à 2 dièses (Ré Majeur) & accords complets (HTTYD)',
+          ja: 'ニ長調（シャープ2つ）と重厚な和音の初見（ヒックとドラゴン）',
+          zh: 'D大调（两升号）与饱满和弦视奏（驯龙高手）',
+        },
+        durationMin: 12,
+        progressPercent: 0,
+        targetPieceId: 'httyd-test-drive',
+        practiceVariant: 'wait-for-note',
+        description: {
+          en: 'Train your eyes to automatically play every F as F# and every C as C# while spotting stacked triad & octave chord shapes in D Major.',
+          de: 'Trainiere dein Auge, jedes F automatisch als F♯ und jedes C als C♯ zu greifen und Dreiklangs- sowie Oktavformen sofort als Ganzes zu lesen.',
+          fr: 'Automatisez Fa# et Do# tout en lisant instantanément les accords empilés en Ré Majeur.',
+          ja: 'F#・C#を自動的に捉えつつ、和音とオクターブを塊として視奏する練習。',
+          zh: '在D大调中自动反应F#与C#，把三和弦与八度作为整体图形一眼看清。',
+        },
+      },
+      {
+        id: 'sri-3',
+        number: 3,
+        title: {
+          en: 'Reading 2-Flat Key Signatures, Naturals (♮) & 6/4 Polyphony',
+          de: 'g-Moll (B♭, E♭), Auflösungszeichen (♮) & 6/4 Zweistimmigkeit',
+          fr: 'Sol mineur (Sib, Mib), bécarres (♮) et polyphonie 6/4',
+          ja: 'ト短調（Bb・Eb）・ナチュラル記号・6/4拍子2声の読譜',
+          zh: 'G小调（两降号）、还原号(♮)与6/4拍双声部读谱',
+        },
+        durationMin: 15,
+        progressPercent: 0,
+        targetPieceId: 'chopin-ballade-1',
+        practiceVariant: 'wait-for-note',
+        description: {
+          en: 'Learn to separate soprano stems-up dotted halves from stems-down accompaniment chords and catch cautionary natural signs (B♮, E♮) in Chopin Ballade No. 1.',
+          de: 'Lerne in Chopin Ballade Nr. 1 (Takt 8–26), die Sopran-Stimme (Hals hoch, punktierte Halbe) optisch von den Begleitakkorden (Hals runter) zu trennen und Auflösungszeichen (♮) sofort zu erkennen.',
+          fr: 'Distinguez la mélodie (hampes hautes) de l’accompagnement (hampes basses) et les bécarres.',
+          ja: 'ショパン・バラード第1番で上向きの旋律と下向きの伴奏和音、臨時ナチュラルを瞬時に見分けます。',
+          zh: '在肖邦第一叙事曲中清晰区分符干朝上的旋律长音与符干朝下的内声部和弦，迅速识别还原号。',
+        },
+      },
+      {
+        id: 'sri-4',
+        number: 4,
+        title: {
+          en: 'Lookahead Sight-Reading & Beamed 8th/16th Patterns',
+          de: 'Blick-Voraus-Training & gebalkte 8tel/16tel Gruppen',
+          fr: 'Lecture anticipée & groupes de croches/doubles-croches',
+          ja: '1小節先読み＆連桁リズムパターンの習得',
+          zh: '提前看谱与符杠节奏组视奏训练',
+        },
+        durationMin: 12,
+        progressPercent: 0,
+        targetPieceId: 'beethoven-fur-elise',
+        practiceVariant: 'wait-for-note',
+        description: {
+          en: 'Read beamed 8th and 16th note groups as single visual waves rather than individual noteheads, keeping your eyes 1 beat ahead.',
+          de: 'Lies gebalkte Achtel- und Sechzehntelgruppen als fließende Wellenform statt Note für Note — mit den Augen immer einen Schlag voraus!',
+          fr: 'Lisez les groupes liés par ligatures comme des vagues fluides en anticipant d’un temps.',
+          ja: '連桁で結ばれた8分・16分音符を1つの波形として捉え、常に1拍先を読みます。',
+          zh: '将符杠相连的八分/十六分音符视作整体波形，目光始终提前一拍。',
+        },
+      },
+    ],
+  },
+
   // 0. FLAGSHIP: VOLLSTÄNDIGES NOTENLESEN VON GRUND AUF (NOTE READING FROM ZERO TO VIRTUOSO)
   {
     id: 'course-complete-note-reading-from-zero',

@@ -397,6 +397,26 @@ export const SheetMusicView: React.FC<SheetMusicViewProps> = ({
     return Math.max(0, Math.floor((currentMeasure - 1) / measuresPerSystem))
   }, [currentMeasure, measuresPerSystem])
 
+  // Pinpoint the exact single chord/slot currently awaited in Wait Mode so rapid 16th/32nd repeats never stack multiple "WAIT" badges
+  const expectedTargetTime = useMemo(() => {
+    if (!isWaitMode || expectedNotes.length === 0) return null
+    let bestTime: number | null = null
+    let bestDist = Infinity
+    for (let i = 0; i < piece.notes.length; i++) {
+      const n = piece.notes[i]
+      if (!expectedNotes.includes(n.midi)) continue
+      const dist = Math.abs(n.startTime - currentTime)
+      if (dist <= 0.6) {
+        // Prefer the earliest matching time slot closest to currentTime
+        if (bestTime === null || dist < bestDist - 0.015) {
+          bestTime = n.startTime
+          bestDist = dist
+        }
+      }
+    }
+    return bestTime
+  }, [isWaitMode, expectedNotes, piece.notes, currentTime])
+
   useEffect(() => {
     if (!scrollContainerRef.current) return
     const activeEl = scrollContainerRef.current.querySelector<HTMLElement>(
@@ -452,7 +472,7 @@ export const SheetMusicView: React.FC<SheetMusicViewProps> = ({
         return (
           <g fill={inkColor} fontSize="14" fontFamily="serif" fontWeight="bold">
             {offsets.slice(0, sharpsCount).map((dy, idx) => (
-              <text key={`ks-s-${idx}`} x={startX + idx * 7} y={topY + dy}>
+              <text key={`ks-s-${idx}`} x={startX + idx * 8} y={topY + dy}>
                 ♯
               </text>
             ))}
@@ -464,7 +484,7 @@ export const SheetMusicView: React.FC<SheetMusicViewProps> = ({
         return (
           <g fill={inkColor} fontSize="15" fontFamily="serif" fontWeight="bold">
             {offsets.slice(0, flatsCount).map((dy, idx) => (
-              <text key={`ks-f-${idx}`} x={startX + idx * 7} y={topY + dy}>
+              <text key={`ks-f-${idx}`} x={startX + idx * 8} y={topY + dy}>
                 ♭
               </text>
             ))}
@@ -668,8 +688,8 @@ export const SheetMusicView: React.FC<SheetMusicViewProps> = ({
           const firstMeasInSystem = systemMeasures[0]
           const sysRightClef = getClefForMeasure(firstMeasInSystem, 'right')
           const sysLeftClef = getClefForMeasure(firstMeasInSystem, 'left')
-          const ksWidth = Math.max(sharpsCount, flatsCount) * 7.5
-          const accoladeWidth = Math.max(isFirstSystem ? 92 : 76, 54 + ksWidth + (isFirstSystem ? 26 : 8))
+          const ksWidth = Math.max(sharpsCount, flatsCount) * 8.5
+          const accoladeWidth = Math.max(isFirstSystem ? 96 : 78, 58 + ksWidth + (isFirstSystem ? 26 : 10))
           const availableMeasureWidth = SYSTEM_WIDTH - accoladeWidth
           const measureWidth = availableMeasureWidth / systemMeasures.length
 
@@ -728,9 +748,9 @@ export const SheetMusicView: React.FC<SheetMusicViewProps> = ({
                   </g>
                 )}
 
-                {/* Key Signatures matched to each staff's actual clef */}
-                {renderKeySignature(TREBLE_TOP_Y, sysRightClef, 50)}
-                {renderKeySignature(BASS_TOP_Y, sysLeftClef, 50)}
+                {/* Key Signatures matched to each staff's actual clef (clear daylight after G-clef curve) */}
+                {renderKeySignature(TREBLE_TOP_Y, sysRightClef, 54)}
+                {renderKeySignature(BASS_TOP_Y, sysLeftClef, 54)}
 
                 {/* Initial Time Signature on First System */}
                 {isFirstSystem && (() => {
@@ -1043,9 +1063,10 @@ export const SheetMusicView: React.FC<SheetMusicViewProps> = ({
 
                         const isExpected =
                           isWaitMode &&
+                          expectedTargetTime !== null &&
                           expectedNotes.length > 0 &&
                           vNotes.some((n) => expectedNotes.includes(n.midi)) &&
-                          Math.abs(col.startTime - currentTime) < 0.45
+                          Math.abs(col.startTime - expectedTargetTime) < 0.045
 
                         const isSounding = vNotes.some(
                           (n) =>
@@ -1715,12 +1736,12 @@ export const SheetMusicView: React.FC<SheetMusicViewProps> = ({
                         </text>
                       </g>
 
-                      {/* Tempo Heading Above Staff (e.g. Andantino, Lento, Moderato) */}
+                      {/* Tempo Heading Above Staff (aligned with START badge rail so WAIT marker below never overlaps) */}
                       {marking?.tempo && (
                         <text
                           x={mStartX + (mNum === startMeasure ? 76 : 26)}
-                          y={TREBLE_TOP_Y - 26}
-                          fontSize="12"
+                          y={TREBLE_TOP_Y - 41}
+                          fontSize="11.5"
                           fontFamily="serif"
                           fontWeight="800"
                           fill={inkColor}

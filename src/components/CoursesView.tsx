@@ -1,7 +1,8 @@
-import React, { useState } from 'react'
+import React, { useState, useEffect } from 'react'
 import { coursesData, type Course } from '../data/courses'
 import type { LanguageCode } from '../i18n/translations'
 import type { PracticeVariant } from '../types/music'
+import { MidiManager } from '../midi/MidiManager'
 import {
   BookOpen,
   ChevronLeft,
@@ -13,6 +14,7 @@ import {
   RotateCcw,
   Eye,
   Flame,
+  Sliders,
 } from 'lucide-react'
 
 interface CoursesViewProps {
@@ -35,6 +37,22 @@ export const CoursesView: React.FC<CoursesViewProps> = ({
   const [selectedCourse, setSelectedCourse] = useState<Course | null>(null)
   const [selectedCategory, setSelectedCategory] = useState<string>('all')
   const [expandedLessonId, setExpandedLessonId] = useState<string | null>(null)
+  const [liveDamper, setLiveDamper] = useState<number>(() => MidiManager.getInstance().getState().damperPedal)
+  const [liveSoftPedal, setLiveSoftPedal] = useState<number>(() => MidiManager.getInstance().getState().softPedal)
+
+  useEffect(() => {
+    const unsub = MidiManager.getInstance().subscribe(
+      () => {},
+      () => {},
+      (depth) => setLiveDamper(depth),
+      (st) => {
+        setLiveDamper(st.damperPedal)
+        setLiveSoftPedal(st.softPedal)
+      },
+      (soft) => setLiveSoftPedal(soft)
+    )
+    return () => unsub()
+  }, [])
 
   // Real Persistent Progress Map: { [lessonId: string]: boolean }
   const [completedLessons, setCompletedLessons] = useState<Record<string, boolean>>(() => {
@@ -129,7 +147,7 @@ export const CoursesView: React.FC<CoursesViewProps> = ({
     const nextLesson = selectedCourse.lessons.find((l) => !completedLessons[l.id]) || selectedCourse.lessons[0]
 
     return (
-      <div className="w-full h-full bg-[#0a0a0f] text-zinc-100 flex flex-col overflow-y-auto touch-pan-y select-none px-4 sm:px-8 pl-[max(1rem,env(safe-area-inset-left))] pr-[max(1rem,env(safe-area-inset-right))] py-6 max-w-5xl mx-auto pb-[calc(11.5rem+env(safe-area-inset-bottom))] animate-in fade-in duration-200">
+      <div className="w-full h-full bg-[#0a0a0f] text-zinc-100 overflow-y-auto touch-pan-y select-none px-4 sm:px-8 pl-[max(1rem,env(safe-area-inset-left))] pr-[max(1rem,env(safe-area-inset-right))] py-6 max-w-5xl mx-auto pb-[calc(11.5rem+env(safe-area-inset-bottom))] animate-in fade-in duration-200">
         {/* Back Button & Top Bar */}
         <div className="flex items-center justify-between mb-6">
           <button
@@ -185,6 +203,86 @@ export const CoursesView: React.FC<CoursesViewProps> = ({
             </button>
           </div>
         </div>
+
+        {/* Interactive Live Half-Pedal (CC64) & Una Corda (CC67) Practice Gauge inside Pedaling Courses */}
+        {selectedCourse.category === 'pedaling' && (
+          <div className="mb-6 p-5 rounded-3xl bg-gradient-to-br from-cyan-950/50 via-zinc-900 to-zinc-950 border border-cyan-500/35 space-y-4 shadow-xl">
+            <div className="flex flex-wrap items-center justify-between gap-2">
+              <div className="flex items-center gap-2 text-cyan-300 font-extrabold text-sm">
+                <Sliders className="w-4 h-4" />
+                <span>
+                  {language === 'de'
+                    ? 'Live Halbpedal-Labor (Roland LX-9 CC64 & CC67)'
+                    : 'Live Half-Pedal Lab (Roland LX-9 CC64 & CC67)'}
+                </span>
+              </div>
+              <span
+                className={`px-2.5 py-0.5 rounded-full text-[11px] font-mono font-black border ${
+                  liveDamper >= 35 && liveDamper <= 80
+                    ? 'bg-emerald-500/20 text-emerald-300 border-emerald-400/50'
+                    : liveDamper > 80
+                    ? 'bg-amber-500/20 text-amber-300 border-amber-400/50'
+                    : 'bg-zinc-800 text-zinc-400 border-white/10'
+                }`}
+              >
+                {liveDamper < 20
+                  ? language === 'de'
+                    ? 'Trocken (Dry)'
+                    : 'Dry (Clear)'
+                  : liveDamper <= 80
+                  ? language === 'de'
+                    ? 'HALBPEDAL SWEET-SPOT'
+                    : 'HALF-PEDAL SWEET SPOT'
+                  : language === 'de'
+                  ? 'Vollpedal (Full Sustain)'
+                  : 'Full Sustain'}
+              </span>
+            </div>
+
+            <div className="space-y-1.5">
+              <div className="flex justify-between text-[11px] font-mono text-zinc-300">
+                <span>Dämpferpedal (CC64)</span>
+                <span className="font-bold text-cyan-300">{liveDamper} / 127</span>
+              </div>
+              <div className="relative w-full h-4 rounded-full bg-zinc-950 border border-white/10 overflow-hidden">
+                {/* Sweet spot highlight zone 35–80 (27%–63%) */}
+                <div
+                  className="absolute top-0 bottom-0 bg-emerald-500/25 border-x border-emerald-400/60 pointer-events-none"
+                  style={{ left: '27%', width: '36%' }}
+                />
+                <div
+                  className="h-full bg-gradient-to-r from-sky-500 via-emerald-400 to-amber-400 transition-all duration-75"
+                  style={{ width: `${Math.round((liveDamper / 127) * 100)}%` }}
+                />
+              </div>
+              <div className="flex justify-between text-[9.5px] font-mono text-zinc-500 px-0.5">
+                <span>0 (Klar)</span>
+                <span className="text-emerald-400 font-bold">35–80 Halbpedal-Zone</span>
+                <span>127 (Voll)</span>
+              </div>
+            </div>
+
+            <div className="flex flex-wrap items-center justify-between gap-2 pt-1 text-[11px] text-zinc-400">
+              <span>
+                {language === 'de'
+                  ? 'Tritt dein Roland LX-9 Pedal langsam in die grüne Zone (35–80) oder teste per Slider:'
+                  : 'Press your Roland LX-9 damper pedal gently into the green zone (35–80) or test with slider:'}
+              </span>
+              <div className="flex items-center gap-2">
+                <input
+                  type="range"
+                  min={0}
+                  max={127}
+                  value={liveDamper}
+                  onChange={(e) => setLiveDamper(parseInt(e.target.value, 10))}
+                  className="w-32 accent-cyan-400 cursor-pointer"
+                  aria-label="Test damper pedal depth"
+                />
+                <span className="font-mono text-[10px] text-sky-300">CC67: {liveSoftPedal}</span>
+              </div>
+            </div>
+          </div>
+        )}
 
         {/* Lessons List */}
         <div className="space-y-3">
@@ -292,8 +390,22 @@ export const CoursesView: React.FC<CoursesViewProps> = ({
                       <span className="text-zinc-500 font-mono">Lektion {lesson.number}</span>
                     </div>
 
-                    {/* Lesson 1: Keyboard Geography & Finding Middle C */}
-                    {lesson.number === 1 && (
+                    {/* Pedaling-specific Theory Guide vs Note Reading Guide */}
+                    {selectedCourse.category === 'pedaling' ? (
+                      <div className="space-y-2.5 text-zinc-300">
+                        <p className="leading-relaxed">
+                          <strong className="text-cyan-300">
+                            {language === 'de' ? 'Konzert-Pedaltechnik (Roland LX-9 & Flügel):' : 'Concert Pedaling Mechanics:'}
+                          </strong>{' '}
+                          {lDesc}
+                        </p>
+                        <div className="p-3 rounded-xl bg-zinc-900 border border-cyan-500/25 font-mono text-[11px] text-cyan-200">
+                          {language === 'de'
+                            ? 'Ablauf Nach-Pedalisieren: [1] Neue Taste drücken → [2] Fuß kurz auf 0 (alte Harmonie löschen) → [3] Fuß auf 45–75 (neue Harmonie fangen)'
+                            : 'Syncopated sequence: [1] Strike new key → [2] Lift foot briefly to 0 (clear old harmony) → [3] Catch at 45–75 (new bloom)'}
+                        </div>
+                      </div>
+                    ) : lesson.number === 1 && (
                       <div className="space-y-2.5 text-zinc-300">
                         <p className="leading-relaxed">
                           <strong className="text-white">Das Geheimnis der Klaviatur:</strong> Schau auf die schwarzen Tasten deines Klaviers. Du siehst immer abwechselnd Gruppen aus <strong>2 schwarzen Tasten</strong> und <strong>3 schwarzen Tasten</strong>.
@@ -312,7 +424,7 @@ export const CoursesView: React.FC<CoursesViewProps> = ({
                     )}
 
                     {/* Lesson 2: Treble Clef */}
-                    {lesson.number === 2 && (
+                    {selectedCourse.category !== 'pedaling' && lesson.number === 2 && (
                       <div className="space-y-2.5 text-zinc-300">
                         <p className="leading-relaxed">
                           <strong className="text-white">Violinschlüssel (G-Schlüssel):</strong> Gilt für die rechte Hand (höhere Töne). Sein innerer Kringel kreist genau um die 2. Linie von unten (die Note G4)!
@@ -333,7 +445,7 @@ export const CoursesView: React.FC<CoursesViewProps> = ({
                     )}
 
                     {/* Lesson 3: Bass Clef */}
-                    {lesson.number === 3 && (
+                    {selectedCourse.category !== 'pedaling' && lesson.number === 3 && (
                       <div className="space-y-2.5 text-zinc-300">
                         <p className="leading-relaxed">
                           <strong className="text-white">Bassschlüssel (F-Schlüssel):</strong> Gilt für die linke Hand (tiefe Begleitungen und Bassfundamente). Die beiden Punkte umrahmen die 4. Linie von unten (die Note F3)!
@@ -354,7 +466,7 @@ export const CoursesView: React.FC<CoursesViewProps> = ({
                     )}
 
                     {/* Lesson 4: Middle C Bridge */}
-                    {lesson.number === 4 && (
+                    {selectedCourse.category !== 'pedaling' && lesson.number === 4 && (
                       <div className="space-y-2 text-zinc-300">
                         <p className="leading-relaxed">
                           <strong className="text-white">Das Schloss-C verbindet beide Welten:</strong> Das Notensystem hat 10 Linien (5 oben im Violinschlüssel, 5 unten im Bassschlüssel). Dazwischen liegt eine unsichtbare 11. Linie: Das Schloss-C!
@@ -366,7 +478,7 @@ export const CoursesView: React.FC<CoursesViewProps> = ({
                     )}
 
                     {/* Lesson 5+: Rhythms, Accidentals, Intervals */}
-                    {lesson.number >= 5 && (
+                    {selectedCourse.category !== 'pedaling' && lesson.number >= 5 && (
                       <div className="space-y-2 text-zinc-300">
                         <p className="leading-relaxed">
                           <strong className="text-white">Profi-Regel:</strong> Lies Musik niemals als einzelne Buchstaben, sondern erfasse <strong>Abstände (Intervalle)</strong> und Formen! Linie zu Zwischenraum = Schritt (2te). Linie zu Linie = Sprung (3te).
@@ -527,7 +639,8 @@ export const CoursesView: React.FC<CoursesViewProps> = ({
       <div className="flex items-center gap-2 overflow-x-auto pb-1 scrollbar-none">
         {[
           { id: 'all', label: language === 'de' ? 'Alle Kurse' : 'All Courses' },
-          { id: 'beginner', label: language === 'de' ? 'Anfänger & Notenlesen' : 'Beginner & Notes' },
+          { id: 'pedaling', label: language === 'de' ? 'Pedalkunst (CC64)' : 'Pedaling (CC64)' },
+          { id: 'beginner', label: language === 'de' ? 'Anfänger & Notenlesen' : 'Beginner & Sight-Reading' },
           { id: 'technique', label: language === 'de' ? 'Fingersatz & Hanon' : 'Technique & Hanon' },
           { id: 'scales', label: language === 'de' ? 'Tonleitern' : 'Scales' },
           { id: 'chords', label: language === 'de' ? 'Akkorde' : 'Chords' },

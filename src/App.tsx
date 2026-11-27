@@ -23,6 +23,8 @@ import {
   type LiveTouchFeedback,
 } from './engine/PianoTeacherEngine'
 import { ConcertLoadingScreen } from './components/ConcertLoadingScreen'
+import { PracticeCoachModal } from './components/PracticeCoachModal'
+import { PassivePracticeCoach } from './engine/PassivePracticeCoach'
 import { SongStorageManager } from './library/SongStorageManager'
 import { AcousticNoteRecognizer } from './engine/AcousticNoteRecognizer'
 import { translations, type LanguageCode } from './i18n/translations'
@@ -56,18 +58,15 @@ export function App() {
   }, [])
   const [langMenuOpen, setLangMenuOpen] = useState<boolean>(false)
   const langMenuRef = useRef<HTMLDivElement>(null)
-  const [currentPieceId, setCurrentPieceId] = useState<string>('beethoven-fur-elise')
+  const [currentPieceId, setCurrentPieceId] = useState<string>(() => SongStorageManager.getLastOpenedPieceId())
   const [edition, setEdition] = useState<MasterEditionId>('urtext')
 
   // Dynamic piece data loaded from LibraryRepository / ScoreEngine
   const [piece, setPiece] = useState<Piece | null>(null)
-  const [loadingPieceSummary, setLoadingPieceSummary] = useState<LibraryPieceSummary | null>(() => {
-    return (
-      LibraryRepository.getCatalog().find((p) => p.id === 'beethoven-fur-elise') ||
-      LibraryRepository.getCatalog()[0] ||
-      null
-    )
-  })
+  const [isAppBootSplashOpen, setIsAppBootSplashOpen] = useState<boolean>(true)
+  const [loadingPieceSummary, setLoadingPieceSummary] = useState<LibraryPieceSummary | null>(null)
+  const [isPracticeCoachOpen, setIsPracticeCoachOpen] = useState<boolean>(false)
+  const [coachRefreshKey, setCoachRefreshKey] = useState<number>(0)
 
   // Practice, Competition & Playback states
   const [practiceVariant, setPracticeVariant] = useState<PracticeVariant>('original')
@@ -156,6 +155,7 @@ export function App() {
       setIsWarmupsModalOpen(false)
       setIsAudioSettingsOpen(false)
       setIsCompetitionReportOpen(false)
+      setIsPracticeCoachOpen(false)
     }
     const onPointerDown = (e: PointerEvent) => {
       if (langMenuRef.current && !langMenuRef.current.contains(e.target as Node)) {
@@ -338,6 +338,14 @@ export function App() {
 
           if (!isUpcomingValidNote) {
             triggerWrongNoteAlert(midi)
+            const curMeas = currentPiece.notes[nextNoteIndexRef.current]?.measure || 1
+            PassivePracticeCoach.getInstance().recordWrongKey(
+              currentPiece.id,
+              curMeas,
+              midi,
+              currentExpected,
+              currentHand
+            )
           }
         }
         return
@@ -715,12 +723,22 @@ export function App() {
                 // Playhead is at the chord, hold and wait for player's fingers!
                 expectedWaitMidisRef.current = expectedMidis
                 AcousticNoteRecognizer.getInstance().setTargetNotes(expectedMidis)
+                PassivePracticeCoach.getInstance().markWaitingForChord(
+                  activePiece.id,
+                  upcomingLeader.measure,
+                  expectedMidis.join(',')
+                )
                 keepCheckingChords = false
                 animId = requestAnimationFrame(tick)
                 return
               }
 
-              // Chord satisfied! Consume matching strikes and advance strike consumption record
+              // Chord satisfied! Record passive practice progress & consume strikes
+              PassivePracticeCoach.getInstance().recordCorrectChord(
+                activePiece.id,
+                upcomingLeader.measure,
+                targetChordNotes.length
+              )
               matchedTokens.forEach(({ midi: m, token, strikeTime }) => {
                 if (token) {
                   token.matched = true
@@ -1017,7 +1035,8 @@ export function App() {
     loopRangeCustom?: [number, number]
   ) => {
     const summary = LibraryRepository.getCatalog().find((p) => p.id === pieceId)
-    if (summary) {
+    SongStorageManager.setLastOpenedPieceId(pieceId)
+    if (summary && !PianoAudioEngine.getInstance().getTelemetry().isMainEngineActive) {
       setLoadingPieceSummary(summary)
     }
 
@@ -1067,6 +1086,8 @@ export function App() {
 
   const handleSelectCustomPiece = (customPiece: Piece) => {
     SongStorageManager.savePiece(customPiece)
+    SongStorageManager.setPieceShelf(customPiece.id, 'studying')
+    SongStorageManager.setLastOpenedPieceId(customPiece.id)
     skipNextEffectLoadRef.current = true
     setPiece(customPiece)
     setCurrentPieceId(customPiece.id)
@@ -1304,6 +1325,10 @@ export function App() {
             onLoopRangeChange={setLoopRange}
             onOpenBluetoothModal={() => setIsRolandModalOpen(true)}
             onOpenTutorials={() => setIsTutorialsOpen(true)}
+            onOpenPracticeCoach={() => {
+              setCoachRefreshKey((k) => k + 1)
+              setIsPracticeCoachOpen(true)
+            }}
             onBackToDiscovery={() => {
               cancelCountIn()
               PianoAudioEngine.getInstance().stopAllVoices()
@@ -1510,9 +1535,41 @@ export function App() {
           language={language}
         />
       )}
-      {/* Concert Masterclass Preloading & Stage Preparation Screen */}
-      {loadingPieceSummary && (
+      {/* Passive Practice Coach Modal (Works in Wait Mode & Flow Mode across all inputs!) */}
+      {activePiece && (
+        <PracticeCoachModal
+          isOpen={isPracticeCoachOpen}
+          onClose={() => setIsPracticeCoachOpen(false)}
+          piece={activePiece}
+          language={language}
+          refreshKey={coachRefreshKey}
+          onPracticeLoop={(range, targetHand) => {
+            setIsPracticeCoachOpen(false)
+            setLoopRange(range)
+            setIsLooping(true)
+            setPlayMode('practice')
+            if (targetHand) handleHandModeChange(targetHand)
+            const startNote = activePiece.notes.find((n) => n.measure >= range[0])
+            const startSec = startNote ? startNote.startTime : 0
+            resetPlaybackToIndex(startSec, activePiece.notes)
+            setCurrentTime(startSec)
+          }}
+          onResetStats={() => setCoachRefreshKey((k) => k + 1)}
+        />
+      )}
+
+      {/* Branded Studio Startup Splash (Cold Boot — never falsely displays Für Elise!) */}
+      {isAppBootSplashOpen && (
         <ConcertLoadingScreen
+          mode="app-boot"
+          onReady={() => setIsAppBootSplashOpen(false)}
+        />
+      )}
+
+      {/* Specific Song Preloading Screen (Only shown if audio engine still loading when opening a song) */}
+      {!isAppBootSplashOpen && loadingPieceSummary && (
+        <ConcertLoadingScreen
+          mode="song-load"
           pieceSummary={loadingPieceSummary}
           onReady={() => setLoadingPieceSummary(null)}
         />

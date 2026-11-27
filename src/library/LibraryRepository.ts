@@ -21,9 +21,32 @@ import mozartTwinkleScore from '../data/scores/mozart-twinkle-twinkle.json'
 import chopinLisztSorrowScore from '../data/scores/chopin-liszt-sorrow.json'
 import queenBohemianScore from '../data/scores/queen-bohemian-rhapsody.json'
 import franzBehrFrenchChildsSongScore from '../data/scores/franz-behr-french-childs-song.json'
+import httydTestDriveScore from '../data/scores/httyd-test-drive.json'
 
 export class LibraryRepository {
   private static catalog: LibraryPieceSummary[] = [
+    {
+      id: 'httyd-test-drive',
+      title: 'Test Drive (How to Train Your Dragon)',
+      composer: 'John Powell',
+      opus: 'HTTYD OST (2010)',
+      difficulty: 6,
+      key: 'D Major / E Major',
+      period: 'Contemporary',
+      durationSeconds: 146,
+      coverColor: 'from-sky-600 via-blue-950 to-zinc-950',
+      coverImage: '/images/covers/httyd-test-drive.svg',
+      badge: 'HTTYD Concert MIDI',
+      quote: 'Authentic concert piano transcription of John Powell’s Test Drive: sweeping scale flourishes, heroic flight chords, and triumphant E Major climax.',
+      availableEditions: [
+        {
+          id: 'urtext',
+          name: 'Authentic Concert MIDI Edition',
+          year: '2010 / Full MIDI Score',
+          description: 'Complete transcription parsed directly from your Test Drive.mid: full D Major to E Major modulation, sweeping 32nd-note flourishes, and orchestral finale.',
+        },
+      ],
+    },
     {
       id: 'franz-behr-french-childs-song',
       title: "French Child's Song",
@@ -852,6 +875,9 @@ export class LibraryRepository {
     }
     if (pieceId === 'franz-behr-french-childs-song') {
       return franzBehrFrenchChildsSongScore as unknown as Piece
+    }
+    if (pieceId === 'httyd-test-drive') {
+      return httydTestDriveScore as unknown as Piece
     }
 
     // 1. Try loading complete pre-parsed canonical JSON score
