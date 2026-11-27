@@ -6,6 +6,7 @@ import { FallingKeysCanvas, type VisualTheme } from './FallingKeysCanvas'
 import { SheetMusicView } from './SheetMusicView'
 import { AcousticNoteRecognizer } from '../engine/AcousticNoteRecognizer'
 import { PianoAudioEngine, type EngineTelemetry } from '../audio/PianoAudioEngine'
+import type { LiveTouchFeedback } from '../engine/PianoTeacherEngine'
 import {
   Play,
   Pause,
@@ -52,6 +53,8 @@ interface FlowkeyPlayerViewProps {
   edition: MasterEditionId
   language: LanguageCode
   isConnectedLX9: boolean
+  isRolandBluetooth?: boolean
+  midiDeviceName?: string
   wrongNoteMidi: number | null
   expectedNotes?: number[]
   isMetronomeOn?: boolean
@@ -60,6 +63,10 @@ interface FlowkeyPlayerViewProps {
   competitionScore?: number
   competitionCombo?: number
   competitionLastJudgment?: { text: string; color: string; offsetMs?: number } | null
+  competitionExamRange?: [number, number]
+  onChangeCompetitionExamRange?: (range: [number, number]) => void
+  liveTouchFeedback?: LiveTouchFeedback | null
+  onOpenDemoTeacherReport?: () => void
   onChangePlayMode?: (mode: 'flow' | 'practice' | 'competition') => void
   onOpenCompetitionReport?: () => void
   onTogglePlay: () => void
@@ -111,6 +118,8 @@ export const FlowkeyPlayerView: React.FC<FlowkeyPlayerViewProps> = ({
   edition,
   language,
   isConnectedLX9,
+  isRolandBluetooth = false,
+  midiDeviceName,
   wrongNoteMidi,
   expectedNotes = [],
   isMetronomeOn = false,
@@ -119,6 +128,10 @@ export const FlowkeyPlayerView: React.FC<FlowkeyPlayerViewProps> = ({
   competitionScore = 0,
   competitionCombo = 0,
   competitionLastJudgment = null,
+  competitionExamRange,
+  onChangeCompetitionExamRange,
+  liveTouchFeedback = null,
+  onOpenDemoTeacherReport,
   onChangePlayMode,
   onOpenCompetitionReport,
   onTogglePlay,
@@ -1117,36 +1130,152 @@ export const FlowkeyPlayerView: React.FC<FlowkeyPlayerViewProps> = ({
 
       {/* 2. MAIN PERFORMANCE STAGE (Keys Highway OR Full Sheet Music — consistent position!) */}
       <div className="relative overflow-hidden w-full flex-1 min-h-0">
-        {/* Live Competition HUD Overlay (Available in BOTH Keys and Sheet Modes!) */}
-        {playMode === 'competition' && (
-          <div className="absolute top-2.5 left-1/2 -translate-x-1/2 z-30 flex items-center gap-2 sm:gap-3 px-3 py-1.5 rounded-2xl bg-zinc-950/90 backdrop-blur-xl border border-amber-500/40 shadow-[0_4px_24px_rgba(0,0,0,0.6)] animate-in fade-in select-none max-w-[95vw]">
-            <div className="flex items-center gap-1 text-amber-400 font-black text-xs">
-              <Trophy className="w-3.5 h-3.5 text-yellow-400 flex-shrink-0" />
-              <span className="font-mono text-white text-xs sm:text-sm font-extrabold">
-                {(competitionScore || 0).toLocaleString()}
+        {/* Live Competition & Roland LX-9 Bluetooth Piano Teacher HUD */}
+        {playMode === 'competition' && !isRolandBluetooth && (
+          <div className="absolute top-3 left-1/2 -translate-x-1/2 z-30 w-[94vw] max-w-xl p-3.5 sm:p-4 rounded-2xl bg-zinc-950/95 backdrop-blur-2xl border border-blue-500/45 shadow-[0_8px_32px_rgba(0,0,0,0.75)] animate-in fade-in select-none space-y-2.5">
+            <div className="flex items-start justify-between gap-2.5">
+              <div className="flex items-start gap-2.5 min-w-0">
+                <div className="w-9 h-9 rounded-xl bg-blue-500/20 border border-blue-400/40 flex items-center justify-center text-blue-400 flex-shrink-0">
+                  <Bluetooth className="w-5 h-5" />
+                </div>
+                <div className="min-w-0">
+                  <div className="text-xs sm:text-sm font-extrabold text-white flex items-center gap-1.5 flex-wrap">
+                    <span>
+                      {language === 'de'
+                        ? 'Klavierlehrer-Modus — Exklusiv für Roland LX-9 Bluetooth'
+                        : 'Piano Teacher Mode — Exclusive to Roland LX-9 Bluetooth'}
+                    </span>
+                  </div>
+                  <p className="text-[11px] text-zinc-300 leading-snug mt-0.5">
+                    {language === 'de'
+                      ? 'Exakte Messung von Anschlagsgeschwindigkeit (schnell vs. langsam), Lautstärke-Voicing (RH vs. LH), Tastentiefe, Loslass-Dynamik & 128-stufigem Halbpedal (CC64) ist nur über die Roland LX-9 Bluetooth-MIDI-Verbindung präzise möglich — nicht über Mikrofon oder Touch-Tasten.'
+                      : 'Accurate measurement of key press speed (fast vs. slow), melody voicing, key hold depth, release velocity & 128-step half-pedaling (CC64) is exclusively available via Roland LX-9 Bluetooth MIDI — not microphone or touch screen.'}
+                  </p>
+                </div>
+              </div>
+            </div>
+
+            <div className="flex flex-wrap items-center gap-2 pt-0.5">
+              <button
+                type="button"
+                onClick={onOpenBluetoothModal}
+                className="flex-1 min-w-[175px] px-3.5 py-2 rounded-xl bg-blue-500 hover:bg-blue-400 text-zinc-950 font-black text-xs flex items-center justify-center gap-1.5 shadow-[0_0_16px_rgba(59,130,246,0.4)] active:scale-95 transition-all"
+              >
+                <Bluetooth className="w-4 h-4" />
+                <span>
+                  {language === 'de' ? 'Roland LX-9 per Bluetooth verbinden' : 'Connect Roland LX-9 Bluetooth'}
+                </span>
+              </button>
+              {onOpenDemoTeacherReport && (
+                <button
+                  type="button"
+                  onClick={onOpenDemoTeacherReport}
+                  className="px-3 py-2 rounded-xl bg-amber-500/20 hover:bg-amber-500/35 border border-amber-500/40 text-amber-300 font-bold text-[11px] flex items-center gap-1.5 active:scale-95 transition-all"
+                >
+                  <GraduationCap className="w-3.5 h-3.5" />
+                  <span>
+                    {language === 'de' ? 'Beispiel-Gutachten (M. 1–26)' : 'Preview Report (M. 1–26)'}
+                  </span>
+                </button>
+              )}
+            </div>
+          </div>
+        )}
+
+        {playMode === 'competition' && isRolandBluetooth && (
+          <div className="absolute top-2 left-1/2 -translate-x-1/2 z-30 flex flex-col items-center gap-1.5 max-w-[96vw] select-none animate-in fade-in">
+            <div className="flex items-center gap-2 sm:gap-2.5 px-3 py-1.5 rounded-2xl bg-zinc-950/92 backdrop-blur-xl border border-amber-500/45 shadow-[0_4px_24px_rgba(0,0,0,0.65)] flex-wrap justify-center">
+              <span className="flex items-center gap-1 text-[10px] font-mono font-bold text-blue-300 bg-blue-500/15 px-2 py-0.5 rounded-lg border border-blue-500/30">
+                <Bluetooth className="w-3 h-3 text-blue-400" />
+                <span>{midiDeviceName?.includes('LX-9') ? 'LX-9 BLE' : 'BLE MIDI'}</span>
               </span>
-            </div>
-            <div className="h-3.5 w-px bg-white/10" />
-            <div className="flex items-center gap-1 text-xs font-bold text-orange-400">
-              <Flame className="w-3 h-3 flex-shrink-0" />
-              <span className="font-mono text-white font-extrabold">{competitionCombo || 0}x</span>
-            </div>
-            {competitionLastJudgment && (
-              <>
-                <div className="h-3.5 w-px bg-white/10 hidden xs:block sm:block" />
+
+              <div className="flex items-center gap-1 text-amber-400 font-black text-xs">
+                <Trophy className="w-3.5 h-3.5 text-yellow-400 flex-shrink-0" />
+                <span className="font-mono text-white text-xs sm:text-sm font-extrabold">
+                  {(competitionScore || 0).toLocaleString()}
+                </span>
+              </div>
+              <div className="h-3.5 w-px bg-white/10" />
+              <div className="flex items-center gap-1 text-xs font-bold text-orange-400">
+                <Flame className="w-3 h-3 flex-shrink-0" />
+                <span className="font-mono text-white font-extrabold">{competitionCombo || 0}x</span>
+              </div>
+
+              {/* Exam Scope Quick Toggle (e.g. Ballade M. 1–26!) */}
+              {competitionExamRange && onChangeCompetitionExamRange && (
+                <>
+                  <div className="h-3.5 w-px bg-white/10" />
+                  <button
+                    type="button"
+                    onClick={() => {
+                      if (piece.id === 'chopin-ballade-1') {
+                        const isM26 = competitionExamRange[0] === 1 && competitionExamRange[1] === 26
+                        onChangeCompetitionExamRange(isM26 ? [1, maxMeasure] : [1, 26])
+                      } else {
+                        setSectionsMenuOpen(true)
+                      }
+                    }}
+                    className="px-2 py-0.5 rounded-lg bg-zinc-900 hover:bg-zinc-800 border border-amber-500/35 font-mono text-[10px] font-bold text-amber-300 transition-colors"
+                    title={language === 'de' ? 'Prüfungsbereich wechseln' : 'Switch exam measure scope'}
+                  >
+                    {language === 'de' ? 'Prüfung' : 'Exam'} M.{competitionExamRange[0]}–{competitionExamRange[1]}
+                  </button>
+                </>
+              )}
+
+              {/* Live Touch Physics Micro-Meters */}
+              {liveTouchFeedback && (
+                <>
+                  <div className="h-3.5 w-px bg-white/10 hidden sm:block" />
+                  <span
+                    className={`hidden sm:inline-flex items-center gap-1 text-[10px] font-mono font-bold px-1.5 py-0.5 rounded border ${
+                      liveTouchFeedback.attackFeel === 'fast-percussive'
+                        ? 'bg-rose-500/20 text-rose-300 border-rose-500/40'
+                        : 'bg-emerald-500/15 text-emerald-300 border-emerald-500/30'
+                    }`}
+                  >
+                    <span className="italic font-serif">{liveTouchFeedback.dynamicLabel}</span>
+                    <span>v{liveTouchFeedback.velocity}</span>
+                  </span>
+                  {liveTouchFeedback.voicingLead !== null && (
+                    <span
+                      className={`hidden md:inline-flex text-[10px] font-mono font-bold px-1.5 py-0.5 rounded border ${
+                        liveTouchFeedback.voicingLead >= 12
+                          ? 'bg-sky-500/15 text-sky-300 border-sky-500/30'
+                          : 'bg-amber-500/20 text-amber-300 border-amber-500/40'
+                      }`}
+                    >
+                      Voicing {liveTouchFeedback.voicingLead >= 0 ? `+${liveTouchFeedback.voicingLead}` : liveTouchFeedback.voicingLead}
+                    </span>
+                  )}
+                  <span className="hidden md:inline-flex text-[10px] font-mono font-bold text-cyan-300 bg-cyan-500/15 px-1.5 py-0.5 rounded border border-cyan-500/30">
+                    CC64 {liveTouchFeedback.damperDepth}
+                  </span>
+                </>
+              )}
+
+              {competitionLastJudgment && (
                 <span className={`text-[10px] sm:text-xs font-black uppercase tracking-wider truncate ${competitionLastJudgment.color}`}>
                   {competitionLastJudgment.text}
                 </span>
-              </>
-            )}
-            {onOpenCompetitionReport && (
-              <button
-                type="button"
-                onClick={onOpenCompetitionReport}
-                className="ml-0.5 px-2.5 py-1 rounded-xl bg-amber-500 hover:bg-amber-400 text-zinc-950 text-[10px] font-black transition-colors flex-shrink-0"
-              >
-                {language === 'de' ? 'Bericht' : 'Report'}
-              </button>
+              )}
+
+              {onOpenCompetitionReport && (
+                <button
+                  type="button"
+                  onClick={onOpenCompetitionReport}
+                  className="ml-0.5 px-2.5 py-1 rounded-xl bg-amber-500 hover:bg-amber-400 text-zinc-950 text-[10px] font-black transition-colors flex-shrink-0"
+                >
+                  {language === 'de' ? 'Gutachten' : 'Report'}
+                </button>
+              )}
+            </div>
+
+            {liveTouchFeedback?.coachHint && (
+              <div className="px-3 py-1 rounded-full bg-amber-950/90 border border-amber-500/50 text-amber-200 text-[10.5px] font-bold shadow-lg">
+                {liveTouchFeedback.coachHint}
+              </div>
             )}
           </div>
         )}
@@ -1191,7 +1320,6 @@ export const FlowkeyPlayerView: React.FC<FlowkeyPlayerViewProps> = ({
               onToggleLoop={onToggleLoop}
               onOpenSections={() => setSectionsMenuOpen(true)}
               language={language}
-              showFingering={false}
             />
           </div>
         )}
@@ -1819,8 +1947,8 @@ export const FlowkeyPlayerView: React.FC<FlowkeyPlayerViewProps> = ({
                   </div>
                 </div>
 
-                {/* 3 Main Action Buttons */}
-                <div className="grid grid-cols-1 sm:grid-cols-3 gap-2 pt-1">
+                {/* 4 Main Action Buttons (Loop Listen, Wait Practice, Sheet, Roland LX-9 Teacher Exam) */}
+                <div className="grid grid-cols-2 gap-2 pt-1">
                   <button
                     type="button"
                     onClick={() => handleListenInLoop(customStartMeasure, customEndMeasure)}
@@ -1846,6 +1974,24 @@ export const FlowkeyPlayerView: React.FC<FlowkeyPlayerViewProps> = ({
                   >
                     <FileText className="w-4 h-4" />
                     <span>{language === 'de' ? 'Noten anzeigen' : 'Display Sheet'}</span>
+                  </button>
+
+                  <button
+                    type="button"
+                    onClick={() => {
+                      const s = clampMeasure(customStartMeasure)
+                      const e = Math.max(s, clampMeasure(customEndMeasure))
+                      if (onChangeCompetitionExamRange) onChangeCompetitionExamRange([s, e])
+                      if (isLooping) onToggleLoop()
+                      if (onChangePlayMode) onChangePlayMode('competition')
+                      const startNote = piece.notes.find((n) => n.measure >= s)
+                      onSeek(startNote ? startNote.startTime : 0)
+                      setSectionsMenuOpen(false)
+                    }}
+                    className="p-3 rounded-2xl bg-gradient-to-r from-amber-500 via-yellow-500 to-orange-500 hover:from-amber-400 hover:to-orange-400 text-zinc-950 font-black text-xs flex items-center justify-center gap-1.5 shadow-md shadow-amber-500/25 active:scale-95 transition-all"
+                  >
+                    <GraduationCap className="w-4 h-4" />
+                    <span>{language === 'de' ? 'Lehrer-Prüfung (LX-9)' : 'Teacher Exam (LX-9)'}</span>
                   </button>
                 </div>
               </div>

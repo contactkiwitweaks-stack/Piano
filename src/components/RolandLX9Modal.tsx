@@ -230,6 +230,35 @@ export const RolandLX9Modal: React.FC<RolandLX9ModalProps> = ({
             )}
           </div>
 
+          {/* Roland LX-9 Bluetooth Teacher Exclusivity Status */}
+          <div
+            className={`p-3 rounded-2xl border flex items-center justify-between gap-2 text-[11px] ${
+              isConnected && connectionType === 'ble'
+                ? 'bg-blue-950/40 border-blue-500/45 text-blue-200'
+                : 'bg-amber-950/30 border-amber-500/35 text-amber-200'
+            }`}
+          >
+            <div className="leading-snug">
+              <div className="font-extrabold flex items-center gap-1.5">
+                <Bluetooth className="w-3.5 h-3.5 text-blue-400" />
+                <span>
+                  {isConnected && connectionType === 'ble'
+                    ? language === 'de'
+                      ? 'Klavierlehrer-Modus (Roland LX-9 BLE) Aktiv!'
+                      : 'Conservatory Piano Teacher (Roland LX-9 BLE) Unlocked!'
+                    : language === 'de'
+                    ? 'Klavierlehrer-Analyse benötigt Roland LX-9 Bluetooth'
+                    : 'Piano Teacher Analysis requires Roland LX-9 Bluetooth'}
+                </span>
+              </div>
+              <p className="text-[10px] text-zinc-300 mt-0.5">
+                {language === 'de'
+                  ? 'Überträgt echte Tastengeschwindigkeit (1–127), Release-Velocity, Spieltiefe & 128-stufiges Halbpedal (CC64).'
+                  : 'Streams true key velocity (1–127), Note-Off release speed, hold depth & 128-step half-pedal (CC64).'}
+              </p>
+            </div>
+          </div>
+
           {errorMsg && (
             <div className="p-3 rounded-2xl bg-red-950/50 border border-red-500/40 text-red-300 text-[11px] leading-tight animate-in fade-in">
               {errorMsg}
@@ -354,7 +383,7 @@ export const RolandLX9Modal: React.FC<RolandLX9ModalProps> = ({
                 <strong className="text-white">USB-C / Lightning Kabel (Empfohlen):</strong> Direkt an dein iPhone anschließen. Native CoreMIDI-Erkennung erkennt dein Piano sofort mit 0ms Latenz ohne Treiber!
               </li>
               <li>
-                <strong className="text-white">Drahtloses Bluetooth:</strong> Schalte Bluetooth an deinem Digitalpiano ein. Auf iOS wird Bluetooth MIDI über CoreMIDI gekoppelt (einmalig in *iOS Einstellungen* oder in einer kostenlosen App wie *GarageBand* koppeln — Virtuoso Piano empfängt es danach sofort!).
+                <strong className="text-white">Roland LX-9 Bluetooth MIDI (Empfohlen für Klavierlehrer):</strong> Schalte Bluetooth am Roland LX-9 ein und tippe oben auf „Bluetooth MIDI Koppeln“ — auf dem iPhone öffnet sich direkt der native Apple Bluetooth-MIDI-Dialog zum Koppeln ohne Dritt-App!
               </li>
             </ul>
           </div>

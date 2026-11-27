@@ -1,0 +1,50 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 600 400" width="600" height="400">
+  <defs>
+    <linearGradient id="bg" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="#1e293b"/>
+      <stop offset="50%" stop-color="#0f3d4c"/>
+      <stop offset="100%" stop-color="#090d16"/>
+    </linearGradient>
+    <radialGradient id="glow" cx="68%" cy="34%" r="48%">
+      <stop offset="0%" stop-color="#fbbf24" stop-opacity="0.32"/>
+      <stop offset="60%" stop-color="#38bdf8" stop-opacity="0.12"/>
+      <stop offset="100%" stop-color="#090d16" stop-opacity="0"/>
+    </radialGradient>
+  </defs>
+  <rect width="600" height="400" fill="url(#bg)"/>
+  <rect width="600" height="400" fill="url(#glow)"/>
+  <!-- Delicate Parisian Music Staff Arc -->
+  <g stroke="#f8fafc" stroke-opacity="0.14" stroke-width="1.4" fill="none">
+    <path d="M 0 260 Q 300 220 600 268"/>
+    <path d="M 0 272 Q 300 232 600 280"/>
+    <path d="M 0 284 Q 300 244 600 292"/>
+    <path d="M 0 296 Q 300 256 600 304"/>
+    <path d="M 0 308 Q 300 268 600 316"/>
+  </g>
+  <!-- Engraved Half & Quarter Note Motif (E5-E5-E5 G5) -->
+  <g transform="translate(120, 120)">
+    <!-- Half note E5 -->
+    <ellipse cx="48" cy="146" rx="13" ry="9" transform="rotate(-18 48 146)" fill="none" stroke="#fbbf24" stroke-width="3.2"/>
+    <line x1="36" y1="149" x2="36" y2="215" stroke="#fbbf24" stroke-width="2.8"/>
+    <!-- Quarter notes -->
+    <ellipse cx="145" cy="136" rx="12" ry="8.5" transform="rotate(-18 145 136)" fill="#fde68a"/>
+    <line x1="134" y1="139" x2="134" y2="205" stroke="#fde68a" stroke-width="2.6"/>
+    <ellipse cx="220" cy="134" rx="12" ry="8.5" transform="rotate(-18 220 134)" fill="#fde68a"/>
+    <line x1="209" y1="137" x2="209" y2="203" stroke="#fde68a" stroke-width="2.6"/>
+    <!-- High G5 Half note -->
+    <ellipse cx="325" cy="116" rx="13" ry="9" transform="rotate(-18 325 116)" fill="none" stroke="#38bdf8" stroke-width="3.2"/>
+    <line x1="313" y1="119" x2="313" y2="185" stroke="#38bdf8" stroke-width="2.8"/>
+  </g>
+  <!-- Soft Floating Stars -->
+  <g fill="#fef3c7" opacity="0.6">
+    <circle cx="92" cy="74" r="2.2"/>
+    <circle cx="468" cy="84" r="2.8"/>
+    <circle cx="515" cy="145" r="1.8"/>
+    <circle cx="385" cy="64" r="1.6"/>
+    <circle cx="190" cy="52" r="2"/>
+  </g>
+  <!-- Classical Title Overlay -->
+  <text x="44" y="96" fill="#fbbf24" font-family="Georgia, serif" font-size="16" font-weight="700" letter-spacing="3">GRADE 1 • ANDANTINO</text>
+  <text x="44" y="140" fill="#ffffff" font-family="Georgia, serif" font-size="34" font-weight="700">French Child's Song</text>
+  <text x="44" y="172" fill="#cbd5e1" font-family="Georgia, serif" font-style="italic" font-size="18">Franz Behr (1837–1898) • C Major</text>
+</svg>

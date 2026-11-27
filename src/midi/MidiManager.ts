@@ -1,11 +1,16 @@
 // Roland LX-9 Bluetooth MIDI (BLE) & Web MIDI Manager
+// Captures attack velocity, Note Off release velocity, millisecond key hold depth,
+// and continuous CC64 Damper / CC67 Una Corda telemetry for the Conservatory Piano Teacher.
 
 import type { MidiInputState } from '../types/music'
 import { PianoAudioEngine } from '../audio/PianoAudioEngine'
 
-type NoteCallback = (midi: number, velocity: number) => void
-type NoteOffCallback = (midi: number) => void
-type PedalCallback = (depth: number) => void
+export type MidiEventOrigin = 'hardware-ble' | 'hardware-usb' | 'simulated' | 'acoustic-mic'
+
+type NoteCallback = (midi: number, velocity: number, origin?: MidiEventOrigin) => void
+type NoteOffCallback = (midi: number, releaseVelocity?: number, holdDurationMs?: number, origin?: MidiEventOrigin) => void
+type PedalCallback = (depth: number, origin?: MidiEventOrigin) => void
+type SoftPedalCallback = (depth: number, origin?: MidiEventOrigin) => void
 type StateCallback = (state: MidiInputState) => void
 
 // Roland / Apple Bluetooth LE MIDI UUIDs
@@ -58,12 +63,14 @@ export class MidiManager {
     deviceName: 'Disconnected',
     isConnected: false,
     connectionType: 'none',
+    isRolandBluetooth: false,
     latencyMs: 4,
   }
 
   private noteOnListeners: Set<NoteCallback> = new Set()
   private noteOffListeners: Set<NoteOffCallback> = new Set()
   private pedalListeners: Set<PedalCallback> = new Set()
+  private softPedalListeners: Set<SoftPedalCallback> = new Set()
   private stateListeners: Set<StateCallback> = new Set()
 
   private midiAccess: GenericMidiAccess | null = null
@@ -75,17 +82,31 @@ export class MidiManager {
       window.addEventListener('nativeMidiMessage', (e: Event) => {
         const customEv = e as CustomEvent<{ data: number[] }>
         if (customEv.detail && customEv.detail.data) {
-          this.processRawMidiMessage(new Uint8Array(customEv.detail.data))
+          const origin: MidiEventOrigin = this.state.connectionType === 'ble' ? 'hardware-ble' : 'hardware-usb'
+          this.processRawMidiMessage(new Uint8Array(customEv.detail.data), origin)
         }
       })
 
       window.addEventListener('nativeMidiDeviceConnected', (e: Event) => {
-        const customEv = e as CustomEvent<{ name: string }>
+        const customEv = e as CustomEvent<{ name: string; transport?: 'ble' | 'usb' }>
         if (customEv.detail && customEv.detail.name) {
-          this.state.deviceName = customEv.detail.name
+          const name = customEv.detail.name
+          const lower = name.toLowerCase()
+          const transport: 'ble' | 'usb' =
+            customEv.detail.transport === 'ble' || lower.includes('bluetooth') || lower.includes('ble')
+              ? 'ble'
+              : 'usb'
+          this.state.deviceName = name
           this.state.isConnected = true
-          this.state.connectionType = 'usb'
+          this.state.connectionType = transport
+          this.state.isRolandBluetooth = transport === 'ble'
           this.notifyState()
+        }
+      })
+
+      window.addEventListener('nativeMidiDeviceDisconnected', () => {
+        if (this.state.connectionType !== 'simulated') {
+          this.disconnect()
         }
       })
     }
@@ -105,83 +126,56 @@ export class MidiManager {
     }
   }
 
+  /**
+   * Strict hardware gate for the Conservatory Piano Teacher:
+   * Returns true ONLY when actively connected via real Bluetooth MIDI (Roland LX-9 BLE MIDI).
+   * Explicitly excludes microphone input, on-screen touch keys, simulator, and disconnected state.
+   */
+  public isRolandBluetoothConnected(): boolean {
+    return this.state.isConnected && this.state.connectionType === 'ble'
+  }
+
   public subscribe(
     onNoteOn: NoteCallback,
     onNoteOff: NoteOffCallback,
     onPedal: PedalCallback,
-    onState: StateCallback
+    onState: StateCallback,
+    onSoftPedal?: SoftPedalCallback
   ): () => void {
     this.noteOnListeners.add(onNoteOn)
     this.noteOffListeners.add(onNoteOff)
     this.pedalListeners.add(onPedal)
     this.stateListeners.add(onState)
+    if (onSoftPedal) {
+      this.softPedalListeners.add(onSoftPedal)
+    }
 
     return () => {
       this.noteOnListeners.delete(onNoteOn)
       this.noteOffListeners.delete(onNoteOff)
       this.pedalListeners.delete(onPedal)
       this.stateListeners.delete(onState)
-    }
-  }
-
-  /**
-   * Attempts connection to Roland LX-9 via Web MIDI API (USB or system-paired BLE)
-   */
-  public async connectWebMidi(): Promise<boolean> {
-    const nav = navigator as unknown as { requestMIDIAccess?: (opt: { sysex: boolean }) => Promise<GenericMidiAccess> }
-    if (!nav.requestMIDIAccess) {
-      console.warn('Web MIDI API not supported in this browser environment.')
-      return false
-    }
-
-    try {
-      this.midiAccess = await nav.requestMIDIAccess({ sysex: false })
-      const inputs = Array.from(this.midiAccess.inputs.values())
-
-      if (inputs.length === 0) {
-        return false
-      }
-
-      // Prioritize Roland LX-9 if present in device names
-      const selectedInput = inputs.find((input: GenericMidiInput) =>
-        input.name?.toLowerCase().includes('roland') || input.name?.toLowerCase().includes('lx-9')
-      ) || inputs[0]
-
-      this.bindMidiInput(selectedInput)
-      return true
-    } catch (err) {
-      console.error('Error requesting Web MIDI access:', err)
-      return false
-    }
-  }
-
-  private bindMidiInput(input: GenericMidiInput) {
-    this.state.deviceName = input.name || 'Roland Digital Piano'
-    this.state.isConnected = true
-    this.state.connectionType = input.name?.toLowerCase().includes('bluetooth') ? 'ble' : 'usb'
-    this.notifyState()
-
-    input.onmidimessage = (event: { data: Uint8Array }) => {
-      this.processRawMidiMessage(event.data)
-    }
-
-    if (this.midiAccess) {
-      this.midiAccess.onstatechange = (e: { port: { id: string; type: string; state: string } }) => {
-        const port = e.port
-        if (port.type === 'input' && port.state === 'disconnected') {
-          if (port.id === input.id) {
-            this.disconnect()
-          }
-        }
+      if (onSoftPedal) {
+        this.softPedalListeners.delete(onSoftPedal)
       }
     }
   }
 
   /**
-   * Connects via Web Bluetooth (BLE MIDI) directly to digital pianos
-   * Compatible with Bluefy, WebBLE, Chrome, Edge, and iOS WebKit Bluetooth bridges
+   * Opens Apple's native iOS CABTMIDICentralViewController Bluetooth MIDI picker when running inside iOS app,
+   * or falls back to Web Bluetooth BLE MIDI pairing on desktop/Bluefy.
    */
   public async connectBluetoothMidi(): Promise<boolean> {
+    if (typeof window !== 'undefined') {
+      const wk = (window as unknown as {
+        webkit?: { messageHandlers?: { openBleMidiPicker?: { postMessage: (v: unknown) => void } } }
+      }).webkit
+      if (wk?.messageHandlers?.openBleMidiPicker) {
+        wk.messageHandlers.openBleMidiPicker.postMessage({})
+        return true
+      }
+    }
+
     const nav = navigator as unknown as {
       bluetooth?: { requestDevice: (opt: object) => Promise<GenericBleDevice> }
       requestMIDIAccess?: (opt: { sysex: boolean }) => Promise<GenericMidiAccess>
@@ -198,7 +192,6 @@ export class MidiManager {
       const lowerUuid = BLE_MIDI_SERVICE_UUID.toLowerCase()
       const upperUuid = BLE_MIDI_SERVICE_UUID.toUpperCase()
 
-      // Bluefy / WebBLE on iOS: standard BLE MIDI service filter
       try {
         this.bleDevice = await nav.bluetooth.requestDevice({
           filters: [{ services: [lowerUuid] }],
@@ -209,14 +202,12 @@ export class MidiManager {
         if (errMsg.toLowerCase().includes('cancel') || errMsg.toLowerCase().includes('abort')) {
           return false
         }
-        // Fallback 1: Uppercase UUID for older WebBLE wrappers
         try {
           this.bleDevice = await nav.bluetooth.requestDevice({
             filters: [{ services: [upperUuid] }],
             optionalServices: [lowerUuid, upperUuid],
           })
         } catch {
-          // Fallback 2: acceptAllDevices with optionalServices
           this.bleDevice = await nav.bluetooth.requestDevice({
             acceptAllDevices: true,
             optionalServices: [lowerUuid, upperUuid],
@@ -253,15 +244,74 @@ export class MidiManager {
       this.bleCharacteristic.addEventListener('characteristicvaluechanged', onValChanged)
       ;(this.bleCharacteristic as unknown as { oncharacteristicvaluechanged?: (event: Event) => void }).oncharacteristicvaluechanged = onValChanged
 
-      this.state.deviceName = this.bleDevice.name || 'Bluetooth Digital Piano'
+      this.state.deviceName = this.bleDevice.name || 'Roland LX-9 (BLE MIDI)'
       this.state.isConnected = true
       this.state.connectionType = 'ble'
+      this.state.isRolandBluetooth = true
       this.notifyState()
 
       return true
     } catch (err) {
       console.error('Failed to connect Bluetooth MIDI:', err)
       return false
+    }
+  }
+
+  /**
+   * Attempts connection to Roland LX-9 via Web MIDI API (USB or system-paired BLE)
+   */
+  public async connectWebMidi(): Promise<boolean> {
+    const nav = navigator as unknown as { requestMIDIAccess?: (opt: { sysex: boolean }) => Promise<GenericMidiAccess> }
+    if (!nav.requestMIDIAccess) {
+      console.warn('Web MIDI API not supported in this browser environment.')
+      return false
+    }
+
+    try {
+      this.midiAccess = await nav.requestMIDIAccess({ sysex: false })
+      const inputs = Array.from(this.midiAccess.inputs.values())
+
+      if (inputs.length === 0) {
+        return false
+      }
+
+      const selectedInput =
+        inputs.find((input: GenericMidiInput) => {
+          const n = input.name?.toLowerCase() || ''
+          return n.includes('lx-9') || n.includes('lx9') || n.includes('roland')
+        }) || inputs[0]
+
+      this.bindMidiInput(selectedInput)
+      return true
+    } catch (err) {
+      console.error('Error requesting Web MIDI access:', err)
+      return false
+    }
+  }
+
+  private bindMidiInput(input: GenericMidiInput) {
+    const name = input.name || 'Roland Digital Piano'
+    const lower = name.toLowerCase()
+    const isBle = lower.includes('bluetooth') || lower.includes('ble')
+    this.state.deviceName = name
+    this.state.isConnected = true
+    this.state.connectionType = isBle ? 'ble' : 'usb'
+    this.state.isRolandBluetooth = isBle
+    this.notifyState()
+
+    input.onmidimessage = (event: { data: Uint8Array }) => {
+      this.processRawMidiMessage(event.data, isBle ? 'hardware-ble' : 'hardware-usb')
+    }
+
+    if (this.midiAccess) {
+      this.midiAccess.onstatechange = (e: { port: { id: string; type: string; state: string } }) => {
+        const port = e.port
+        if (port.type === 'input' && port.state === 'disconnected') {
+          if (port.id === input.id) {
+            this.disconnect()
+          }
+        }
+      }
     }
   }
 
@@ -274,35 +324,28 @@ export class MidiManager {
     if (dataView.byteLength < 3) return
     const len = dataView.byteLength
     let runningStatus = 0
-    let i = 1 // Skip Header Byte (dataView[0] has bit 7 set and 6-bit timestamp high)
+    let i = 1
 
     while (i < len) {
       const b = dataView.getUint8(i++)
-
-      // System Real-Time messages (0xF8 - 0xFF, e.g. 0xFE Active Sensing from Roland/Yamaha)
-      // Must be handled/ignored WITHOUT altering runningStatus!
       if (b >= 0xf8) {
         continue
       }
 
-      // If byte has MSB set (0x80 - 0xF7): either timestamp low or status byte
       if ((b & 0x80) !== 0) {
         if (i < len) {
           const next = dataView.getUint8(i)
           if (next >= 0xf8) {
-            i++ // Skip interleaved real-time byte
+            i++
             continue
           }
           if ((next & 0x80) !== 0) {
-            // b was timestamp low, next is status byte!
             runningStatus = dataView.getUint8(i++)
           } else {
-            // b was status byte, next is data byte!
             runningStatus = b
           }
         }
       } else {
-        // b has MSB 0: this is data1 under existing runningStatus
         i--
       }
 
@@ -310,63 +353,68 @@ export class MidiManager {
 
       const cmd = runningStatus & 0xf0
       if (cmd === 0xc0 || cmd === 0xd0) {
-        // 1-byte data commands (Program Change, Channel Pressure)
         if (i < len) {
           const d1 = dataView.getUint8(i++)
-          this.processRawMidiMessage(new Uint8Array([runningStatus, d1]))
+          this.processRawMidiMessage(new Uint8Array([runningStatus, d1]), 'hardware-ble')
         }
       } else {
-        // 2-byte data commands (Note On 0x90, Note Off 0x80, CC Damper 0xB0, Pitch Bend 0xE0)
         if (i + 1 < len) {
           const d1 = dataView.getUint8(i++)
           const d2 = dataView.getUint8(i++)
-          this.processRawMidiMessage(new Uint8Array([runningStatus, d1, d2]))
+          this.processRawMidiMessage(new Uint8Array([runningStatus, d1, d2]), 'hardware-ble')
         } else if (i < len) {
           const d1 = dataView.getUint8(i++)
-          this.processRawMidiMessage(new Uint8Array([runningStatus, d1, 0]))
+          this.processRawMidiMessage(new Uint8Array([runningStatus, d1, 0]), 'hardware-ble')
         }
       }
     }
   }
 
   /**
-   * Processes raw MIDI messages (handles single messages, continuous buffers, and chords)
+   * Processes raw MIDI messages preserving Attack Velocity, Note Off Release Velocity,
+   * exact millisecond Hold Duration, and continuous CC64 / CC67 pedals.
    */
-  public processRawMidiMessage(data: Uint8Array) {
+  public processRawMidiMessage(data: Uint8Array, origin: MidiEventOrigin = 'simulated') {
     if (!data || data.length === 0) return
     let i = 0
     let hasChanged = false
+    const now = performance.now()
 
     while (i < data.length) {
       const status = data[i]
       if ((status & 0x80) !== 0) {
         const command = status & 0xf0
         const note = data[i + 1] ?? 0
-        const velocity = data[i + 2] ?? 0
+        const value = data[i + 2] ?? 0
 
         if (command === 0x90) {
-          if (velocity > 0) {
-            this.state.activeNotes.set(note, { velocity, timestamp: performance.now() })
-            this.noteOnListeners.forEach((cb) => cb(note, velocity))
+          if (value > 0) {
+            this.state.activeNotes.set(note, { velocity: value, timestamp: now })
+            this.noteOnListeners.forEach((cb) => cb(note, value, origin))
           } else {
+            const held = this.state.activeNotes.get(note)
+            const holdMs = held ? Math.max(10, Math.round(now - held.timestamp)) : 0
             this.state.activeNotes.delete(note)
-            this.noteOffListeners.forEach((cb) => cb(note))
+            this.noteOffListeners.forEach((cb) => cb(note, 0, holdMs, origin))
           }
           hasChanged = true
           i += 3
         } else if (command === 0x80) {
+          const held = this.state.activeNotes.get(note)
+          const holdMs = held ? Math.max(10, Math.round(now - held.timestamp)) : 0
+          const releaseVelocity = value // Roland LX-9 transmits real 0–127 key release speed!
           this.state.activeNotes.delete(note)
-          this.noteOffListeners.forEach((cb) => cb(note))
+          this.noteOffListeners.forEach((cb) => cb(note, releaseVelocity, holdMs, origin))
           hasChanged = true
           i += 3
         } else if (command === 0xb0) {
           const controller = note
-          const value = velocity
           if (controller === 64) {
             this.state.damperPedal = value
-            this.pedalListeners.forEach((cb) => cb(value))
+            this.pedalListeners.forEach((cb) => cb(value, origin))
           } else if (controller === 67) {
             this.state.softPedal = value
+            this.softPedalListeners.forEach((cb) => cb(value, origin))
             try {
               PianoAudioEngine.getInstance().setSoftPedal(value)
             } catch {}
@@ -390,12 +438,12 @@ export class MidiManager {
     }
   }
 
-  public simulateNoteOn(midi: number, velocity: number = 80) {
-    this.processRawMidiMessage(new Uint8Array([0x90, midi, velocity]))
+  public simulateNoteOn(midi: number, velocity: number = 80, origin: MidiEventOrigin = 'simulated') {
+    this.processRawMidiMessage(new Uint8Array([0x90, midi, velocity]), origin)
   }
 
-  public simulateNoteOff(midi: number) {
-    this.processRawMidiMessage(new Uint8Array([0x80, midi, 0]))
+  public simulateNoteOff(midi: number, releaseVelocity: number = 48, origin: MidiEventOrigin = 'simulated') {
+    this.processRawMidiMessage(new Uint8Array([0x80, midi, releaseVelocity]), origin)
   }
 
   public simulatePedal(depth: number) {
@@ -407,9 +455,10 @@ export class MidiManager {
   }
 
   public enableSimulator() {
-    this.state.deviceName = 'Roland LX-9 (Virtual Bridge)'
+    this.state.deviceName = 'Roland LX-9 (Virtual Simulator)'
     this.state.isConnected = true
     this.state.connectionType = 'simulated'
+    this.state.isRolandBluetooth = false
     this.notifyState()
   }
 
@@ -420,6 +469,7 @@ export class MidiManager {
     this.state.deviceName = 'Disconnected'
     this.state.isConnected = false
     this.state.connectionType = 'none'
+    this.state.isRolandBluetooth = false
     this.state.activeNotes.clear()
     this.notifyState()
   }

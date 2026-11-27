@@ -170,7 +170,7 @@ export class AcousticNoteRecognizer {
 
     // Release any lingering acoustic notes
     this.activeMidis.forEach((midi) => {
-      MidiManager.getInstance().simulateNoteOff(midi)
+      MidiManager.getInstance().simulateNoteOff(midi, 0, 'acoustic-mic')
     })
     this.activeMidis.clear()
     this.noteHoldTimers.clear()
@@ -233,7 +233,7 @@ export class AcousticNoteRecognizer {
         if (!this.activeMidis.has(midi)) {
           this.activeMidis.add(midi)
           const velocity = Math.min(118, Math.max(70, Math.round(rms * 260)))
-          MidiManager.getInstance().simulateNoteOn(midi, velocity)
+          MidiManager.getInstance().simulateNoteOn(midi, velocity, 'acoustic-mic')
         }
         // Sustained note hold window: 280ms hold prevents jittery note cut-offs
         this.noteHoldTimers.set(midi, now + 280)

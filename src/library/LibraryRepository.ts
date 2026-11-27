@@ -20,9 +20,32 @@ import montiCzardasScore from '../data/scores/monti-czardas.json'
 import mozartTwinkleScore from '../data/scores/mozart-twinkle-twinkle.json'
 import chopinLisztSorrowScore from '../data/scores/chopin-liszt-sorrow.json'
 import queenBohemianScore from '../data/scores/queen-bohemian-rhapsody.json'
+import franzBehrFrenchChildsSongScore from '../data/scores/franz-behr-french-childs-song.json'
 
 export class LibraryRepository {
   private static catalog: LibraryPieceSummary[] = [
+    {
+      id: 'franz-behr-french-childs-song',
+      title: "French Child's Song",
+      composer: 'Franz Behr (1837–1898)',
+      opus: 'Grade 1 • Andantino',
+      difficulty: 1,
+      key: 'C Major',
+      period: 'Romantic',
+      durationSeconds: 62,
+      coverColor: 'from-sky-700 via-teal-900 to-zinc-950',
+      coverImage: '/images/covers/franz-behr-french-childs-song.svg',
+      badge: 'Grade 1 Classic',
+      quote: 'Charming 19th-century Grade 1 cantabile in C Major: both hands in treble clef, singing half & whole notes, and clear p–mf phrasing.',
+      availableEditions: [
+        {
+          id: 'urtext',
+          name: 'Urtext Conservatory Edition',
+          year: '1837–1898 / Authentic Score',
+          description: 'Complete 24-measure Grade 1 Urtext score: both hands in treble clef, authentic fingerings, whole/dotted-half/half/quarter notes, and p/mf dynamic phrasing.',
+        },
+      ],
+    },
     {
       id: 'queen-bohemian-rhapsody',
       title: 'Bohemian Rhapsody',
@@ -826,6 +849,9 @@ export class LibraryRepository {
     }
     if (pieceId === 'queen-bohemian-rhapsody') {
       return queenBohemianScore as unknown as Piece
+    }
+    if (pieceId === 'franz-behr-french-childs-song') {
+      return franzBehrFrenchChildsSongScore as unknown as Piece
     }
 
     // 1. Try loading complete pre-parsed canonical JSON score

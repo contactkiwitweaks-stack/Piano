@@ -16,10 +16,14 @@ import { LibraryModal } from './components/LibraryModal'
 import { WarmupsModal } from './components/WarmupsModal'
 import { AudioSettingsModal } from './components/AudioSettingsModal'
 import { TutorialsView } from './components/TutorialsView'
-import { CompetitionReportModal, type CompetitionResults, type CompetitionMistake } from './components/CompetitionReportModal'
+import { CompetitionReportModal, type CompetitionResults } from './components/CompetitionReportModal'
+import {
+  PianoTeacherSession,
+  generateBalladeM1To26DemoReport,
+  type LiveTouchFeedback,
+} from './engine/PianoTeacherEngine'
 import { ConcertLoadingScreen } from './components/ConcertLoadingScreen'
 import { SongStorageManager } from './library/SongStorageManager'
-import { ScoreEngine } from './engine/ScoreEngine'
 import { AcousticNoteRecognizer } from './engine/AcousticNoteRecognizer'
 import { translations, type LanguageCode } from './i18n/translations'
 import {
@@ -75,21 +79,18 @@ export function App() {
   const [playbackRate, setPlaybackRate] = useState<number>(1.0)
   const [isMuted, setIsMuted] = useState<boolean>(false)
 
-  // Competition Exam Evaluation state
+  // Competition & Roland LX-9 Bluetooth Piano Teacher state
   const [competitionScore, setCompetitionScore] = useState<number>(0)
   const [competitionCombo, setCompetitionCombo] = useState<number>(0)
   const [competitionLastJudgment, setCompetitionLastJudgment] = useState<{ text: string; color: string; offsetMs?: number } | null>(null)
+  const [liveTouchFeedback, setLiveTouchFeedback] = useState<LiveTouchFeedback | null>(null)
+  const [competitionExamRange, setCompetitionExamRange] = useState<[number, number]>([1, 26])
   const [isCompetitionReportOpen, setIsCompetitionReportOpen] = useState<boolean>(false)
   const [competitionResults, setCompetitionResults] = useState<CompetitionResults | null>(null)
 
-  const competitionScoreRef = useRef<number>(0)
-  const competitionComboRef = useRef<number>(0)
-  const competitionMaxComboRef = useRef<number>(0)
-  const competitionMistakesRef = useRef<CompetitionMistake[]>([])
-  const competitionHitsCountRef = useRef<number>(0)
-  const competitionMissesCountRef = useRef<number>(0)
-  const competitionExtraNotesCountRef = useRef<number>(0)
-  const competitionTimingErrorsRef = useRef<number[]>([])
+  const teacherSessionRef = useRef<PianoTeacherSession>(new PianoTeacherSession())
+  const competitionExamRangeRef = useRef<[number, number]>(competitionExamRange)
+  competitionExamRangeRef.current = competitionExamRange
   const processedNoteIdsRef = useRef<Set<string>>(new Set())
 
   // Adaptive Performance Buffer (empowers playing faster than tempo without getting stuck)
@@ -182,6 +183,10 @@ export function App() {
       const savedStart = localStorage.getItem(`virtuoso_start_measure_${currentPieceId}`)
       const parsedStart = savedStart ? Math.max(1, parseInt(savedStart, 10)) : 1
       setStartMeasure(parsedStart)
+      const pieceMaxM = Math.max(1, ...loadedPiece.notes.map((n) => n.measure))
+      const defaultExamEnd = loadedPiece.id === 'chopin-ballade-1' ? Math.min(26, pieceMaxM) : pieceMaxM
+      setCompetitionExamRange([1, defaultExamEnd])
+      teacherSessionRef.current.reset([1, defaultExamEnd])
       const startNote = loadedPiece.notes.find((n) => n.measure >= parsedStart)
       const initTime = startNote ? startNote.startTime : 0
       setCurrentTime(initTime)
@@ -252,17 +257,11 @@ export function App() {
     lastMetronomeBeatRef.current = -1
     processedNoteIdsRef.current.clear()
 
-    competitionScoreRef.current = 0
-    competitionComboRef.current = 0
-    competitionMaxComboRef.current = 0
-    competitionHitsCountRef.current = 0
-    competitionMissesCountRef.current = 0
-    competitionExtraNotesCountRef.current = 0
-    competitionTimingErrorsRef.current = []
-    competitionMistakesRef.current = []
+    teacherSessionRef.current.reset(competitionExamRangeRef.current)
     setCompetitionScore(0)
     setCompetitionCombo(0)
     setCompetitionLastJudgment(null)
+    setLiveTouchFeedback(null)
 
     let idx = 0
     while (idx < notes.length && notes[idx].startTime < targetTime) {
@@ -300,177 +299,145 @@ export function App() {
     }, 1200)
   }, [])
 
-  // Unified Performance Note Handler (used by Roland USB-C MIDI and on-screen keyboard)
-  const handlePerformanceNoteInput = useCallback((midi: number, velocity: number = 80) => {
-    PianoAudioEngine.getInstance().noteOn(midi, velocity)
-    hitWaitNotesRef.current.add(midi)
+  // Unified Performance Note Handler
+  // NOTE: Deep Competition Piano Teacher scoring is STRICTLY gated to real Roland LX-9 Bluetooth MIDI!
+  const handlePerformanceNoteInput = useCallback(
+    (midi: number, velocity: number = 80, source: 'ble-midi' | 'usb-midi' | 'screen' | 'mic' = 'screen') => {
+      PianoAudioEngine.getInstance().noteOn(midi, velocity)
+      hitWaitNotesRef.current.add(midi)
 
-    const now = performance.now()
-    lastNoteStrikeTimeRef.current.set(midi, now)
-    performanceBufferRef.current.push({
-      midi,
-      timestampMs: now,
-      velocity,
-      matched: false,
-    })
-    performanceBufferRef.current = performanceBufferRef.current.filter((e) => now - e.timestampMs < 3000)
-
-    const currentPiece = activePieceRef.current
-    const currentPlayMode = playModeRef.current
-    const curTime = currentTimeRef.current
-    const currentHand = handModeRef.current
-
-    if (!currentPiece || activeTabRef.current !== 'player') return
-
-    // 1. PRACTICE MODE (Adaptive Elastic Performance Follower)
-    if (currentPlayMode === 'practice') {
-      const currentExpected = expectedWaitMidisRef.current
-      if (currentExpected.length > 0 && !currentExpected.includes(midi)) {
-        // Multi-chord lookahead: check if this note is part of upcoming chords (next 20 notes)
-        const lookaheadNotes = currentPiece.notes.slice(
-          nextNoteIndexRef.current,
-          nextNoteIndexRef.current + 20
-        ).filter((n) => {
-          if (currentHand === 'right') return n.hand === 'right'
-          if (currentHand === 'left') return n.hand === 'left'
-          return true
-        })
-        const isUpcomingValidNote = lookaheadNotes.some((n) => n.midi === midi)
-
-        if (!isUpcomingValidNote) {
-          triggerWrongNoteAlert(midi)
-        }
-      }
-      return
-    }
-
-    // 2. COMPETITION MODE (Real-time Evaluated Exam)
-    if (currentPlayMode === 'competition') {
-      const eligibleNotes = currentPiece.notes.filter((n) => {
-        if (processedNoteIdsRef.current.has(n.id)) return false
-        if (currentHand === 'right' && n.hand !== 'right') return false
-        if (currentHand === 'left' && n.hand !== 'left') return false
-        return Math.abs(n.startTime - curTime) < 0.22
+      const now = performance.now()
+      lastNoteStrikeTimeRef.current.set(midi, now)
+      performanceBufferRef.current.push({
+        midi,
+        timestampMs: now,
+        velocity,
+        matched: false,
       })
+      performanceBufferRef.current = performanceBufferRef.current.filter((e) => now - e.timestampMs < 3000)
 
-      const matchedNote = eligibleNotes.find((n) => n.midi === midi)
+      const currentPiece = activePieceRef.current
+      const currentPlayMode = playModeRef.current
+      const curTime = currentTimeRef.current
+      const currentHand = handModeRef.current
 
-      if (matchedNote) {
-        processedNoteIdsRef.current.add(matchedNote.id)
-        const offsetMs = Math.round((curTime - matchedNote.startTime) * 1000)
-        competitionTimingErrorsRef.current.push(Math.abs(offsetMs))
-        competitionHitsCountRef.current++
+      if (!currentPiece || activeTabRef.current !== 'player') return
 
-        competitionComboRef.current++
-        competitionMaxComboRef.current = Math.max(
-          competitionMaxComboRef.current,
-          competitionComboRef.current
+      // 1. PRACTICE MODE (Adaptive Elastic Performance Follower)
+      if (currentPlayMode === 'practice') {
+        const currentExpected = expectedWaitMidisRef.current
+        if (currentExpected.length > 0 && !currentExpected.includes(midi)) {
+          const lookaheadNotes = currentPiece.notes
+            .slice(nextNoteIndexRef.current, nextNoteIndexRef.current + 20)
+            .filter((n) => {
+              if (currentHand === 'right') return n.hand === 'right'
+              if (currentHand === 'left') return n.hand === 'left'
+              return true
+            })
+          const isUpcomingValidNote = lookaheadNotes.some((n) => n.midi === midi)
+
+          if (!isUpcomingValidNote) {
+            triggerWrongNoteAlert(midi)
+          }
+        }
+        return
+      }
+
+      // 2. COMPETITION PIANO TEACHER MODE (Strictly Roland LX-9 Bluetooth MIDI Exclusive!)
+      if (currentPlayMode === 'competition') {
+        if (source !== 'ble-midi' || !MidiManager.getInstance().isRolandBluetoothConnected()) {
+          return
+        }
+
+        const [examStartM, examEndM] = competitionExamRangeRef.current
+        const eligibleNotes = currentPiece.notes.filter((n) => {
+          if (n.measure < examStartM || n.measure > examEndM) return false
+          if (processedNoteIdsRef.current.has(n.id)) return false
+          if (currentHand === 'right' && n.hand !== 'right') return false
+          if (currentHand === 'left' && n.hand !== 'left') return false
+          return Math.abs(n.startTime - curTime) < 0.25
+        })
+
+        // Prefer closest note in time matching MIDI pitch
+        const matchedNote =
+          eligibleNotes
+            .filter((n) => n.midi === midi)
+            .sort((a, b) => Math.abs(a.startTime - curTime) - Math.abs(b.startTime - curTime))[0] || null
+
+        if (matchedNote) {
+          processedNoteIdsRef.current.add(matchedNote.id)
+        }
+
+        // Determine current measure for fallback extra keys
+        let fallbackMeas = examStartM
+        for (let i = currentPiece.notes.length - 1; i >= 0; i--) {
+          if (curTime >= currentPiece.notes[i].startTime) {
+            fallbackMeas = currentPiece.notes[i].measure
+            break
+          }
+        }
+
+        const evalStep = teacherSessionRef.current.recordNoteOn(
+          midi,
+          velocity,
+          curTime,
+          matchedNote,
+          fallbackMeas,
+          language
         )
 
-        const mult = competitionComboRef.current >= 40 ? 4 : competitionComboRef.current >= 20 ? 3 : competitionComboRef.current >= 10 ? 2 : 1
-        const basePts = Math.abs(offsetMs) <= 30 ? 1000 : Math.abs(offsetMs) <= 70 ? 750 : Math.abs(offsetMs) <= 130 ? 450 : 200
-        competitionScoreRef.current += basePts * mult
-
-        setCompetitionScore(competitionScoreRef.current)
-        setCompetitionCombo(competitionComboRef.current)
-
-        const text = Math.abs(offsetMs) <= 30 ? 'CRITICAL PERFECT!' : Math.abs(offsetMs) <= 70 ? 'PERFECT' : offsetMs < -70 ? 'EARLY' : 'LATE'
-        const color = Math.abs(offsetMs) <= 30 ? 'text-amber-400' : Math.abs(offsetMs) <= 70 ? 'text-emerald-400' : 'text-sky-400'
-        setCompetitionLastJudgment({ text, color, offsetMs })
-      } else {
-        competitionExtraNotesCountRef.current++
-        competitionComboRef.current = 0
-        competitionScoreRef.current = Math.max(0, competitionScoreRef.current - 150)
-
-        const mNum = Math.max(1, Math.floor(curTime / (60 / (currentPiece.tempoBpm || 100) * 4)) + 1)
-        competitionMistakesRef.current.push({
-          id: `extra-${Date.now()}-${Math.random()}`,
-          measure: mNum,
-          beat: 1,
-          timestampSec: Math.round(curTime * 10) / 10,
-          type: 'wrong-key',
-          playedNoteName: ScoreEngine.midiToNoteName(midi),
-          description: `Extra / wrong note ${ScoreEngine.midiToNoteName(midi)} struck unexpectedly`,
-        })
-
-        setCompetitionScore(competitionScoreRef.current)
-        setCompetitionCombo(0)
-        setCompetitionLastJudgment({ text: 'EXTRA KEY (-150)', color: 'text-rose-400' })
+        setCompetitionScore(evalStep.score)
+        setCompetitionCombo(evalStep.combo)
+        setCompetitionLastJudgment(evalStep.judgment)
+        setLiveTouchFeedback(evalStep.liveTouch)
       }
-    }
-  }, [triggerWrongNoteAlert])
+    },
+    [triggerWrongNoteAlert, language]
+  )
 
   const finishCompetition = useCallback(() => {
     setIsPlaying(false)
     const currentPiece = activePieceRef.current
-    const totalScoreNotes = currentPiece ? currentPiece.notes.length : 1
-    const hits = competitionHitsCountRef.current
-    const misses = competitionMissesCountRef.current
-    const extras = competitionExtraNotesCountRef.current
-    const totalAttempts = hits + misses + extras
-    const acc = totalAttempts > 0 ? Math.round((hits / totalAttempts) * 100) : 0
+    if (!currentPiece) return
 
-    const avgTiming = competitionTimingErrorsRef.current.length > 0
-      ? Math.round(competitionTimingErrorsRef.current.reduce((a, b) => a + b, 0) / competitionTimingErrorsRef.current.length)
-      : 24
+    const midiMgr = MidiManager.getInstance()
+    const isBle = midiMgr.isRolandBluetoothConnected()
+    const deviceName = midiMgr.getState().deviceName || 'Roland LX-9'
 
-    const grade: 'S+' | 'S' | 'A' | 'B' | 'C' | 'D' =
-      acc >= 98 && avgTiming <= 30 && extras === 0 ? 'S+' :
-      acc >= 93 && avgTiming <= 45 ? 'S' :
-      acc >= 85 ? 'A' :
-      acc >= 75 ? 'B' :
-      acc >= 60 ? 'C' : 'D'
-
-    const measureMistakeCounts: Record<number, number> = {}
-    competitionMistakesRef.current.forEach((m) => {
-      measureMistakeCounts[m.measure] = (measureMistakeCounts[m.measure] || 0) + 1
-    })
-    let worstMeasure = 1
-    let maxErrors = 0
-    Object.entries(measureMistakeCounts).forEach(([mStr, count]) => {
-      if (count > maxErrors) {
-        maxErrors = count
-        worstMeasure = parseInt(mStr, 10)
-      }
-    })
-    const maxMeasure = currentPiece?.sections?.[0]?.endMeasure || 16
-    const problemRange: [number, number] = [
-      Math.max(1, worstMeasure - 1),
-      Math.min(maxMeasure, worstMeasure + 2)
-    ]
-
-    const res: CompetitionResults = {
-      score: competitionScoreRef.current,
-      maxPossibleScore: 100000,
-      maxCombo: competitionMaxComboRef.current,
-      totalNotes: totalScoreNotes,
-      notesHit: hits,
-      notesMissed: misses,
-      extraNotesCount: extras,
-      accuracyPercent: acc,
-      averageTimingErrorMs: avgTiming,
-      dynamicRatingPercent: Math.min(100, Math.round(acc * 0.95)),
-      pedalRatingPercent: 94,
-      grade,
-      mistakes: [...competitionMistakesRef.current],
-      problemMeasures: problemRange,
+    if (!isBle) {
+      // Strictly never generate fake measurements for non-BLE sources: show demo preview clearly marked as preview
+      setCompetitionResults(generateBalladeM1To26DemoReport(language))
+      setIsCompetitionReportOpen(true)
+      return
     }
 
-    setCompetitionResults(res)
-    if (currentPiece) {
-      SongStorageManager.saveCompetitionScore({
-        pieceId: currentPiece.id,
-        score: res.score,
-        accuracyPercent: acc,
-        grade,
-        date: new Date().toLocaleDateString(),
-        timingErrorMs: avgTiming,
-        extraNotesCount: extras,
-        missedNotesCount: misses,
-      })
-    }
+    const report = teacherSessionRef.current.evaluate(
+      currentPiece,
+      deviceName,
+      true,
+      language,
+      handModeRef.current
+    )
+
+    setCompetitionResults(report)
+    SongStorageManager.saveCompetitionScore({
+      pieceId: currentPiece.id,
+      score: report.score,
+      accuracyPercent: report.accuracyPercent,
+      grade: report.grade,
+      date: new Date().toLocaleDateString(),
+      timingErrorMs: report.averageTimingErrorMs,
+      extraNotesCount: report.extraNotesCount,
+      missedNotesCount: report.notesMissed,
+    })
     setIsCompetitionReportOpen(true)
-  }, [])
+  }, [language])
+
+  const handleOpenDemoTeacherReport = useCallback(() => {
+    setIsPlaying(false)
+    setCompetitionResults(generateBalladeM1To26DemoReport(language))
+    setIsCompetitionReportOpen(true)
+  }, [language])
 
   // iOS Safari & WKWebView Audio Lifecycle Recovery (handles app exit, backgrounding, re-entry & touch unlocks)
   useEffect(() => {
@@ -509,21 +476,62 @@ export function App() {
     }
   }, [])
 
-  // Subscribe to Roland LX-9 Bluetooth & Web MIDI events
+  // Subscribe to Roland LX-9 Bluetooth & Web MIDI events (with Note-Off release velocity, hold depth & CC64/CC67!)
   useEffect(() => {
+    const getCurMeasure = () => {
+      const p = activePieceRef.current
+      if (!p) return 1
+      const t = currentTimeRef.current
+      for (let i = p.notes.length - 1; i >= 0; i--) {
+        if (t >= p.notes[i].startTime) return Math.max(1, p.notes[i].measure)
+      }
+      return 1
+    }
+
     const unsubscribe = MidiManager.getInstance().subscribe(
-      (midi, velocity) => {
-        handlePerformanceNoteInput(midi, velocity)
+      (midi, velocity, origin) => {
+        const midiSource =
+          origin === 'hardware-ble'
+            ? 'ble-midi'
+            : origin === 'acoustic-mic'
+            ? 'mic'
+            : origin === 'hardware-usb'
+            ? 'usb-midi'
+            : 'screen'
+        handlePerformanceNoteInput(midi, velocity, midiSource)
       },
-      (midi) => {
+      (midi, releaseVelocity, holdDurationMs, origin) => {
         PianoAudioEngine.getInstance().noteOff(midi)
+        if (
+          origin === 'hardware-ble' &&
+          playModeRef.current === 'competition' &&
+          MidiManager.getInstance().isRolandBluetoothConnected()
+        ) {
+          teacherSessionRef.current.recordNoteOff(midi, releaseVelocity ?? 40, holdDurationMs)
+        }
       },
-      (pedalVal) => {
+      (pedalVal, origin) => {
         manualPedalDepthRef.current = pedalVal
         PianoAudioEngine.getInstance().setDamperPedal(pedalVal)
+        if (
+          origin === 'hardware-ble' &&
+          playModeRef.current === 'competition' &&
+          MidiManager.getInstance().isRolandBluetoothConnected()
+        ) {
+          teacherSessionRef.current.recordPedal(64, pedalVal, currentTimeRef.current, getCurMeasure())
+        }
       },
       (updatedState) => {
         setMidiState(updatedState)
+      },
+      (softPedalVal, origin) => {
+        if (
+          origin === 'hardware-ble' &&
+          playModeRef.current === 'competition' &&
+          MidiManager.getInstance().isRolandBluetoothConnected()
+        ) {
+          teacherSessionRef.current.recordPedal(67, softPedalVal, currentTimeRef.current, getCurMeasure())
+        }
       }
     )
 
@@ -780,33 +788,37 @@ export function App() {
           }
         }
 
-        // 2. COMPETITION MODE (Real-time Examination: checks missed notes)
-        if (currentPlayMode === 'competition') {
+        // 2. COMPETITION PIANO TEACHER MODE (Roland LX-9 Bluetooth Exclusive: missed notes & Section Exam completion!)
+        if (currentPlayMode === 'competition' && MidiManager.getInstance().isRolandBluetoothConnected()) {
+          const [examStartM, examEndM] = competitionExamRangeRef.current
           for (let i = 0; i < activePiece.notes.length; i++) {
             const note = activePiece.notes[i]
-            if (note.startTime < nextTime - 0.22 && !processedNoteIdsRef.current.has(note.id)) {
+            if (note.measure < examStartM || note.measure > examEndM) continue
+            if (note.startTime < nextTime - 0.25 && !processedNoteIdsRef.current.has(note.id)) {
               const matchesHand =
                 handMode === 'both' ||
                 (handMode === 'right' && note.hand === 'right') ||
                 (handMode === 'left' && note.hand === 'left')
               if (matchesHand) {
                 processedNoteIdsRef.current.add(note.id)
-                competitionMissesCountRef.current++
-                competitionComboRef.current = 0
+                teacherSessionRef.current.recordMissedNote(note)
                 setCompetitionCombo(0)
-                competitionMistakesRef.current.push({
-                  id: `miss-${note.id}`,
-                  measure: note.measure,
-                  beat: note.beat || 1,
-                  timestampSec: note.startTime,
-                  type: 'missed-note',
-                  expectedNoteName: note.noteName,
-                  description: `Missed note ${note.noteName} (${note.hand} hand)`,
-                })
                 setCompetitionLastJudgment({ text: 'MISSED', color: 'text-rose-500' })
               }
             }
             if (note.startTime > nextTime) break
+          }
+
+          // Auto-finish Competition Exam when reaching end of exam measure range (e.g. Takt 26 in Ballade No. 1!)
+          const examScopeNotes = activePiece.notes.filter((n) => n.measure <= examEndM)
+          const lastExamNote = examScopeNotes[examScopeNotes.length - 1]
+          const examEndTimeSec = lastExamNote
+            ? lastExamNote.startTime + Math.max(1.1, lastExamNote.duration)
+            : activePiece.duration
+          if (nextTime >= examEndTimeSec) {
+            finishCompetitionRef.current()
+            animId = requestAnimationFrame(tick)
+            return
           }
         }
 
@@ -1036,6 +1048,11 @@ export function App() {
       const savedStart = localStorage.getItem(`virtuoso_start_measure_${pieceId}`)
       const parsedStart = savedStart ? Math.max(1, parseInt(savedStart, 10)) : 1
       setStartMeasure(parsedStart)
+      const pieceMaxM = Math.max(1, ...loadedPiece.notes.map((n) => n.measure))
+      const defaultExamEnd = pieceId === 'chopin-ballade-1' ? Math.min(26, pieceMaxM) : pieceMaxM
+      const initExamRange: [number, number] = loopRangeCustom ? loopRangeCustom : [1, defaultExamEnd]
+      setCompetitionExamRange(initExamRange)
+      competitionExamRangeRef.current = initExamRange
 
       const targetStartMeas = loopRangeCustom ? loopRangeCustom[0] : parsedStart
       const startNote = loadedPiece.notes.find((n) => n.measure >= targetStartMeas)
@@ -1243,6 +1260,17 @@ export function App() {
             competitionScore={competitionScore}
             competitionCombo={competitionCombo}
             competitionLastJudgment={competitionLastJudgment}
+            competitionExamRange={competitionExamRange}
+            onChangeCompetitionExamRange={(rng) => {
+              setCompetitionExamRange(rng)
+              competitionExamRangeRef.current = rng
+              teacherSessionRef.current.reset(rng)
+              const targetSec = getMeasureStartTime(rng[0])
+              resetPlaybackToIndex(targetSec, activePiece.notes)
+              setCurrentTime(targetSec)
+            }}
+            liveTouchFeedback={liveTouchFeedback}
+            onOpenDemoTeacherReport={handleOpenDemoTeacherReport}
             onOpenCompetitionReport={finishCompetition}
             showHands={showHands}
             isLooping={isLooping}
@@ -1254,6 +1282,8 @@ export function App() {
             edition={edition}
             language={language}
             isConnectedLX9={midiState.isConnected}
+            isRolandBluetooth={midiState.isConnected && midiState.connectionType === 'ble'}
+            midiDeviceName={midiState.deviceName}
             wrongNoteMidi={wrongNoteMidi}
             expectedNotes={expectedNotes}
             isMetronomeOn={isMetronomeOn}
@@ -1449,17 +1479,21 @@ export function App() {
         </div>
       )}
 
-      {/* Grand Competition Jury & Mistake Auditor Modal */}
+      {/* Grand Competition Piano Teacher & Mistake Auditor Modal */}
       {activePiece && (
         <CompetitionReportModal
           isOpen={isCompetitionReportOpen}
           onClose={() => setIsCompetitionReportOpen(false)}
           onRetry={() => {
             setIsCompetitionReportOpen(false)
-            resetPlaybackToIndex(0, activePiece.notes)
-            setCurrentTime(0)
+            const startMeas = competitionExamRange[0] || 1
+            const startSec = getMeasureStartTime(startMeas)
+            resetPlaybackToIndex(startSec, activePiece.notes)
+            setCurrentTime(startSec)
+            setPlayMode('competition')
             setIsPlaying(true)
           }}
+          onOpenBluetoothModal={() => setIsRolandModalOpen(true)}
           onPracticeProblemMeasures={(range) => {
             setIsCompetitionReportOpen(false)
             setLoopRange(range)
